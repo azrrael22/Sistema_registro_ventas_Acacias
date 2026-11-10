@@ -1,5 +1,5 @@
 import type { NextRequest } from "next/server";
-import { leerFiltros, nombrePeriodo, obtenerReporte } from "@/lib/reportes";
+import { leerFiltros, nombrePeriodo, obtenerReporte } from "@/server/reportes";
 
 const celda = (v: string | number) => (typeof v === "number" ? String(v) : `"${v.replaceAll('"', '""')}"`);
 

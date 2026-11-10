@@ -1,4 +1,5 @@
-import { createClient } from "@/lib/supabase/server";
+import "server-only";
+import { createClient } from "@/server/supabase";
 
 // Productos de las categorías donde el empleado es socio activo.
 export async function misProductos(empleadoId: string) {

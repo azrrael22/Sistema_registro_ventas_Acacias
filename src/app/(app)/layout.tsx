@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { requerirEmpleadoActivo } from "@/lib/sesion";
-import { createClient } from "@/lib/supabase/server";
+import { requerirEmpleadoActivo } from "@/server/sesion";
+import { createClient } from "@/server/supabase";
 import { Navegacion } from "@/components/navegacion";
 import { Campanita } from "@/components/campanita";
 import { cerrarSesion } from "../(auth)/actions";

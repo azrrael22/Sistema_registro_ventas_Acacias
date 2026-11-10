@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import type { EmailOtpType } from "@supabase/supabase-js";
-import { createClient } from "@/lib/supabase/server";
+import { createClient } from "@/server/supabase";
 
 // Destino del enlace de confirmación de correo.
 export async function GET(request: NextRequest) {

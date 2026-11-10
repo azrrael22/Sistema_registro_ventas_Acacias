@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { dinero } from "@/lib/formato";
-import { GRANULARIDADES, leerFiltros, nombrePeriodo, obtenerReporte } from "@/lib/reportes";
+import { GRANULARIDADES, leerFiltros, nombrePeriodo, obtenerReporte } from "@/server/reportes";
 import { Aviso, Boton, Entrada, Etiqueta, Selector, Tarjeta, Titulo, Vacio } from "@/components/ui";
 
 export const metadata: Metadata = { title: "Reportes" };

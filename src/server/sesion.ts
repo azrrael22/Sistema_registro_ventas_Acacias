@@ -1,6 +1,7 @@
+import "server-only";
 import { cache } from "react";
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { createClient } from "@/server/supabase";
 
 // Empleado de la sesión actual (una sola consulta por request).
 export const getEmpleado = cache(async () => {

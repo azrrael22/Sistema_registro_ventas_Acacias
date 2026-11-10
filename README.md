@@ -89,7 +89,8 @@ update empleados set es_admin = true, activo = true where email = 'TU_CORREO';
 ```
 src/app/(auth)/          login, registro
 src/app/(app)/           pantallas internas (vender, ventas, productos, inventario, retiros, reportes, notificaciones, admin)
-src/lib/supabase/        clientes de Supabase (navegador, servidor, proxy)
+src/server/              código solo de servidor: cliente Supabase, sesión, consultas, reportes, proxy
+src/lib/                 código compartido: formato, tipos, cliente Supabase del navegador
 src/proxy.ts             redirige a /login si no hay sesión
 supabase/migrations/     esquema, RLS, triggers, RPCs y catálogo inicial
 supabase/functions/      Edge Function de correos

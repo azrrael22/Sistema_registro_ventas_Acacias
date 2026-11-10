@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
-import { requerirEmpleadoActivo } from "@/lib/sesion";
+import { createClient } from "@/server/supabase";
+import { requerirEmpleadoActivo } from "@/server/sesion";
 import { dinero, fecha } from "@/lib/formato";
 import { Tarjeta, Titulo, Vacio, cx } from "@/components/ui";
 

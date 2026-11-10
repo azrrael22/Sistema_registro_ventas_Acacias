@@ -1,8 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { createClient } from "@/lib/supabase/server";
-import { requerirAdmin } from "@/lib/sesion";
+import { createClient } from "@/server/supabase";
+import { requerirAdmin } from "@/server/sesion";
 import { mensajeError } from "@/lib/formato";
 import type { Resultado } from "@/lib/acciones";
 

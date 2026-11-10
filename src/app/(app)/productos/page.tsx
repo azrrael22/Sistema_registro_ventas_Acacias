@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
-import { createClient } from "@/lib/supabase/server";
-import { requerirEmpleadoActivo } from "@/lib/sesion";
+import { createClient } from "@/server/supabase";
+import { requerirEmpleadoActivo } from "@/server/sesion";
 import { dinero } from "@/lib/formato";
 import { Boton, Entrada, Etiqueta, Tarjeta, Titulo, Vacio } from "@/components/ui";
 import { BotonEnvio } from "@/components/boton-envio";

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { createClient } from "@/server/supabase";
 import { dinero, fecha } from "@/lib/formato";
 import { Entrada, Etiqueta, Tarjeta, Titulo } from "@/components/ui";
 import { BotonEnvio } from "@/components/boton-envio";

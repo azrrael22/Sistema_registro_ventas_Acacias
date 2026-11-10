@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import { getEmpleado } from "@/lib/sesion";
+import { getEmpleado } from "@/server/sesion";
 import { Boton } from "@/components/ui";
 import { cerrarSesion } from "../(auth)/actions";
 

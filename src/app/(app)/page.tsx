@@ -1,7 +1,7 @@
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
-import { requerirEmpleadoActivo } from "@/lib/sesion";
-import { misProductos } from "@/lib/consultas";
+import { createClient } from "@/server/supabase";
+import { requerirEmpleadoActivo } from "@/server/sesion";
+import { misProductos } from "@/server/consultas";
 import { dinero } from "@/lib/formato";
 import { Tarjeta } from "@/components/ui";
 

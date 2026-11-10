@@ -2,8 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
-import { requerirEmpleadoActivo } from "@/lib/sesion";
+import { createClient } from "@/server/supabase";
+import { requerirEmpleadoActivo } from "@/server/sesion";
 import { mensajeError } from "@/lib/formato";
 import type { Resultado } from "@/lib/acciones";
 

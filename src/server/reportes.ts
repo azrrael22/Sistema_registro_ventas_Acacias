@@ -1,4 +1,5 @@
-import { createClient } from "@/lib/supabase/server";
+import "server-only";
+import { createClient } from "@/server/supabase";
 import { hoy } from "@/lib/formato";
 
 export const GRANULARIDADES = {

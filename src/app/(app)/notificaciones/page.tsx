@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { createClient } from "@/lib/supabase/server";
+import { createClient } from "@/server/supabase";
 import { fecha } from "@/lib/formato";
 import { Boton, Tarjeta, Titulo, Vacio, cx } from "@/components/ui";
 import { marcarTodasLeidas } from "./actions";

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { createClient } from "@/lib/supabase/server";
+import { createClient } from "@/server/supabase";
 import { Titulo, Vacio } from "@/components/ui";
 import { Carrito } from "./carrito";
 
