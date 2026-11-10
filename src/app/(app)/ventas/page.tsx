@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { createClient } from "@/server/supabase";
 import { requerirEmpleadoActivo } from "@/server/sesion";
+import { misProductos } from "@/server/consultas";
 import { dinero, fecha } from "@/lib/formato";
 import { Tarjeta, Titulo, Vacio, cx } from "@/components/ui";
 
@@ -10,16 +11,21 @@ export const metadata: Metadata = { title: "Ventas" };
 export default async function VentasPage({ searchParams }: PageProps<"/ventas">) {
   const empleado = await requerirEmpleadoActivo();
   const { ver } = await searchParams;
-  const soloMias = ver !== "todas";
+  // "todas" es solo para admin; cualquier otro valor muestra "Mis ventas".
+  const vista = ver === "categorias" || (ver === "todas" && empleado.es_admin) ? ver : undefined;
   const supabase = await createClient();
 
+  // Filtro explícito: la RLS deja ver todas las ventas a un admin.
+  // Con !inner solo llegan las ventas con ítems que pasan el filtro, y solo esos ítems.
   let consulta = supabase
     .from("ventas")
-    .select("id, tipo, fecha, nota, empleado_id, venta_origen_id, empleados(nombre), venta_items(id, cantidad, precio_unitario, productos(nombre))")
+    .select("id, tipo, fecha, nota, empleado_id, venta_origen_id, empleados(nombre), venta_items!inner(id, cantidad, precio_unitario, productos(nombre))")
     .order("fecha", { ascending: false })
     .limit(100);
-  if (soloMias) consulta = consulta.eq("empleado_id", empleado.id);
-  const { data: ventas } = await consulta;
+  const ids = vista === "categorias" ? (await misProductos(empleado.id)).map((p) => p.id) : [];
+  if (!vista) consulta = consulta.eq("empleado_id", empleado.id);
+  if (vista === "categorias") consulta = consulta.in("venta_items.producto_id", ids);
+  const { data: ventas } = vista === "categorias" && !ids.length ? { data: [] } : await consulta;
 
   return (
     <>
@@ -29,19 +35,22 @@ export default async function VentasPage({ searchParams }: PageProps<"/ventas">)
       <div className="mb-4 flex gap-1 text-sm">
         {[
           { v: undefined, t: "Mis ventas" },
-          { v: "todas", t: "Mías y de mis productos" },
+          { v: "categorias", t: "Mis categorías" },
+          ...(empleado.es_admin ? [{ v: "todas", t: "Todas" }] : []),
         ].map((o) => (
           <Link
             key={o.t}
             href={o.v ? `/ventas?ver=${o.v}` : "/ventas"}
-            className={cx("rounded-lg px-3 py-2 font-medium", (o.v === "todas") !== soloMias ? "bg-stone-200 text-stone-900" : "text-stone-600 hover:bg-stone-100")}
+            className={cx("rounded-lg px-3 py-2 font-medium", o.v === vista ? "bg-stone-200 text-stone-900" : "text-stone-600 hover:bg-stone-100")}
           >
             {o.t}
           </Link>
         ))}
       </div>
 
-      {!ventas?.length && <Vacio>No hay ventas registradas.</Vacio>}
+      {!ventas?.length && (
+        <Vacio>{vista === "categorias" && !ids.length ? "Aún no eres socio de ninguna categoría." : "No hay ventas registradas."}</Vacio>
+      )}
       <ul className="flex flex-col gap-3">
         {ventas?.map((v) => {
           const total = v.venta_items.reduce((t, i) => t + i.cantidad * Number(i.precio_unitario), 0);
@@ -70,9 +79,6 @@ export default async function VentasPage({ searchParams }: PageProps<"/ventas">)
                     </li>
                   ))}
                 </ul>
-                {v.venta_items.length === 0 && (
-                  <p className="mt-2 text-sm text-stone-500">Sin productos de tus categorías.</p>
-                )}
                 {v.nota && <p className="mt-1 text-sm text-stone-500 italic">“{v.nota}”</p>}
                 {!esDevolucion && (
                   <Link href={`/ventas/${v.id}/devolver`} className="mt-2 inline-block text-sm font-medium text-amber-800 hover:underline">
