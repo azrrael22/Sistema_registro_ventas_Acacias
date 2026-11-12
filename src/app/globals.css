@@ -7,3 +7,10 @@
 body {
   font-family: var(--font-sans);
 }
+
+/* Imprimir los colores de fondo (barras de los reportes) */
+@media print {
+  * {
+    print-color-adjust: exact;
+  }
+}

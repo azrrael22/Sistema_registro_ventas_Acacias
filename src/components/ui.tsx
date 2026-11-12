@@ -44,7 +44,7 @@ export function Etiqueta({ texto, children, className }: { texto: string; childr
 }
 
 export function Tarjeta({ className, ...props }: ComponentProps<"section">) {
-  return <section className={cx("rounded-xl border border-stone-200 bg-white p-4 shadow-sm", className)} {...props} />;
+  return <section className={cx("rounded-xl border border-stone-200 bg-white p-4 shadow-sm print:shadow-none", className)} {...props} />;
 }
 
 export function Titulo({ children, accion }: { children: React.ReactNode; accion?: React.ReactNode }) {

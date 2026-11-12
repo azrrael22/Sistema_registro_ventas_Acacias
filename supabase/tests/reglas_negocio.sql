@@ -165,6 +165,14 @@ do $$ begin
   assert (select count(*) from notificaciones) = 3, 'C: aprobada + retiro + nuevo socio';
   assert (select count(*) from reporte_socio('trimestre', '2020-01-01', '2100-01-01')) = 2, 'C ve 2 productos';
   assert (select retiros from reporte_socio('anio', '2020-01-01', '2100-01-01') where producto='Repelentes std') = 20000;
+  assert (select sum(ventas_netas) from reporte_socio('dia', '2020-01-01', '2100-01-01'))
+       = (select sum(ventas_netas) from reporte_socio('anio', '2020-01-01', '2100-01-01')), 'por día suma igual que por año';
+  assert (select unidades_base from inventario_socio('2020-01-01', '2100-01-01') where producto='Repelentes std') = 10, 'base repelentes';
+  assert (select unidades_quedan from inventario_socio('2020-01-01', '2100-01-01') where producto='Repelentes std') = 8, 'quedan repelentes';
+  assert (select sum(unidades_base - unidades_quedan) from inventario_socio('2020-01-01', '2100-01-01'))
+       = (select sum(unidades) from reporte_socio('anio', '2020-01-01', '2100-01-01')), 'base - quedan = vendidas';
+  assert (select unidades_base from inventario_socio('2100-01-01', '2100-01-01') where producto='Repelentes std') = 8,
+         'periodo futuro: la base es el stock que quedó';
   assert (select count(*) from ventas) = 1, 'C ve la venta de B (es socio de items)';
   assert (select count(*) from venta_items) = 2, 'C solo ve items de sus productos';
 end $$;
@@ -176,6 +184,7 @@ do $$ begin
   -- B: aprobada + A se unió a pines? (A ya era socio antes que B) => solo aprobada
   assert (select count(*) from notificaciones) = 1, 'B solo tiene aprobada';
   assert (select count(*) from reporte_socio('mes', '2020-01-01', '2100-01-01')) = 1, 'B ve solo pines';
+  assert (select count(*) from inventario_socio('2020-01-01', '2100-01-01')) = 1, 'B: inventario solo de pines';
 end $$;
 
 -- ===== anon no ve nada =====

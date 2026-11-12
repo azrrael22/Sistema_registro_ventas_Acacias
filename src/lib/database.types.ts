@@ -558,6 +558,16 @@ export type Database = {
         Args: { p_empleado: string; p_producto: number }
         Returns: boolean
       }
+      inventario_socio: {
+        Args: { p_desde: string; p_hasta: string }
+        Returns: {
+          categoria: string
+          producto: string
+          producto_id: number
+          unidades_base: number
+          unidades_quedan: number
+        }[]
+      }
       registrar_venta: {
         Args: {
           p_items: Json
@@ -572,6 +582,7 @@ export type Database = {
         Returns: {
           periodo: string
           producto: string
+          producto_id: number
           retiros: number
           unidades: number
           ventas_netas: number

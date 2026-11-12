@@ -15,7 +15,7 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
 
   return (
     <div className="flex min-h-dvh flex-col">
-      <header className="sticky top-0 z-10 border-b border-stone-200 bg-white/95 backdrop-blur">
+      <header className="sticky top-0 z-10 border-b border-stone-200 bg-white/95 backdrop-blur print:hidden">
         <div className="mx-auto flex max-w-5xl items-center justify-between gap-3 px-4 py-3">
           <Link href="/" className="flex items-center gap-2 font-semibold">
             <span aria-hidden>🌳</span> Las Acacias
@@ -30,7 +30,7 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
         </div>
         <Navegacion esAdmin={empleado.es_admin} />
       </header>
-      <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-6">{children}</main>
+      <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-6 print:max-w-none print:p-0">{children}</main>
     </div>
   );
 }
