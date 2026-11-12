@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useActionState } from "react";
 import { Aviso, Entrada, Etiqueta } from "@/components/ui";
 import { BotonEnvio } from "@/components/boton-envio";
+import { EntradaContrasena } from "@/components/entrada-contrasena";
 import { iniciarSesion, registrarse } from "./actions";
 
 export function FormularioAuth({ modo }: { modo: "login" | "registro" }) {
@@ -22,9 +23,8 @@ export function FormularioAuth({ modo }: { modo: "login" | "registro" }) {
         <Entrada name="email" type="email" required autoComplete="email" />
       </Etiqueta>
       <Etiqueta texto="Contraseña">
-        <Entrada
+        <EntradaContrasena
           name="password"
-          type="password"
           required
           minLength={modo === "registro" ? 8 : undefined}
           autoComplete={modo === "login" ? "current-password" : "new-password"}
@@ -32,7 +32,7 @@ export function FormularioAuth({ modo }: { modo: "login" | "registro" }) {
       </Etiqueta>
       {modo === "registro" && (
         <Etiqueta texto="Confirmar contraseña">
-          <Entrada name="confirmar" type="password" required autoComplete="new-password" />
+          <EntradaContrasena name="confirmar" required autoComplete="new-password" />
         </Etiqueta>
       )}
       <Aviso>{estado?.error}</Aviso>
