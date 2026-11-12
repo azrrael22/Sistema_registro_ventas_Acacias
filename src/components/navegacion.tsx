@@ -22,16 +22,19 @@ export function Navegacion({ esAdmin }: { esAdmin: boolean }) {
     .sort((a, b) => b.href.length - a.href.length)[0]?.href;
 
   return (
-    <nav className="mx-auto max-w-5xl overflow-x-auto px-2">
-      <ul className="flex gap-1 pb-2 text-sm whitespace-nowrap">
+    <nav className="mx-auto max-w-5xl overflow-x-auto px-1 sm:px-3">
+      <ul className="flex text-sm whitespace-nowrap">
         {todos.map((e) => (
           <li key={e.href}>
             <Link
               href={e.href}
               aria-current={activo === e.href ? "page" : undefined}
               className={cx(
-                "block rounded-lg px-3 py-2 font-medium",
-                activo === e.href ? "bg-emerald-50 text-emerald-800" : "text-stone-600 hover:bg-stone-100",
+                "relative block px-3 py-3 font-medium transition-colors focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-emerald-700",
+                // La sección activa se marca con una raya verde sobre el borde del encabezado
+                activo === e.href
+                  ? "text-stone-900 after:absolute after:inset-x-3 after:bottom-0 after:h-0.5 after:rounded-full after:bg-emerald-700"
+                  : "text-stone-600 hover:text-stone-900",
               )}
             >
               {e.texto}

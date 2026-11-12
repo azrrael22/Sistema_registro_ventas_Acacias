@@ -2,11 +2,17 @@ import type { Metadata } from "next";
 import { createClient } from "@/server/supabase";
 import { fecha } from "@/lib/formato";
 import { Boton, Tarjeta, Titulo, Vacio, cx } from "@/components/ui";
+import { IconoAprobado, IconoBilletes, IconoCampana, IconoPersonaNueva, IconoSocios } from "@/components/iconos";
 import { marcarTodasLeidas } from "./actions";
 
 export const metadata: Metadata = { title: "Notificaciones" };
 
-const ICONOS: Record<string, string> = { retiro: "💸", nuevo_socio: "🤝", registro_pendiente: "🙋", cuenta_aprobada: "✅" };
+const ICONOS: Record<string, typeof IconoCampana> = {
+  retiro: IconoBilletes,
+  nuevo_socio: IconoSocios,
+  registro_pendiente: IconoPersonaNueva,
+  cuenta_aprobada: IconoAprobado,
+};
 
 export default async function NotificacionesPage() {
   const supabase = await createClient();
@@ -30,23 +36,37 @@ export default async function NotificacionesPage() {
       >
         Notificaciones
       </Titulo>
-      {!notificaciones?.length && <Vacio>No tienes notificaciones.</Vacio>}
-      <ul className="flex flex-col gap-2">
-        {notificaciones?.map((n) => (
-          <li key={n.id}>
-            <Tarjeta className={cx("flex gap-3", !n.leida && "border-emerald-300 bg-emerald-50/60")}>
-              <span className="text-xl" aria-hidden>{ICONOS[n.tipo] ?? "🔔"}</span>
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium">
-                  {n.titulo} {!n.leida && <span className="ml-1 rounded bg-emerald-700 px-1.5 py-0.5 text-[10px] font-semibold text-white uppercase">nueva</span>}
-                </p>
-                <p className="text-sm text-stone-700">{n.mensaje}</p>
-                <p className="mt-1 text-xs text-stone-500">{fecha(n.creada_en)}</p>
-              </div>
-            </Tarjeta>
-          </li>
-        ))}
-      </ul>
+      {!notificaciones?.length ? (
+        <Vacio>No tienes notificaciones</Vacio>
+      ) : (
+        <Tarjeta className="p-0">
+          <ul className="divide-y divide-stone-100">
+            {notificaciones.map((n) => {
+              const Icono = ICONOS[n.tipo] ?? IconoCampana;
+              return (
+                <li key={n.id} className="flex gap-3 px-4 py-4 sm:px-5">
+                  <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-stone-100 text-stone-600">
+                    <Icono />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className={cx("flex items-center gap-2 text-sm", n.leida ? "text-stone-700" : "font-medium text-stone-900")}>
+                      {n.titulo}
+                      {!n.leida && (
+                        <>
+                          <span className="size-2 shrink-0 rounded-full bg-emerald-600" aria-hidden />
+                          <span className="sr-only">(sin leer)</span>
+                        </>
+                      )}
+                    </p>
+                    <p className="text-sm text-stone-600">{n.mensaje}</p>
+                    <p className="mt-1 text-xs text-stone-500">{fecha(n.creada_en)}</p>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        </Tarjeta>
+      )}
     </>
   );
 }

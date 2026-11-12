@@ -3,7 +3,7 @@ import { createClient } from "@/server/supabase";
 import { requerirEmpleadoActivo } from "@/server/sesion";
 import { misProductos } from "@/server/consultas";
 import { fecha } from "@/lib/formato";
-import { Entrada, Etiqueta, Selector, Tarjeta, Titulo, Vacio } from "@/components/ui";
+import { Entrada, Etiqueta, Selector, Tarjeta, Titulo, Vacio, cx } from "@/components/ui";
 import { BotonEnvio } from "@/components/boton-envio";
 import { FormAccion } from "@/components/form-accion";
 import { registrarMovimiento } from "./actions";
@@ -24,7 +24,7 @@ export default async function InventarioPage() {
       .order("fecha", { ascending: false })
       .limit(30),
   ]);
-  const stockPor = new Map(stock?.map((s) => [s.producto_id, s.stock]));
+  const stockPor = new Map(stock?.map((s) => [s.producto_id, Number(s.stock ?? 0)]));
 
   return (
     <>
@@ -34,7 +34,7 @@ export default async function InventarioPage() {
       ) : (
         <div className="grid gap-4 md:grid-cols-2">
           <Tarjeta>
-            <h2 className="mb-3 font-semibold">Registrar movimiento</h2>
+            <h2 className="mb-4 font-medium text-stone-900">Registrar movimiento</h2>
             <FormAccion accion={registrarMovimiento} className="flex flex-col gap-3">
               <Etiqueta texto="Producto">
                 <Selector name="producto_id" required>
@@ -60,28 +60,31 @@ export default async function InventarioPage() {
           </Tarjeta>
 
           <Tarjeta>
-            <h2 className="mb-3 font-semibold">Stock actual</h2>
+            <h2 className="mb-2 font-medium text-stone-900">Stock actual</h2>
             <ul className="divide-y divide-stone-100 text-sm">
-              {productos.map((p) => (
-                <li key={p.id} className="flex justify-between py-2">
-                  <span>{p.nombre} <span className="text-stone-500">· {p.categorias?.nombre}</span></span>
-                  <span className="font-semibold tabular-nums">{stockPor.get(p.id) ?? 0}</span>
-                </li>
-              ))}
+              {productos.map((p) => {
+                const disponibles = stockPor.get(p.id) ?? 0;
+                return (
+                  <li key={p.id} className="flex justify-between gap-4 py-2.5">
+                    <span className="text-stone-900">{p.nombre} <span className="text-stone-500">· {p.categorias?.nombre}</span></span>
+                    <span className={cx("font-medium tabular-nums", disponibles <= 3 ? "text-amber-700" : "text-stone-900")}>{disponibles}</span>
+                  </li>
+                );
+              })}
             </ul>
           </Tarjeta>
 
           <Tarjeta className="md:col-span-2">
-            <h2 className="mb-3 font-semibold">Últimos movimientos</h2>
+            <h2 className="mb-2 font-medium text-stone-900">Últimos movimientos</h2>
             {!movimientos?.length ? (
-              <p className="text-sm text-stone-500">Sin movimientos todavía.</p>
+              <p className="text-sm text-stone-500">Sin movimientos todavía</p>
             ) : (
               <ul className="divide-y divide-stone-100 text-sm">
                 {movimientos.map((m) => (
-                  <li key={m.id} className="flex flex-wrap justify-between gap-2 py-2">
-                    <span>
-                      <span className="font-medium">{m.cantidad > 0 ? "+" : ""}{m.cantidad}</span> {m.productos?.nombre}
-                      <span className="text-stone-500"> · {m.tipo} · {m.empleados?.nombre}{m.nota ? ` · ${m.nota}` : ""}</span>
+                  <li key={m.id} className="flex flex-wrap justify-between gap-x-4 gap-y-1 py-2.5">
+                    <span className="text-stone-900">
+                      <span className="font-medium tabular-nums">{m.cantidad > 0 ? "+" : "−"}{Math.abs(m.cantidad)}</span> {m.productos?.nombre}
+                      <span className="text-stone-500"> · {m.tipo === "entrada" ? "Entrada" : "Ajuste"} · {m.empleados?.nombre}{m.nota ? ` · ${m.nota}` : ""}</span>
                     </span>
                     <span className="text-stone-500">{fecha(m.fecha)}</span>
                   </li>

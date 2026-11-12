@@ -2,7 +2,7 @@
 
 @theme inline {
   --font-sans: var(--font-geist-sans), system-ui, sans-serif;
-  --font-mono: var(--font-geist-mono, ui-monospace), ui-monospace, monospace;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
 }
 
 @theme {
@@ -18,6 +18,24 @@
 
 body {
   font-family: var(--font-sans);
+  /* Casillas y selectores de fecha en el verde de la marca, no en el azul del navegador */
+  accent-color: var(--color-emerald-700);
+}
+
+/* Base de los componentes de ui.tsx. Va en la capa components para que las clases
+   que llegan por className (p-0, w-24, text-base…) siempre la reemplacen. */
+@layer components {
+  .tarjeta {
+    @apply rounded-xl border border-stone-200 bg-white p-4 shadow-sm sm:p-5 print:shadow-none;
+  }
+
+  .boton {
+    @apply inline-flex min-h-10 items-center justify-center gap-2 rounded-lg px-4 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-700 disabled:cursor-not-allowed;
+  }
+
+  .campo {
+    @apply min-h-10 w-full rounded-lg border border-stone-300 bg-white px-3 text-sm text-stone-900 placeholder:text-stone-400 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-600/20 focus:outline-none disabled:bg-stone-50 disabled:text-stone-400;
+  }
 }
 
 /* Imprimir los colores de fondo (barras de los reportes) */

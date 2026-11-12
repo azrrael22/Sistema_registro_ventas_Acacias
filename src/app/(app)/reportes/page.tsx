@@ -4,7 +4,7 @@ import Form from "next/form";
 import { Suspense } from "react";
 import { dinero, dineroCorto, fecha, fechaCorta, hoy, mensajeError, porcentaje, rangoFechas } from "@/lib/formato";
 import { PERIODOS, leerFiltros, obtenerReporte, type Filtros, type Periodo } from "@/server/reportes";
-import { Aviso, Boton, Entrada, Etiqueta, Tarjeta, Titulo, Vacio, cx } from "@/components/ui";
+import { Aviso, Boton, Entrada, Etiqueta, Monto, Pestanas, Tarjeta, Titulo, Vacio, claseBoton, cx } from "@/components/ui";
 import { BotonImprimir } from "@/components/boton-imprimir";
 import { Marca } from "@/components/marca";
 
@@ -19,24 +19,10 @@ export default async function ReportesPage({ searchParams }: PageProps<"/reporte
     <>
       <Titulo>Reportes</Titulo>
 
-      <nav aria-label="Periodo del reporte" className="mb-4 overflow-x-auto print:hidden">
-        <ul className="inline-flex gap-1 rounded-lg bg-stone-100 p-1 text-sm whitespace-nowrap">
-          {(Object.keys(PERIODOS) as Periodo[]).map((g) => (
-            <li key={g}>
-              <Link
-                href={`/reportes?g=${g}`}
-                aria-current={filtros.g === g ? "page" : undefined}
-                className={cx(
-                  "block rounded-md px-3 py-1.5 font-medium transition-colors",
-                  filtros.g === g ? "bg-white text-stone-900 shadow-sm" : "text-stone-600 hover:text-stone-900",
-                )}
-              >
-                {PERIODOS[g].texto}
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </nav>
+      <Pestanas
+        etiqueta="Periodo del reporte"
+        opciones={(Object.keys(PERIODOS) as Periodo[]).map((g) => ({ href: `/reportes?g=${g}`, texto: PERIODOS[g].texto, activa: filtros.g === g }))}
+      />
 
       {filtros.g === "rango" && (
         <Tarjeta className="mb-4 print:hidden">
@@ -80,25 +66,22 @@ async function ContenidoReporte({ filtros }: { filtros: Filtros }) {
 
   return (
     <div className="flex flex-col gap-4">
-      {filtros.generado && <Aviso tipo="ok">✓ {nombre} generado: {rango}.</Aviso>}
+      {filtros.generado && <Aviso tipo="ok">{nombre} generado: {rango}</Aviso>}
 
-      <Tarjeta className="flex flex-wrap items-start justify-between gap-3">
+      <Tarjeta className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <p className="hidden items-center gap-2 text-sm font-semibold print:flex">
+          <p className="mb-2 hidden items-center gap-2 text-sm font-medium print:flex">
             <Marca className="size-4" /> Las Acacias · Reporte de mis productos
           </p>
-          <p className="text-xs font-semibold tracking-wide text-emerald-700 uppercase">{nombre}</p>
-          <h2 className="text-lg font-semibold text-stone-900">{rango}</h2>
-          <p className="text-sm text-stone-500">
+          <p className="text-sm text-stone-500">{nombre}</p>
+          <h2 className="mt-0.5 text-xl font-medium text-stone-900">{rango}</h2>
+          <p className="mt-1 text-sm text-stone-500">
             Comparado con {rangoFechas(filtros.antDesde, filtros.antHasta)} · Generado el {fecha(new Date().toISOString())}
           </p>
         </div>
         {r.productos.length > 0 && (
           <div className="flex flex-wrap gap-2 print:hidden">
-            <a
-              href={`/reportes/csv?${filtros.qs}`}
-              className="inline-flex min-h-10 items-center rounded-lg border border-stone-300 bg-white px-4 text-sm font-medium text-stone-800 hover:bg-stone-100"
-            >
+            <a href={`/reportes/csv?${filtros.qs}`} className={claseBoton("secundario")}>
               Descargar CSV
             </a>
             <BotonImprimir />
@@ -106,24 +89,24 @@ async function ContenidoReporte({ filtros }: { filtros: Filtros }) {
         )}
       </Tarjeta>
 
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <Indicador titulo="Ventas netas" valor={dinero(total.ventas)}>
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+        <Indicador titulo="Ventas netas" valor={<Monto valor={total.ventas} />}>
           <Variacion actual={total.ventas} anterior={anterior.ventas} />
         </Indicador>
         <Indicador titulo="Unidades vendidas" valor={total.unidades.toLocaleString("es-CO")}>
           <Variacion actual={total.unidades} anterior={anterior.unidades} />
         </Indicador>
-        <Indicador titulo="Retiros" valor={dinero(total.retiros)}>
+        <Indicador titulo="Retiros" valor={<Monto valor={total.retiros} />}>
           {/* Más retiros no es bueno ni malo: variación en color neutro */}
           <Variacion actual={total.retiros} anterior={anterior.retiros} neutral />
         </Indicador>
-        <Indicador titulo="Balance del periodo" valor={dinero(total.ventas - total.retiros)}>
+        <Indicador titulo="Balance del periodo" valor={<Monto valor={total.ventas - total.retiros} />}>
           <p className="text-xs text-stone-500">Ventas netas − retiros</p>
         </Indicador>
       </div>
 
       {!r.productos.length ? (
-        <Vacio>Tus productos no tienen movimientos ni inventario en el periodo {rango}.</Vacio>
+        <Vacio>Tus productos no tienen movimientos ni inventario en el periodo {rango}</Vacio>
       ) : (
         <>
           <Tendencia tramos={r.tramos} paso={r.paso} />
@@ -134,11 +117,11 @@ async function ContenidoReporte({ filtros }: { filtros: Filtros }) {
   );
 }
 
-function Indicador({ titulo, valor, children }: { titulo: string; valor: string; children: React.ReactNode }) {
+function Indicador({ titulo, valor, children }: { titulo: string; valor: React.ReactNode; children: React.ReactNode }) {
   return (
-    <Tarjeta className="flex flex-col gap-1 p-3 sm:p-4">
-      <p className="text-xs font-medium text-stone-500">{titulo}</p>
-      <p className="text-xl font-semibold text-stone-900 tabular-nums">{valor}</p>
+    <Tarjeta className="flex flex-col gap-1">
+      <p className="text-sm text-stone-500">{titulo}</p>
+      <p className="text-xl font-medium text-stone-900 tabular-nums sm:text-2xl">{valor}</p>
       {children}
     </Tarjeta>
   );
@@ -174,14 +157,14 @@ function Tendencia({ tramos, paso }: { tramos: Reporte["tramos"]; paso: number }
 
   return (
     <Tarjeta className="break-inside-avoid">
-      <h3 className="font-semibold text-stone-900">{titulo}</h3>
-      <p className="mb-6 text-xs text-stone-500">Pasa el cursor sobre una barra para ver el detalle</p>
+      <h3 className="font-medium text-stone-900">{titulo}</h3>
+      <p className="mb-6 text-xs text-stone-500">En verde, el periodo más reciente. Pasa el cursor sobre una barra para ver el detalle.</p>
       {!max ? (
-        <p className="py-10 text-center text-sm text-stone-500">No hubo ventas en este periodo.</p>
+        <p className="py-10 text-center text-sm text-stone-500">No hubo ventas en este periodo</p>
       ) : (
         <div className="flex gap-2" role="img" aria-label={`${titulo}: ${tramos.map((t) => `${rangoTramo(t)}, ${dinero(t.ventas)}`).join("; ")}`}>
           {/* Eje Y */}
-          <div className="relative h-44 w-14 shrink-0 text-right text-[11px] text-stone-500 tabular-nums" aria-hidden>
+          <div className="relative h-44 w-14 shrink-0 text-right font-mono text-[11px] text-stone-500" aria-hidden>
             {[0, 0.5, 1].map((k) => (
               <span key={k} className="absolute right-0 translate-y-1/2" style={{ bottom: `${k * 100}%` }}>
                 {dineroCorto(k * tope)}
@@ -196,17 +179,24 @@ function Tendencia({ tramos, paso }: { tramos: Reporte["tramos"]; paso: number }
               <div className="absolute inset-0 flex gap-0.5">
                 {tramos.map((t, i) => {
                   const alto = (Math.max(0, t.ventas) / tope) * 100;
+                  // Solo el tramo más reciente lleva el verde; los anteriores quedan en gris
+                  const reciente = i === tramos.length - 1;
                   // El tooltip se alinea al borde en las barras de los extremos para no salirse de la tarjeta
                   const lado = i < tramos.length / 3 ? "left-0" : i >= (tramos.length * 2) / 3 ? "right-0" : "left-1/2 -translate-x-1/2";
                   return (
-                    <div key={t.inicio} tabIndex={0} className="group relative flex-1 rounded-sm outline-none focus-visible:bg-emerald-50">
+                    <div key={t.inicio} tabIndex={0} className="group relative flex-1 rounded-sm outline-none focus-visible:bg-stone-100">
                       <div
-                        className="absolute inset-x-0 bottom-0 mx-auto w-full max-w-6 rounded-t bg-emerald-600 transition-colors group-hover:bg-emerald-700 group-focus-visible:bg-emerald-700"
+                        className={cx(
+                          "absolute inset-x-0 bottom-0 mx-auto w-full max-w-6 rounded-t transition-colors",
+                          reciente
+                            ? "bg-emerald-600 group-hover:bg-emerald-700 group-focus-visible:bg-emerald-700"
+                            : "bg-stone-300 group-hover:bg-stone-400 group-focus-visible:bg-stone-400",
+                        )}
                         style={{ height: `${alto}%` }}
                       />
                       {t.ventas === max && (
                         <span
-                          className="absolute inset-x-0 text-center text-[11px] font-medium whitespace-nowrap text-stone-700 tabular-nums"
+                          className="absolute inset-x-0 text-center font-mono text-[11px] whitespace-nowrap text-stone-700"
                           style={{ bottom: `calc(${alto}% + 2px)` }}
                           aria-hidden
                         >
@@ -221,9 +211,9 @@ function Tendencia({ tramos, paso }: { tramos: Reporte["tramos"]; paso: number }
                         )}
                       >
                         <p className="font-medium">{rangoTramo(t)}</p>
-                        <p className="tabular-nums">Ventas netas: {dinero(t.ventas)}</p>
+                        <p>Ventas netas: <Monto valor={t.ventas} /></p>
                         <p className="tabular-nums">Unidades: {t.unidades}</p>
-                        {t.retiros > 0 && <p className="tabular-nums">Retiros: {dinero(t.retiros)}</p>}
+                        {t.retiros > 0 && <p>Retiros: <Monto valor={t.retiros} /></p>}
                       </div>
                     </div>
                   );
@@ -231,7 +221,7 @@ function Tendencia({ tramos, paso }: { tramos: Reporte["tramos"]; paso: number }
               </div>
             </div>
             {/* Eje X: fecha de inicio de cada tramo (en pantallas pequeñas, una sí y otra no si son muchas) */}
-            <div className="mt-1.5 flex gap-0.5 text-center text-[11px] text-stone-500" aria-hidden>
+            <div className="mt-1.5 flex gap-0.5 text-center font-mono text-[11px] text-stone-500" aria-hidden>
               {tramos.map((t, i) => (
                 <span key={t.inicio} className={cx("min-w-0 flex-1 truncate", tramos.length > 6 && i % 2 === 1 && "max-sm:invisible")}>
                   {fechaCorta(t.inicio, false)}
@@ -247,13 +237,15 @@ function Tendencia({ tramos, paso }: { tramos: Reporte["tramos"]; paso: number }
 
 function TablaProductos({ productos, total }: { productos: Reporte["productos"]; total: Reporte["total"] }) {
   const num = (n: number) => n.toLocaleString("es-CO");
-  const th = "px-3 py-2 font-medium";
-  const td = "px-3 py-2.5 text-right tabular-nums";
+  // La primera y la última columna se alinean con el relleno de la tarjeta
+  const borde = "first:pl-4 last:pr-4 sm:first:pl-5 sm:last:pr-5";
+  const th = cx("px-3 py-2 font-medium", borde);
+  const td = cx("px-3 py-2.5 text-right tabular-nums", borde);
 
   return (
     <Tarjeta className="overflow-hidden p-0">
-      <div className="border-b border-stone-200 p-4">
-        <h3 className="font-semibold text-stone-900">Detalle por producto</h3>
+      <div className="border-b border-stone-200 px-4 py-4 sm:px-5">
+        <h3 className="font-medium text-stone-900">Detalle por producto</h3>
         <p className="text-xs text-stone-500">
           <strong className="font-medium text-stone-600">Base:</strong> stock al inicio del periodo + entradas ·{" "}
           <strong className="font-medium text-stone-600">Quedan:</strong> stock al cierre del periodo
@@ -276,7 +268,7 @@ function TablaProductos({ productos, total }: { productos: Reporte["productos"];
               const parte = total.ventas > 0 ? Math.max(0, p.ventas) / total.ventas : 0;
               return (
                 <tr key={p.id} className="hover:bg-stone-50">
-                  <td className="px-3 py-2.5">
+                  <td className={cx("px-3 py-2.5", borde)}>
                     <p className="font-medium text-stone-900">{p.nombre}</p>
                     <p className="text-xs text-stone-500">{p.categoria}</p>
                   </td>
@@ -288,23 +280,30 @@ function TablaProductos({ productos, total }: { productos: Reporte["productos"];
                       <div className="h-2 w-24 shrink-0 rounded-full bg-stone-100" aria-hidden>
                         <div className="h-2 rounded-full bg-emerald-600" style={{ width: `${parte * 100}%` }} />
                       </div>
-                      <span className="tabular-nums">{dinero(p.ventas)}</span>
+                      <Monto valor={p.ventas} />
                       <span className="text-xs text-stone-500 tabular-nums">{porcentaje(parte)}</span>
                     </div>
                   </td>
-                  <td className={td}>{dinero(p.retiros)}</td>
+                  <td className={td}>
+                    <Monto valor={p.retiros} />
+                  </td>
                 </tr>
               );
             })}
           </tbody>
-          <tfoot className="bg-stone-50 font-semibold text-stone-900">
-            <tr className="border-t border-stone-200">
-              <td className="px-3 py-2.5">Total</td>
+          {/* El total va después de la línea punteada, como en el tiquete */}
+          <tfoot className="bg-stone-50 font-medium text-stone-900">
+            <tr className="border-t border-dashed border-stone-300">
+              <td className={cx("px-3 py-2.5", borde)}>Total</td>
               <td className={td}>{num(total.base)}</td>
               <td className={td}>{num(total.unidades)}</td>
               <td className={td}>{num(total.quedan)}</td>
-              <td className="px-3 py-2.5 tabular-nums">{dinero(total.ventas)}</td>
-              <td className={td}>{dinero(total.retiros)}</td>
+              <td className="px-3 py-2.5">
+                <Monto valor={total.ventas} />
+              </td>
+              <td className={td}>
+                <Monto valor={total.retiros} />
+              </td>
             </tr>
           </tfoot>
         </table>
@@ -321,7 +320,7 @@ function Generando() {
         Generando reporte…
       </p>
       <div className="h-24 animate-pulse rounded-xl bg-stone-100" />
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         {[0, 1, 2, 3].map((i) => (
           <div key={i} className="h-24 animate-pulse rounded-xl bg-stone-100" />
         ))}

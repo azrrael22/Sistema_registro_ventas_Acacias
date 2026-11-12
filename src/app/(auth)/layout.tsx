@@ -1,13 +1,9 @@
-import { Geist_Mono } from "next/font/google";
 import { Marca } from "@/components/marca";
 import { TicketVenta } from "./ticket-venta";
 
-// Solo el tiquete de muestra usa la mono, así que se carga solo en estas páginas.
-const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
-
 export default function AuthLayout({ children }: LayoutProps<"/">) {
   return (
-    <main className={`${geistMono.variable} grid min-h-dvh lg:grid-cols-2`}>
+    <main className="grid min-h-dvh lg:grid-cols-2">
       <div className="flex items-center justify-center px-4 py-10 lg:bg-white lg:px-16">
         <div className="w-full max-w-sm">
           <div className="mb-8 flex flex-col items-center text-center lg:items-start lg:text-left">

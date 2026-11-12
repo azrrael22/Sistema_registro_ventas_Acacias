@@ -16,22 +16,22 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
 
   return (
     <div className="flex min-h-dvh flex-col">
-      <header className="sticky top-0 z-10 border-b border-stone-200 bg-white/95 backdrop-blur print:hidden">
-        <div className="mx-auto flex max-w-5xl items-center justify-between gap-3 px-4 py-3">
-          <Link href="/" className="flex items-center gap-2 font-semibold">
+      <header className="sticky top-0 z-10 border-b border-stone-200 bg-white print:hidden">
+        <div className="mx-auto flex h-14 max-w-5xl items-center justify-between gap-3 px-4 sm:px-6">
+          <Link href="/" className="flex items-center gap-2 font-medium text-stone-900">
             <Marca className="size-5" /> Las Acacias
           </Link>
           <div className="flex items-center gap-1">
             <Campanita empleadoId={empleado.id} sinLeer={count ?? 0} />
-            <span className="hidden text-sm text-stone-600 sm:inline">{empleado.nombre}</span>
+            <span className="hidden px-2 text-sm text-stone-600 sm:inline">{empleado.nombre}</span>
             <form action={cerrarSesion}>
-              <button className="rounded-lg px-2 py-2 text-sm text-stone-600 hover:bg-stone-100">Salir</button>
+              <button className="h-9 rounded-lg px-3 text-sm text-stone-600 transition-colors hover:bg-stone-100 hover:text-stone-900">Salir</button>
             </form>
           </div>
         </div>
         <Navegacion esAdmin={empleado.es_admin} />
       </header>
-      <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-6 print:max-w-none print:p-0">{children}</main>
+      <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-6 sm:px-6 sm:py-8 print:max-w-none print:p-0">{children}</main>
     </div>
   );
 }

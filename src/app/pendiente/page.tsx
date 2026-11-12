@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { getEmpleado } from "@/server/sesion";
 import { Boton } from "@/components/ui";
+import { Marca } from "@/components/marca";
 import { cerrarSesion } from "../(auth)/actions";
 
 export const metadata: Metadata = { title: "Cuenta pendiente" };
@@ -12,14 +13,14 @@ export default async function PendientePage() {
   if (empleado.activo) redirect("/");
 
   return (
-    <main className="flex min-h-dvh items-center justify-center px-4">
-      <div className="w-full max-w-sm rounded-xl border border-stone-200 bg-white p-6 text-center shadow-sm">
-        <p className="text-3xl" aria-hidden>⏳</p>
-        <h1 className="mt-2 text-lg font-semibold">Hola, {empleado.nombre}</h1>
+    <main className="flex min-h-dvh items-center justify-center px-4 py-10">
+      <div className="w-full max-w-sm">
+        <Marca className="size-10" />
+        <h1 className="mt-4 text-2xl font-medium text-stone-900">Cuenta pendiente</h1>
         <p className="mt-2 text-sm text-stone-600">
-          Tu cuenta está esperando la aprobación de un administrador. Cuando la aprueben podrás ingresar.
+          {empleado.nombre}, tu cuenta está esperando la aprobación de un administrador. Cuando la aprueben podrás ingresar.
         </p>
-        <form action={cerrarSesion} className="mt-6">
+        <form action={cerrarSesion} className="mt-8">
           <Boton variante="secundario" className="w-full">Cerrar sesión</Boton>
         </form>
       </div>

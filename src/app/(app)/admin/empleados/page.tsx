@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { createClient } from "@/server/supabase";
 import { requerirAdmin } from "@/server/sesion";
 import { fecha } from "@/lib/formato";
-import { Tarjeta, Titulo, cx } from "@/components/ui";
+import { Tarjeta, Titulo } from "@/components/ui";
 import { BotonEnvio } from "@/components/boton-envio";
 import { FormAccion } from "@/components/form-accion";
 import { actualizarEmpleado } from "./actions";
@@ -30,17 +30,17 @@ export default async function EmpleadosPage() {
   return (
     <>
       <Titulo>Empleados</Titulo>
-      <ul className="flex flex-col gap-2">
-        {empleados?.map((e) => (
-          <li key={e.id}>
-            <Tarjeta className={cx("flex flex-wrap items-center justify-between gap-3", !e.activo && "border-amber-300 bg-amber-50/60")}>
-              <div>
-                <p className="font-medium">
+      <Tarjeta className="p-0">
+        <ul className="divide-y divide-stone-100">
+          {empleados?.map((e) => (
+            <li key={e.id} className="flex flex-wrap items-center justify-between gap-3 px-4 py-4 sm:px-5">
+              <div className="min-w-0">
+                <p className="flex flex-wrap items-center gap-2 font-medium text-stone-900">
                   {e.nombre}
-                  {e.es_admin && <span className="ml-2 rounded bg-stone-800 px-1.5 py-0.5 text-[10px] font-semibold text-white uppercase">admin</span>}
-                  {!e.activo && <span className="ml-2 rounded bg-amber-600 px-1.5 py-0.5 text-[10px] font-semibold text-white uppercase">pendiente</span>}
+                  {e.es_admin && <span className="rounded-md bg-stone-100 px-1.5 py-0.5 text-xs font-normal text-stone-600">Admin</span>}
+                  {!e.activo && <span className="rounded-md bg-amber-50 px-1.5 py-0.5 text-xs font-normal text-amber-800">Pendiente</span>}
                 </p>
-                <p className="text-sm text-stone-600">{e.email} · desde {fecha(e.creado_en)}</p>
+                <p className="text-sm text-stone-500">{e.email} · desde {fecha(e.creado_en)}</p>
               </div>
               {e.id === yo.id ? (
                 <span className="text-sm text-stone-500">Tú</span>
@@ -56,10 +56,10 @@ export default async function EmpleadosPage() {
                   )}
                 </div>
               )}
-            </Tarjeta>
-          </li>
-        ))}
-      </ul>
+            </li>
+          ))}
+        </ul>
+      </Tarjeta>
     </>
   );
 }

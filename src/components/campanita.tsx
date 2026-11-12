@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { IconoCampana } from "@/components/iconos";
 
 // Contador de notificaciones sin leer. Al llegar una nueva (Realtime) se
 // refresca la página y el servidor vuelve a calcular el contador.
@@ -28,15 +29,12 @@ export function Campanita({ empleadoId, sinLeer }: { empleadoId: string; sinLeer
   return (
     <Link
       href="/notificaciones"
-      className="relative rounded-lg p-2 text-stone-600 hover:bg-stone-100"
+      className="relative flex size-9 items-center justify-center rounded-lg text-stone-600 transition-colors hover:bg-stone-100 hover:text-stone-900"
       aria-label={sinLeer ? `Notificaciones (${sinLeer} sin leer)` : "Notificaciones"}
     >
-      <svg viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-        <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
-        <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
-      </svg>
+      <IconoCampana />
       {sinLeer > 0 && (
-        <span className="absolute -top-0.5 -right-0.5 flex min-w-5 items-center justify-center rounded-full bg-red-600 px-1 text-xs font-semibold text-white">
+        <span className="absolute top-0.5 right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-emerald-700 px-1 text-[11px] leading-none font-medium text-white tabular-nums ring-2 ring-white">
           {sinLeer > 99 ? "99+" : sinLeer}
         </span>
       )}

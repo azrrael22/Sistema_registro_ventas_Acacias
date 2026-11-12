@@ -3,8 +3,9 @@ import Link from "next/link";
 import { createClient } from "@/server/supabase";
 import { requerirEmpleadoActivo } from "@/server/sesion";
 import { misProductos } from "@/server/consultas";
-import { dinero, fecha } from "@/lib/formato";
-import { Tarjeta, Titulo, Vacio, cx } from "@/components/ui";
+import { fecha } from "@/lib/formato";
+import { Monto, Pestanas, Tarjeta, Titulo, Vacio, claseBoton, cx } from "@/components/ui";
+import { IconoMas } from "@/components/iconos";
 
 export const metadata: Metadata = { title: "Ventas" };
 
@@ -29,67 +30,68 @@ export default async function VentasPage({ searchParams }: PageProps<"/ventas">)
 
   return (
     <>
-      <Titulo accion={<Link href="/ventas/nueva" className="rounded-lg bg-emerald-700 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-800">+ Nueva venta</Link>}>
+      <Titulo
+        accion={
+          <Link href="/ventas/nueva" className={claseBoton("primario")}>
+            <IconoMas /> Nueva venta
+          </Link>
+        }
+      >
         Ventas
       </Titulo>
-      <div className="mb-4 flex gap-1 text-sm">
-        {[
-          { v: undefined, t: "Mis ventas" },
-          { v: "categorias", t: "Mis categorías" },
-          ...(empleado.es_admin ? [{ v: "todas", t: "Todas" }] : []),
-        ].map((o) => (
-          <Link
-            key={o.t}
-            href={o.v ? `/ventas?ver=${o.v}` : "/ventas"}
-            className={cx("rounded-lg px-3 py-2 font-medium", o.v === vista ? "bg-stone-200 text-stone-900" : "text-stone-600 hover:bg-stone-100")}
-          >
-            {o.t}
-          </Link>
-        ))}
-      </div>
+      <Pestanas
+        etiqueta="Ventas que se muestran"
+        opciones={[
+          { href: "/ventas", texto: "Mis ventas", activa: !vista },
+          { href: "/ventas?ver=categorias", texto: "Mis categorías", activa: vista === "categorias" },
+          ...(empleado.es_admin ? [{ href: "/ventas?ver=todas", texto: "Todas", activa: vista === "todas" }] : []),
+        ]}
+      />
 
-      {!ventas?.length && (
-        <Vacio>{vista === "categorias" && !ids.length ? "Aún no eres socio de ninguna categoría." : "No hay ventas registradas."}</Vacio>
-      )}
-      <ul className="flex flex-col gap-3">
-        {ventas?.map((v) => {
-          const total = v.venta_items.reduce((t, i) => t + i.cantidad * Number(i.precio_unitario), 0);
-          const esDevolucion = v.tipo === "devolucion";
-          return (
-            <li key={v.id}>
-              <Tarjeta className={esDevolucion ? "border-amber-200 bg-amber-50/50" : undefined}>
-                <div className="flex flex-wrap items-start justify-between gap-2">
-                  <div>
-                    <p className="text-sm font-medium">
-                      {esDevolucion ? "Devolución" : "Venta"} #{v.id}
-                      {v.venta_origen_id && <span className="text-stone-500"> de la venta #{v.venta_origen_id}</span>}
+      {!ventas?.length ? (
+        <Vacio>{vista === "categorias" && !ids.length ? "Aún no eres socio de ninguna categoría" : "No hay ventas registradas"}</Vacio>
+      ) : (
+        <Tarjeta className="p-0">
+          <ul className="divide-y divide-stone-100">
+            {ventas.map((v) => {
+              const total = v.venta_items.reduce((t, i) => t + i.cantidad * Number(i.precio_unitario), 0);
+              const esDevolucion = v.tipo === "devolucion";
+              return (
+                <li key={v.id} className="flex items-start justify-between gap-4 px-4 py-4 sm:px-5">
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-stone-900">
+                      {esDevolucion ? <span className="text-amber-800">Devolución</span> : "Venta"} #{v.id}
+                      {v.venta_origen_id && <span className="font-normal text-stone-500"> de la venta #{v.venta_origen_id}</span>}
                     </p>
-                    <p className="text-xs text-stone-500">
+                    <p className="mt-0.5 text-xs text-stone-500">
                       {fecha(v.fecha)} · {v.empleado_id === empleado.id ? "tú" : v.empleados?.nombre}
                     </p>
+                    <ul className="mt-2 text-sm text-stone-700">
+                      {v.venta_items.map((i) => (
+                        <li key={i.id}>
+                          {i.cantidad} × {i.productos?.nombre}{" "}
+                          <span className="text-stone-500">
+                            (<Monto valor={i.precio_unitario} />)
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                    {v.nota && <p className="mt-1 text-sm text-stone-500">“{v.nota}”</p>}
                   </div>
-                  <p className={cx("font-semibold tabular-nums", esDevolucion && "text-amber-800")}>
-                    {esDevolucion ? "−" : ""}{dinero(total)}
-                  </p>
-                </div>
-                <ul className="mt-2 text-sm text-stone-700">
-                  {v.venta_items.map((i) => (
-                    <li key={i.id}>
-                      {i.cantidad} × {i.productos?.nombre} <span className="text-stone-500">({dinero(i.precio_unitario)})</span>
-                    </li>
-                  ))}
-                </ul>
-                {v.nota && <p className="mt-1 text-sm text-stone-500 italic">“{v.nota}”</p>}
-                {!esDevolucion && (
-                  <Link href={`/ventas/${v.id}/devolver`} className="mt-2 inline-block text-sm font-medium text-amber-800 hover:underline">
-                    Registrar devolución
-                  </Link>
-                )}
-              </Tarjeta>
-            </li>
-          );
-        })}
-      </ul>
+                  <div className="flex shrink-0 flex-col items-end gap-2">
+                    <Monto valor={esDevolucion ? -total : total} className={cx("font-medium", esDevolucion ? "text-amber-800" : "text-stone-900")} />
+                    {!esDevolucion && (
+                      <Link href={`/ventas/${v.id}/devolver`} className="text-xs text-stone-500 transition-colors hover:text-stone-900 hover:underline">
+                        Registrar devolución
+                      </Link>
+                    )}
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        </Tarjeta>
+      )}
     </>
   );
 }

@@ -2,8 +2,8 @@ import Link from "next/link";
 import { createClient } from "@/server/supabase";
 import { requerirEmpleadoActivo } from "@/server/sesion";
 import { misProductos } from "@/server/consultas";
-import { dinero } from "@/lib/formato";
-import { Tarjeta } from "@/components/ui";
+import { Monto, Tarjeta, claseBoton, cx } from "@/components/ui";
+import { IconoFlecha, IconoMas } from "@/components/iconos";
 
 export default async function InicioPage() {
   const empleado = await requerirEmpleadoActivo();
@@ -19,53 +19,63 @@ export default async function InicioPage() {
   ]);
   const saldoPor = new Map(saldos?.map((s) => [s.producto_id, Number(s.saldo ?? 0)]));
   const stockPor = new Map(stock?.map((s) => [s.producto_id, Number(s.stock ?? 0)]));
-  const categorias = [...new Set(productos.map((p) => p.categorias?.nombre ?? ""))];
+  const sociedades = [...new Set(productos.map((p) => p.categorias?.nombre ?? ""))].map((cat) => {
+    const prods = productos.filter((p) => (p.categorias?.nombre ?? "") === cat);
+    return { cat, prods, saldo: prods.reduce((t, p) => t + (saldoPor.get(p.id) ?? 0), 0) };
+  });
 
   return (
-    <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="text-xl font-semibold">Hola, {empleado.nombre.split(" ")[0]} 👋</h1>
-        <p className="text-sm text-stone-600">¿Qué vas a hacer hoy?</p>
+    <div className="flex flex-col gap-8">
+      <h1 className="sr-only">Inicio</h1>
+      <div className="flex flex-col gap-3">
+        <Link href="/ventas/nueva" className={claseBoton("primario", "h-16 rounded-xl text-lg")}>
+          <IconoMas /> Registrar venta
+        </Link>
+        {!!pendientes && (
+          <Link href="/admin/empleados" className="tarjeta flex items-center gap-3 text-sm transition-colors hover:bg-stone-50">
+            <span className="size-2 shrink-0 rounded-full bg-amber-500" aria-hidden />
+            <span className="flex-1 text-stone-900">
+              {pendientes} {pendientes === 1 ? "empleado espera" : "empleados esperan"} aprobación
+            </span>
+            <span className="text-stone-500">Revisar</span>
+            <IconoFlecha className="text-stone-400" />
+          </Link>
+        )}
       </div>
 
-      <Link href="/ventas/nueva" className="flex items-center justify-center rounded-xl bg-emerald-700 py-5 text-lg font-semibold text-white shadow-sm hover:bg-emerald-800">
-        + Registrar venta
-      </Link>
-
-      {!!pendientes && (
-        <Link href="/admin/empleados" className="rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm font-medium text-amber-900 hover:bg-amber-100">
-          🙋 Hay {pendientes} {pendientes === 1 ? "empleado esperando" : "empleados esperando"} aprobación →
-        </Link>
-      )}
-
       <section>
-        <h2 className="mb-2 font-semibold">Mis sociedades</h2>
-        {!categorias.length ? (
+        <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
+          <h2 className="text-lg font-medium text-stone-900">Mis sociedades</h2>
+          {sociedades.length > 1 && (
+            <p className="text-sm text-stone-500">
+              Por retirar en total <Monto valor={sociedades.reduce((t, s) => t + s.saldo, 0)} className="text-stone-900" />
+            </p>
+          )}
+        </div>
+        {!sociedades.length ? (
           <Tarjeta className="text-sm text-stone-600">
             Aún no eres socio de ninguna categoría. <Link href="/productos" className="font-medium text-emerald-700 hover:underline">Ver productos</Link>
           </Tarjeta>
         ) : (
-          <div className="grid gap-3 sm:grid-cols-2">
-            {categorias.map((cat) => {
-              const prods = productos.filter((p) => (p.categorias?.nombre ?? "") === cat);
-              const saldo = prods.reduce((t, p) => t + (saldoPor.get(p.id) ?? 0), 0);
-              return (
-                <Tarjeta key={cat}>
-                  <div className="flex items-baseline justify-between">
-                    <h3 className="font-semibold">{cat}</h3>
-                    <span className="text-sm text-stone-500">por retirar <strong className="text-stone-900">{dinero(saldo)}</strong></span>
-                  </div>
-                  <ul className="mt-2 text-sm text-stone-700">
-                    {prods.map((p) => (
-                      <li key={p.id} className="flex justify-between py-0.5">
-                        <span>{p.nombre}</span>
-                        <span className={(stockPor.get(p.id) ?? 0) <= 3 ? "text-amber-700" : "text-stone-500"}>stock {stockPor.get(p.id) ?? 0}</span>
+          <div className="grid gap-4 sm:grid-cols-2">
+            {sociedades.map(({ cat, prods, saldo }) => (
+              <Tarjeta key={cat}>
+                <h3 className="font-medium text-stone-900">{cat}</h3>
+                <p className="mt-4 text-sm text-stone-500">Por retirar</p>
+                <Monto valor={saldo} className="mt-1 block text-3xl font-medium text-stone-900" />
+                <ul className="mt-5 divide-y divide-stone-100 border-t border-stone-100 text-sm">
+                  {prods.map((p) => {
+                    const disponibles = stockPor.get(p.id) ?? 0;
+                    return (
+                      <li key={p.id} className="flex justify-between gap-4 py-2">
+                        <span className="text-stone-700">{p.nombre}</span>
+                        <span className={cx("tabular-nums", disponibles <= 3 ? "text-amber-700" : "text-stone-500")}>{disponibles} en stock</span>
                       </li>
-                    ))}
-                  </ul>
-                </Tarjeta>
-              );
-            })}
+                    );
+                  })}
+                </ul>
+              </Tarjeta>
+            ))}
           </div>
         )}
       </section>
