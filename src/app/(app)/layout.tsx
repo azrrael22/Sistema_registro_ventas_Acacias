@@ -3,6 +3,7 @@ import { requerirEmpleadoActivo } from "@/server/sesion";
 import { createClient } from "@/server/supabase";
 import { Navegacion } from "@/components/navegacion";
 import { Campanita } from "@/components/campanita";
+import { Marca } from "@/components/marca";
 import { cerrarSesion } from "../(auth)/actions";
 
 export default async function AppLayout({ children }: LayoutProps<"/">) {
@@ -18,7 +19,7 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
       <header className="sticky top-0 z-10 border-b border-stone-200 bg-white/95 backdrop-blur print:hidden">
         <div className="mx-auto flex max-w-5xl items-center justify-between gap-3 px-4 py-3">
           <Link href="/" className="flex items-center gap-2 font-semibold">
-            <span aria-hidden>🌳</span> Las Acacias
+            <Marca className="size-5" /> Las Acacias
           </Link>
           <div className="flex items-center gap-1">
             <Campanita empleadoId={empleado.id} sinLeer={count ?? 0} />

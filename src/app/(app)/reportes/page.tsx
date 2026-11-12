@@ -6,6 +6,7 @@ import { dinero, dineroCorto, fecha, fechaCorta, hoy, mensajeError, porcentaje, 
 import { PERIODOS, leerFiltros, obtenerReporte, type Filtros, type Periodo } from "@/server/reportes";
 import { Aviso, Boton, Entrada, Etiqueta, Tarjeta, Titulo, Vacio, cx } from "@/components/ui";
 import { BotonImprimir } from "@/components/boton-imprimir";
+import { Marca } from "@/components/marca";
 
 export const metadata: Metadata = { title: "Reportes" };
 
@@ -83,7 +84,9 @@ async function ContenidoReporte({ filtros }: { filtros: Filtros }) {
 
       <Tarjeta className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <p className="hidden text-sm font-semibold print:block">🌳 Las Acacias · Reporte de mis productos</p>
+          <p className="hidden items-center gap-2 text-sm font-semibold print:flex">
+            <Marca className="size-4" /> Las Acacias · Reporte de mis productos
+          </p>
           <p className="text-xs font-semibold tracking-wide text-emerald-700 uppercase">{nombre}</p>
           <h2 className="text-lg font-semibold text-stone-900">{rango}</h2>
           <p className="text-sm text-stone-500">
