@@ -7,10 +7,10 @@ const cx = (...c: (string | false | null | undefined)[]) => c.filter(Boolean).jo
 // La base de .boton, .campo y .tarjeta está en globals.css; aquí solo van las variantes.
 type Variante = "primario" | "secundario" | "peligro" | "fantasma";
 const variantes: Record<Variante, string> = {
-  primario: "bg-emerald-700 text-white hover:bg-emerald-800 disabled:bg-stone-200 disabled:text-stone-500",
-  secundario: "border border-stone-300 bg-white text-stone-800 hover:bg-stone-100 disabled:opacity-50",
-  peligro: "border border-red-200 bg-white text-red-700 hover:bg-red-50 disabled:opacity-50",
-  fantasma: "text-stone-700 hover:bg-stone-100 hover:text-stone-900 disabled:opacity-50",
+  primario: "bg-emerald-700 text-white shadow-sm hover:bg-emerald-800 active:scale-[0.98] disabled:bg-stone-200 disabled:text-stone-500 disabled:shadow-none disabled:active:scale-100",
+  secundario: "border border-stone-300 bg-white text-stone-800 hover:bg-stone-50 active:bg-stone-100 disabled:opacity-50",
+  peligro: "border border-red-200 bg-white text-red-700 hover:bg-red-50 active:bg-red-100 disabled:opacity-50",
+  fantasma: "text-stone-700 hover:bg-stone-100 hover:text-stone-900 active:bg-stone-200 disabled:opacity-50",
 };
 
 // También para enlaces que se ven como botón
@@ -45,7 +45,7 @@ export function Titulo({ children, descripcion, accion }: { children: React.Reac
   return (
     <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
       <div>
-        <h1 className="text-2xl font-medium text-stone-900">{children}</h1>
+        <h1 className="text-2xl font-semibold text-stone-900">{children}</h1>
         {descripcion && <p className="mt-2 max-w-2xl text-sm text-stone-600">{descripcion}</p>}
       </div>
       {accion}
@@ -91,19 +91,45 @@ export function Monto({ valor, className }: { valor: number | string | null | un
 export function Aviso({ tipo = "error", children }: { tipo?: "error" | "ok" | "info"; children: React.ReactNode }) {
   if (!children) return null;
   const estilos = {
-    error: "border-red-200 bg-red-50 text-red-800",
-    ok: "border-emerald-200 bg-emerald-50 text-emerald-800",
-    info: "border-stone-200 bg-stone-50 text-stone-700",
+    error: "border-red-100 bg-red-50 text-red-800 before:bg-red-500",
+    ok: "border-emerald-100 bg-emerald-50 text-emerald-800 before:bg-emerald-500",
+    info: "border-stone-200 bg-stone-50 text-stone-700 before:bg-stone-400",
   };
   return (
-    <p role={tipo === "error" ? "alert" : "status"} className={cx("rounded-lg border px-3 py-2 text-sm", estilos[tipo])}>
+    <p
+      role={tipo === "error" ? "alert" : "status"}
+      className={cx(
+        "relative overflow-hidden rounded-lg border pl-4 pr-3 py-2.5 text-sm",
+        "before:absolute before:inset-y-0 before:left-0 before:w-[3px]",
+        estilos[tipo],
+      )}
+    >
       {children}
     </p>
   );
 }
 
 export function Vacio({ children }: { children: React.ReactNode }) {
-  return <p className="rounded-xl bg-stone-100 px-6 py-8 text-center text-sm text-stone-600">{children}</p>;
+  return (
+    <p className="rounded-xl border border-dashed border-stone-300 bg-stone-50 px-6 py-10 text-center text-sm text-stone-500">
+      {children}
+    </p>
+  );
+}
+
+type VarianteInsignia = "normal" | "advertencia" | "peligro" | "ok";
+const insigniaEstilos: Record<VarianteInsignia, string> = {
+  normal: "bg-stone-100 text-stone-700",
+  advertencia: "bg-amber-100 text-amber-800",
+  peligro: "bg-red-100 text-red-800",
+  ok: "bg-emerald-100 text-emerald-800",
+};
+export function Insignia({ variante = "normal", className, children }: { variante?: VarianteInsignia; className?: string; children: React.ReactNode }) {
+  return (
+    <span className={cx("inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium", insigniaEstilos[variante], className)}>
+      {children}
+    </span>
+  );
 }
 
 export { cx };

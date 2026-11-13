@@ -14,7 +14,11 @@ export default function AuthLayout({ children }: LayoutProps<"/">) {
           <div className="rounded-xl border border-stone-200 bg-white p-6 shadow-sm lg:border-0 lg:p-0 lg:shadow-none">{children}</div>
         </div>
       </div>
-      <div className="hidden items-center justify-center border-l border-stone-200 bg-stone-100 lg:flex">
+      <div className="hidden flex-col items-center justify-center gap-10 bg-emerald-800 lg:flex">
+        <div className="text-center">
+          <p className="text-sm font-medium text-emerald-100">Sistema de ventas</p>
+          <p className="mt-0.5 text-xs text-emerald-400">Las Acacias · Registro de empleados</p>
+        </div>
         <TicketVenta />
       </div>
     </main>

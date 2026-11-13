@@ -16,9 +16,9 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
 
   return (
     <div className="flex min-h-dvh flex-col">
-      <header className="sticky top-0 z-10 border-b border-stone-200 bg-white print:hidden">
+      <header className="sticky top-0 z-10 border-b border-stone-200 bg-white/95 backdrop-blur-sm print:hidden">
         <div className="mx-auto flex h-14 max-w-5xl items-center justify-between gap-3 px-4 sm:px-6">
-          <Link href="/" className="flex items-center gap-2 font-medium text-stone-900">
+          <Link href="/" className="flex items-center gap-2 font-semibold text-stone-900">
             <Marca className="size-5" /> Las Acacias
           </Link>
           <div className="flex items-center gap-1">

@@ -113,3 +113,39 @@ export function IconoAprobado(props: Props) {
     </Icono>
   );
 }
+
+export function IconoRecibo(props: Props) {
+  return (
+    <Icono {...props}>
+      <path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z" />
+      <path d="M14 8H8M16 12H8M13 16H8" />
+    </Icono>
+  );
+}
+
+export function IconoCaja(props: Props) {
+  return (
+    <Icono {...props}>
+      <path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z" />
+      <path d="m3.3 7 8.7 5 8.7-5M12 22V12" />
+    </Icono>
+  );
+}
+
+export function IconoGrafica(props: Props) {
+  return (
+    <Icono {...props}>
+      <path d="M3 3v16a2 2 0 0 0 2 2h16" />
+      <path d="M7 16v-5M11 16v-9M15 16v-3M19 16v-7" />
+    </Icono>
+  );
+}
+
+export function IconoEtiqueta(props: Props) {
+  return (
+    <Icono {...props}>
+      <path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z" />
+      <circle cx="7.5" cy="7.5" r=".5" fill="currentColor" />
+    </Icono>
+  );
+}

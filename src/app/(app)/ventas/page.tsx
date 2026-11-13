@@ -4,7 +4,7 @@ import { createClient } from "@/server/supabase";
 import { requerirEmpleadoActivo } from "@/server/sesion";
 import { misProductos } from "@/server/consultas";
 import { fecha } from "@/lib/formato";
-import { Monto, Pestanas, Tarjeta, Titulo, Vacio, claseBoton, cx } from "@/components/ui";
+import { Insignia, Monto, Pestanas, Tarjeta, Titulo, Vacio, claseBoton, cx } from "@/components/ui";
 import { IconoMas } from "@/components/iconos";
 
 export const metadata: Metadata = { title: "Ventas" };
@@ -59,9 +59,12 @@ export default async function VentasPage({ searchParams }: PageProps<"/ventas">)
               return (
                 <li key={v.id} className="flex items-start justify-between gap-4 px-4 py-4 sm:px-5">
                   <div className="min-w-0">
-                    <p className="text-sm font-medium text-stone-900">
-                      {esDevolucion ? <span className="text-amber-800">Devolución</span> : "Venta"} #{v.id}
-                      {v.venta_origen_id && <span className="font-normal text-stone-500"> de la venta #{v.venta_origen_id}</span>}
+                    <p className="flex flex-wrap items-center gap-2 text-sm font-medium text-stone-900">
+                      <span>
+                        {esDevolucion ? "Devolución" : "Venta"} #{v.id}
+                        {v.venta_origen_id && <span className="font-normal text-stone-500"> de #{v.venta_origen_id}</span>}
+                      </span>
+                      {esDevolucion && <Insignia variante="advertencia">Devolución</Insignia>}
                     </p>
                     <p className="mt-0.5 text-xs text-stone-500">
                       {fecha(v.fecha)} · {v.empleado_id === empleado.id ? "tú" : v.empleados?.nombre}
