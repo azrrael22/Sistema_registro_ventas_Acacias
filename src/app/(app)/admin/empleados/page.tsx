@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { createClient } from "@/server/supabase";
 import { requerirAdmin } from "@/server/sesion";
 import { fecha } from "@/lib/formato";
-import { Tarjeta, Titulo } from "@/components/ui";
+import { Insignia, Tarjeta, Titulo } from "@/components/ui";
 import { BotonEnvio } from "@/components/boton-envio";
 import { FormAccion } from "@/components/form-accion";
 import { actualizarEmpleado } from "./actions";
@@ -37,8 +37,8 @@ export default async function EmpleadosPage() {
               <div className="min-w-0">
                 <p className="flex flex-wrap items-center gap-2 font-medium text-stone-900 dark:text-stone-50">
                   {e.nombre}
-                  {e.es_admin && <span className="rounded-md bg-stone-100 px-1.5 py-0.5 text-xs font-normal text-stone-600 dark:bg-stone-700 dark:text-stone-300">Admin</span>}
-                  {!e.activo && <span className="rounded-md bg-amber-50 px-1.5 py-0.5 text-xs font-normal text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">Pendiente</span>}
+                  {e.es_admin && <Insignia>Admin</Insignia>}
+                  {!e.activo && <Insignia variante="advertencia">Pendiente</Insignia>}
                 </p>
                 <p className="text-sm text-stone-500 dark:text-stone-400">{e.email} · desde {fecha(e.creado_en)}</p>
               </div>

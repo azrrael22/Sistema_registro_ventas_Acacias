@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { createClient } from "@/server/supabase";
 import { requerirEmpleadoActivo } from "@/server/sesion";
-import { Boton, Entrada, Etiqueta, Monto, Tarjeta, Titulo, Vacio } from "@/components/ui";
+import { Boton, Entrada, Etiqueta, Insignia, Monto, Tarjeta, Titulo, Vacio } from "@/components/ui";
 import { IconoFlecha, IconoMas } from "@/components/iconos";
 import { BotonEnvio } from "@/components/boton-envio";
 import { FormAccion } from "@/components/form-accion";
@@ -59,9 +59,9 @@ export default async function ProductosPage() {
                 {cat.productos.map((p) => (
                   <li key={p.id} className="py-3">
                     <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 text-sm">
-                      <span className={p.activo ? "text-stone-900 dark:text-stone-50" : "text-stone-400 dark:text-stone-600"}>
+                      <span className={p.activo ? "text-stone-900 dark:text-stone-50" : "text-stone-500 dark:text-stone-400"}>
                         {p.nombre}
-                        {!p.activo && <span className="ml-2 rounded-md bg-stone-100 px-1.5 py-0.5 text-xs text-stone-500 dark:bg-stone-700 dark:text-stone-400">Inactivo</span>}
+                        {!p.activo && <Insignia className="ml-2">Inactivo</Insignia>}
                       </span>
                       <span className="flex items-center gap-4">
                         <span className="text-stone-500 tabular-nums dark:text-stone-400">{stockPor.get(p.id) ?? 0} en stock</span>

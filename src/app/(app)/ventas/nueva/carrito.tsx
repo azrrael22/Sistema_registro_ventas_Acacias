@@ -71,7 +71,7 @@ export function Carrito({ productos }: { productos: Producto[] }) {
                   <p className="truncate font-medium text-stone-900 dark:text-stone-50">{p.nombre}</p>
                   <p className="text-sm text-stone-600 dark:text-stone-400">
                     <Monto valor={p.precio} /> ·{" "}
-                    <span className={p.stock <= 3 ? "text-amber-700" : ""}>{agotado ? "Agotado" : `${p.stock} disponibles`}</span>
+                    <span className={p.stock <= 3 ? "text-amber-700 dark:text-amber-400" : ""}>{agotado ? "Agotado" : `${p.stock} disponibles`}</span>
                   </p>
                 </div>
                 <div className="flex shrink-0 items-center gap-2">

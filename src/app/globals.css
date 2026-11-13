@@ -34,7 +34,7 @@ body {
   }
 
   .boton {
-    @apply inline-flex min-h-10 cursor-pointer select-none items-center justify-center gap-2 rounded-lg px-4 text-sm font-medium transition-all duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-700 dark:focus-visible:outline-emerald-500 disabled:cursor-not-allowed;
+    @apply inline-flex min-h-10 cursor-pointer select-none items-center justify-center gap-2 rounded-lg px-4 text-sm font-medium transition-[color,background-color,border-color,box-shadow,scale] duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-700 dark:focus-visible:outline-emerald-500 disabled:cursor-not-allowed;
   }
 
   .campo {

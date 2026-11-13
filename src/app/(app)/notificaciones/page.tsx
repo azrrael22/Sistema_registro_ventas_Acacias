@@ -59,7 +59,7 @@ export default async function NotificacionesPage() {
                       )}
                     </p>
                     <p className="text-sm text-stone-600 dark:text-stone-400">{n.mensaje}</p>
-                    <p className="mt-1 text-xs text-stone-500 dark:text-stone-500">{fecha(n.creada_en)}</p>
+                    <p className="mt-1 text-xs text-stone-500 dark:text-stone-400">{fecha(n.creada_en)}</p>
                   </div>
                 </li>
               );

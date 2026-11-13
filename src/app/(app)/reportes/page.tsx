@@ -55,7 +55,7 @@ async function ContenidoReporte({ filtros }: { filtros: Filtros }) {
     return (
       <Vacio>
         Aún no eres socio de ninguna categoría.{" "}
-        <Link href="/productos" className="font-medium text-emerald-700 hover:underline">Hazte socio</Link> para ver reportes de tus productos.
+        <Link href="/productos" className="font-medium text-emerald-700 hover:underline dark:text-emerald-400">Hazte socio</Link> para ver reportes de tus productos.
       </Vacio>
     );
   }
@@ -101,7 +101,7 @@ async function ContenidoReporte({ filtros }: { filtros: Filtros }) {
           <Variacion actual={total.retiros} anterior={anterior.retiros} neutral />
         </Indicador>
         <Indicador titulo="Balance del periodo" valor={<Monto valor={total.ventas - total.retiros} />}>
-          <p className="text-xs text-stone-500">Ventas netas − retiros</p>
+          <p className="text-xs text-stone-500 dark:text-stone-400">Ventas netas − retiros</p>
         </Indicador>
       </div>
 

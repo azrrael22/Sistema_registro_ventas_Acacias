@@ -45,7 +45,7 @@ export function Titulo({ children, descripcion, accion }: { children: React.Reac
   return (
     <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
       <div>
-        <h1 className="text-2xl font-semibold text-stone-900 dark:text-stone-50">{children}</h1>
+        <h1 className="text-2xl font-medium text-stone-900 dark:text-stone-50">{children}</h1>
         {descripcion && <p className="mt-2 max-w-2xl text-sm text-stone-600 dark:text-stone-400">{descripcion}</p>}
       </div>
       {accion}
@@ -91,19 +91,12 @@ export function Monto({ valor, className }: { valor: number | string | null | un
 export function Aviso({ tipo = "error", children }: { tipo?: "error" | "ok" | "info"; children: React.ReactNode }) {
   if (!children) return null;
   const estilos = {
-    error: "border-red-100 bg-red-50 text-red-800 before:bg-red-500 dark:border-red-900 dark:bg-red-950 dark:text-red-300",
-    ok: "border-emerald-100 bg-emerald-50 text-emerald-800 before:bg-emerald-500 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-300",
-    info: "border-stone-200 bg-stone-50 text-stone-700 before:bg-stone-400 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-300",
+    error: "border-red-200 bg-red-50 text-red-800 dark:border-red-900 dark:bg-red-950 dark:text-red-300",
+    ok: "border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-300",
+    info: "border-stone-200 bg-stone-50 text-stone-700 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-300",
   };
   return (
-    <p
-      role={tipo === "error" ? "alert" : "status"}
-      className={cx(
-        "relative overflow-hidden rounded-lg border pl-4 pr-3 py-2.5 text-sm",
-        "before:absolute before:inset-y-0 before:left-0 before:w-[3px]",
-        estilos[tipo],
-      )}
-    >
+    <p role={tipo === "error" ? "alert" : "status"} className={cx("rounded-lg border px-3 py-2.5 text-sm", estilos[tipo])}>
       {children}
     </p>
   );

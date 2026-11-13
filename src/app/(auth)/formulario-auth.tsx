@@ -37,11 +37,11 @@ export function FormularioAuth({ modo }: { modo: "login" | "registro" }) {
       )}
       <Aviso>{estado?.error}</Aviso>
       <BotonEnvio pendiente="Un momento…">{modo === "login" ? "Ingresar" : "Crear cuenta"}</BotonEnvio>
-      <p className="text-center text-sm text-stone-600">
+      <p className="text-center text-sm text-stone-600 dark:text-stone-400">
         {modo === "login" ? (
-          <>¿No tienes cuenta? <Link className="font-medium text-emerald-700 hover:underline" href="/registro">Regístrate</Link></>
+          <>¿No tienes cuenta? <Link className="font-medium text-emerald-700 hover:underline dark:text-emerald-400" href="/registro">Regístrate</Link></>
         ) : (
-          <>¿Ya tienes cuenta? <Link className="font-medium text-emerald-700 hover:underline" href="/login">Ingresa</Link></>
+          <>¿Ya tienes cuenta? <Link className="font-medium text-emerald-700 hover:underline dark:text-emerald-400" href="/login">Ingresa</Link></>
         )}
       </p>
     </form>

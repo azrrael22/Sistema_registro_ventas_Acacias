@@ -4,7 +4,7 @@ import { createClient } from "@/server/supabase";
 import { requerirEmpleadoActivo } from "@/server/sesion";
 import { misProductos } from "@/server/consultas";
 import { fecha } from "@/lib/formato";
-import { Insignia, Monto, Pestanas, Tarjeta, Titulo, Vacio, claseBoton, cx } from "@/components/ui";
+import { Monto, Pestanas, Tarjeta, Titulo, Vacio, claseBoton, cx } from "@/components/ui";
 import { IconoMas } from "@/components/iconos";
 
 export const metadata: Metadata = { title: "Ventas" };
@@ -64,7 +64,6 @@ export default async function VentasPage({ searchParams }: PageProps<"/ventas">)
                         {esDevolucion ? "Devolución" : "Venta"} #{v.id}
                         {v.venta_origen_id && <span className="font-normal text-stone-500 dark:text-stone-400"> de #{v.venta_origen_id}</span>}
                       </span>
-                      {esDevolucion && <Insignia variante="advertencia">Devolución</Insignia>}
                     </p>
                     <p className="mt-0.5 text-xs text-stone-500 dark:text-stone-400">
                       {fecha(v.fecha)} · {v.empleado_id === empleado.id ? "tú" : v.empleados?.nombre}
@@ -79,7 +78,7 @@ export default async function VentasPage({ searchParams }: PageProps<"/ventas">)
                         </li>
                       ))}
                     </ul>
-                    {v.nota && <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">"{v.nota}"</p>}
+                    {v.nota && <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">“{v.nota}”</p>}
                   </div>
                   <div className="flex shrink-0 flex-col items-end gap-2">
                     <Monto valor={esDevolucion ? -total : total} className={cx("font-medium", esDevolucion ? "text-amber-800 dark:text-amber-400" : "text-stone-900 dark:text-stone-50")} />
