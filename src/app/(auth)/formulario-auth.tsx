@@ -5,6 +5,7 @@ import { useActionState } from "react";
 import { Aviso, Entrada, Etiqueta } from "@/components/ui";
 import { BotonEnvio } from "@/components/boton-envio";
 import { EntradaContrasena } from "@/components/entrada-contrasena";
+import { CamposDocumento } from "@/components/campos-documento";
 import { iniciarSesion, registrarse } from "./actions";
 
 export function FormularioAuth({ modo }: { modo: "login" | "registro" }) {
@@ -15,9 +16,12 @@ export function FormularioAuth({ modo }: { modo: "login" | "registro" }) {
   return (
     <form action={accion} className="flex flex-col gap-4">
       {modo === "registro" && (
-        <Etiqueta texto="Nombre">
-          <Entrada name="nombre" required autoComplete="name" />
-        </Etiqueta>
+        <>
+          <Etiqueta texto="Nombre">
+            <Entrada name="nombre" required autoComplete="name" />
+          </Etiqueta>
+          <CamposDocumento />
+        </>
       )}
       <Etiqueta texto="Correo">
         <Entrada name="email" type="email" required autoComplete="email" />

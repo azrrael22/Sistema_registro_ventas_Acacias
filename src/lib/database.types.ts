@@ -68,6 +68,8 @@ export type Database = {
           es_admin: boolean
           id: string
           nombre: string
+          numero_documento: string | null
+          tipo_documento: Database["public"]["Enums"]["tipo_documento"] | null
         }
         Insert: {
           activo?: boolean
@@ -76,6 +78,8 @@ export type Database = {
           es_admin?: boolean
           id: string
           nombre: string
+          numero_documento?: string | null
+          tipo_documento?: Database["public"]["Enums"]["tipo_documento"] | null
         }
         Update: {
           activo?: boolean
@@ -84,6 +88,8 @@ export type Database = {
           es_admin?: boolean
           id?: string
           nombre?: string
+          numero_documento?: string | null
+          tipo_documento?: Database["public"]["Enums"]["tipo_documento"] | null
         }
         Relationships: []
       }
@@ -553,6 +559,14 @@ export type Database = {
       }
     }
     Functions: {
+      actualizar_documento_empleado: {
+        Args: {
+          p_id: string
+          p_numero: string
+          p_tipo: Database["public"]["Enums"]["tipo_documento"]
+        }
+        Returns: undefined
+      }
       actualizar_empleado: {
         Args: { p_activo: boolean; p_es_admin: boolean; p_id: string }
         Returns: undefined
@@ -598,6 +612,7 @@ export type Database = {
       venta_de_mis_productos: { Args: { p_venta: number }; Returns: boolean }
     }
     Enums: {
+      tipo_documento: "TI" | "CC" | "Pasaporte"
       tipo_mov_inventario: "entrada" | "ajuste"
       tipo_venta: "venta" | "devolucion"
     }
@@ -730,6 +745,7 @@ export const Constants = {
   },
   public: {
     Enums: {
+      tipo_documento: ["TI", "CC", "Pasaporte"],
       tipo_mov_inventario: ["entrada", "ajuste"],
       tipo_venta: ["venta", "devolucion"],
     },

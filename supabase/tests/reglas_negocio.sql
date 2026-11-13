@@ -11,9 +11,9 @@ insert into auth.users (id, email, aud, role, raw_user_meta_data) values
  ('00000000-0000-0000-0000-00000000000a','admin@x.co','authenticated','authenticated','{"nombre":"Admin"}');
 update empleados set es_admin = true, activo = true where email = 'admin@x.co';
 insert into auth.users (id, email, aud, role, raw_user_meta_data) values
- ('00000000-0000-0000-0000-000000000001','a@x.co','authenticated','authenticated','{"nombre":"Ana"}'),
- ('00000000-0000-0000-0000-000000000002','b@x.co','authenticated','authenticated','{"nombre":"Beto"}'),
- ('00000000-0000-0000-0000-000000000003','c@x.co','authenticated','authenticated','{"nombre":"Caro"}'),
+ ('00000000-0000-0000-0000-000000000001','a@x.co','authenticated','authenticated','{"nombre":"Ana","tipo_documento":"CC","numero_documento":"1032456789"}'),
+ ('00000000-0000-0000-0000-000000000002','b@x.co','authenticated','authenticated','{"nombre":"Beto","tipo_documento":"TI","numero_documento":"1032456789"}'),
+ ('00000000-0000-0000-0000-000000000003','c@x.co','authenticated','authenticated','{"nombre":"Caro","tipo_documento":"Pasaporte","numero_documento":"AB123456"}'),
  ('00000000-0000-0000-0000-000000000004','d@x.co','authenticated','authenticated','{}'),
  ('00000000-0000-0000-0000-000000000005','e@x.co','authenticated','authenticated','{"nombre":"Eva"}');
 
@@ -22,6 +22,23 @@ do $$ begin
   assert (select count(*) from empleados where activo) = 1, 'solo admin activo';
   assert (select count(*) from notificaciones where tipo='registro_pendiente') = 5, 'admin notificado 5 veces';
   assert (select nombre from empleados where email='d@x.co') = 'd', 'nombre por defecto';
+  assert (select tipo_documento::text || ' ' || numero_documento from empleados where email='a@x.co') = 'CC 1032456789', 'documento del registro';
+  assert (select tipo_documento is null and numero_documento is null from empleados where email='d@x.co'), 'sin documento';
+  begin
+    insert into auth.users (id, email, aud, role, raw_user_meta_data) values
+     ('00000000-0000-0000-0000-000000000009','f@x.co','authenticated','authenticated','{"tipo_documento":"CC","numero_documento":"1032456789"}');
+    assert false, 'documento repetido';
+  exception when unique_violation then null; end;
+  begin
+    insert into auth.users (id, email, aud, role, raw_user_meta_data) values
+     ('00000000-0000-0000-0000-000000000009','f@x.co','authenticated','authenticated','{"tipo_documento":"CC","numero_documento":"12AB34"}');
+    assert false, 'cédula solo con dígitos';
+  exception when check_violation then null; end;
+  begin
+    insert into auth.users (id, email, aud, role, raw_user_meta_data) values
+     ('00000000-0000-0000-0000-000000000009','f@x.co','authenticated','authenticated','{"tipo_documento":"CC"}');
+    assert false, 'tipo sin número';
+  exception when check_violation then null; end;
 end $$;
 
 create temp table r(k text primary key, v bigint);
@@ -45,6 +62,14 @@ do $$ begin
     assert false, 'RPC solo admin';
   exception when raise_exception then null; end;
   begin
+    update empleados set numero_documento = '55555555' where id = auth.uid();
+    assert false, 'no debería poder cambiar su documento';
+  exception when insufficient_privilege then null; end;
+  begin
+    perform actualizar_documento_empleado(auth.uid(), 'CC', '55555555');
+    assert false, 'RPC de documento solo admin';
+  exception when raise_exception then null; end;
+  begin
     insert into categorias (nombre) values ('hack');
     assert false, 'pendiente no crea categorias';
   exception when insufficient_privilege then null; end;
@@ -60,6 +85,11 @@ do $$ begin
   assert (select count(*) from empleados) = 6, 'admin ve todos';
   begin perform actualizar_empleado(auth.uid(), true, false); assert false;
   exception when raise_exception then null; end;
+  -- El admin completa el documento de D (registrado antes de pedirlo)
+  perform actualizar_documento_empleado('00000000-0000-0000-0000-000000000004', 'CC', '79123456');
+  assert (select numero_documento from empleados where email='d@x.co') = '79123456', 'admin completa documento';
+  begin perform actualizar_documento_empleado('00000000-0000-0000-0000-000000000004', 'CC', '1032456789'); assert false;
+  exception when unique_violation then null; end;
 end $$;
 
 -- ===== Como A: crea categorías y productos, se hace socio de todo =====
