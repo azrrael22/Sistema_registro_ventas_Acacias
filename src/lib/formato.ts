@@ -32,6 +32,16 @@ export const fecha = (iso: string) => {
 // Fecha de hoy (YYYY-MM-DD) en hora de Colombia
 export const hoy = () => diaIso.format(new Date());
 
+// Fecha de ayer (YYYY-MM-DD) en hora de Colombia: se resta un día al calendario, no 24 h al reloj
+export function ayer() {
+  const [a, m, d] = hoy().split("-").map(Number);
+  return new Date(Date.UTC(a, m - 1, d - 1)).toISOString().slice(0, 10);
+}
+
+// Día (YYYY-MM-DD) y hora («1:35 p. m.») de un instante, en hora de Colombia
+export const diaDe = (iso: string) => diaIso.format(new Date(iso));
+export const horaDe = (iso: string) => hora.format(new Date(iso));
+
 // Mensaje legible a partir de un error de Supabase/Postgres
 export function mensajeError(error: { message: string; code?: string } | null) {
   if (!error) return null;
