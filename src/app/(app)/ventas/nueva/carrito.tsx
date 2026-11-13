@@ -3,9 +3,10 @@
 import { useMemo, useState, useTransition } from "react";
 import { Aviso, Boton, Entrada, Monto, cx } from "@/components/ui";
 import { IconoMas, IconoMenos } from "@/components/iconos";
+import { FotoProducto } from "@/components/foto-producto";
 import { registrarVenta } from "../actions";
 
-type Producto = { id: number; nombre: string; precio: number; categoria: string; stock: number };
+type Producto = { id: number; nombre: string; precio: number; foto: string | null; categoria: string; stock: number };
 
 export function Carrito({ productos }: { productos: Producto[] }) {
   const [cantidades, setCantidades] = useState<Record<number, number>>({});
@@ -67,12 +68,15 @@ export function Carrito({ productos }: { productos: Producto[] }) {
                   agotado && "opacity-50",
                 )}
               >
-                <div className="min-w-0">
-                  <p className="truncate font-medium text-stone-900 dark:text-stone-50">{p.nombre}</p>
-                  <p className="text-sm text-stone-600 dark:text-stone-400">
-                    <Monto valor={p.precio} /> ·{" "}
-                    <span className={p.stock <= 3 ? "text-amber-700 dark:text-amber-400" : ""}>{agotado ? "Agotado" : `${p.stock} disponibles`}</span>
-                  </p>
+                <div className="flex min-w-0 items-center gap-3">
+                  <FotoProducto src={p.foto} className="size-12" />
+                  <div className="min-w-0">
+                    <p className="truncate font-medium text-stone-900 dark:text-stone-50">{p.nombre}</p>
+                    <p className="text-sm text-stone-600 dark:text-stone-400">
+                      <Monto valor={p.precio} /> ·{" "}
+                      <span className={p.stock <= 3 ? "text-amber-700 dark:text-amber-400" : ""}>{agotado ? "Agotado" : `${p.stock} disponibles`}</span>
+                    </p>
+                  </div>
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
                   <Boton variante="secundario" className="size-10 px-0" onClick={() => cambiar(p, -1)} disabled={cant === 0} aria-label={`Quitar un ${p.nombre}`}>

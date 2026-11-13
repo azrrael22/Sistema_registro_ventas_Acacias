@@ -202,6 +202,7 @@ export type Database = {
           activo: boolean
           categoria_id: number
           creado_por: string | null
+          foto: string | null
           id: number
           nombre: string
           precio: number
@@ -210,6 +211,7 @@ export type Database = {
           activo?: boolean
           categoria_id: number
           creado_por?: string | null
+          foto?: string | null
           id?: never
           nombre: string
           precio: number
@@ -218,6 +220,7 @@ export type Database = {
           activo?: boolean
           categoria_id?: number
           creado_por?: string | null
+          foto?: string | null
           id?: never
           nombre?: string
           precio?: number
@@ -568,6 +571,7 @@ export type Database = {
           unidades_quedan: number
         }[]
       }
+      puede_editar_producto: { Args: { p_producto: number }; Returns: boolean }
       registrar_venta: {
         Args: {
           p_items: Json

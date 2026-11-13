@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { createClient } from "@/server/supabase";
 import { Titulo, Vacio } from "@/components/ui";
+import { urlFoto } from "@/lib/fotos";
 import { Carrito } from "./carrito";
 
 export const metadata: Metadata = { title: "Vender" };
@@ -10,7 +11,7 @@ export default async function NuevaVentaPage() {
   const [{ data: productos }, { data: stock }] = await Promise.all([
     supabase
       .from("productos")
-      .select("id, nombre, precio, categorias(nombre)")
+      .select("id, nombre, precio, foto, categorias(nombre)")
       .eq("activo", true)
       .order("nombre"),
     supabase.from("stock_producto").select("producto_id, stock"),
@@ -21,6 +22,7 @@ export default async function NuevaVentaPage() {
       id: p.id,
       nombre: p.nombre,
       precio: Number(p.precio),
+      foto: urlFoto(p.foto),
       categoria: p.categorias?.nombre ?? "",
       stock: stockPor.get(p.id) ?? 0,
     }))

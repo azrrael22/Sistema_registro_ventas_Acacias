@@ -5,6 +5,9 @@ import { Boton, Entrada, Etiqueta, Insignia, Monto, Tarjeta, Titulo, Vacio } fro
 import { IconoFlecha, IconoMas } from "@/components/iconos";
 import { BotonEnvio } from "@/components/boton-envio";
 import { FormAccion } from "@/components/form-accion";
+import { CampoFoto } from "@/components/campo-foto";
+import { FotoProducto } from "@/components/foto-producto";
+import { urlFoto } from "@/lib/fotos";
 import { actualizarProducto, crearCategoria, crearProducto, salirCategoria, unirseCategoria } from "./actions";
 
 export const metadata: Metadata = { title: "Productos y socios" };
@@ -18,7 +21,7 @@ export default async function ProductosPage() {
   const [{ data: categorias }, { data: socios }, { data: stock }] = await Promise.all([
     supabase
       .from("categorias")
-      .select("id, nombre, creado_por, productos(id, nombre, precio, activo, creado_por)")
+      .select("id, nombre, creado_por, productos(id, nombre, precio, activo, creado_por, foto)")
       .order("nombre")
       .order("nombre", { referencedTable: "productos" }),
     supabase.from("socios").select("categoria_id, empleado_id, empleados(nombre)").eq("activo", true),
@@ -59,9 +62,12 @@ export default async function ProductosPage() {
                 {cat.productos.map((p) => (
                   <li key={p.id} className="py-3">
                     <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 text-sm">
-                      <span className={p.activo ? "text-stone-900 dark:text-stone-50" : "text-stone-500 dark:text-stone-400"}>
-                        {p.nombre}
-                        {!p.activo && <Insignia className="ml-2">Inactivo</Insignia>}
+                      <span className={`flex items-center gap-3 ${p.activo ? "text-stone-900 dark:text-stone-50" : "text-stone-500 dark:text-stone-400"}`}>
+                        <FotoProducto src={urlFoto(p.foto)} className={p.activo ? undefined : "opacity-60"} />
+                        <span>
+                          {p.nombre}
+                          {!p.activo && <Insignia className="ml-2">Inactivo</Insignia>}
+                        </span>
                       </span>
                       <span className="flex items-center gap-4">
                         <span className="text-stone-500 tabular-nums dark:text-stone-400">{stockPor.get(p.id) ?? 0} en stock</span>
@@ -81,6 +87,7 @@ export default async function ProductosPage() {
                           <Etiqueta texto="Precio" className="w-32">
                             <Entrada name="precio" type="number" min="0" step="50" defaultValue={p.precio} required />
                           </Etiqueta>
+                          <CampoFoto texto="Cambiar foto" actual={urlFoto(p.foto)} className="min-w-64 flex-1" />
                           <label className="flex min-h-10 items-center gap-2 text-sm text-stone-700 dark:text-stone-300">
                             <input type="checkbox" name="activo" defaultChecked={p.activo} className="size-4" /> Activo
                           </label>
@@ -105,6 +112,7 @@ export default async function ProductosPage() {
                     <Etiqueta texto="Precio" className="w-32">
                       <Entrada name="precio" type="number" min="50" step="50" required />
                     </Etiqueta>
+                    <CampoFoto requerida className="min-w-64 flex-1" />
                     <BotonEnvio>Agregar</BotonEnvio>
                   </FormAccion>
                 </details>

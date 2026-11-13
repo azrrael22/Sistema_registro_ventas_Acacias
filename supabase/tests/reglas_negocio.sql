@@ -87,6 +87,27 @@ do $$ begin
     assert false, 'no socio no mueve inventario';
   exception when insufficient_privilege then null; end;
 end $$;
+-- Fotos: B sube la de pines (es socio) pero no la de alfajores; la ruta siempre es '<id>/<n>.webp'
+do $$
+declare v_pines bigint := (select id from productos where nombre='Pines std');
+        v_alf   bigint := (select id from productos where nombre='Alfajores std');
+begin
+  insert into storage.objects (bucket_id, name) values ('productos', v_pines || '/1.webp');
+  update productos set foto = v_pines || '/1.webp' where id = v_pines;
+  assert (select foto from productos where id = v_pines) = v_pines || '/1.webp', 'socio asigna la foto';
+  begin
+    insert into storage.objects (bucket_id, name) values ('productos', v_alf || '/1.webp');
+    assert false, 'no socio no sube fotos';
+  exception when insufficient_privilege then null; end;
+  begin
+    update productos set foto = v_pines || '/1.png' where id = v_pines;
+    assert false, 'la foto debe ser .webp';
+  exception when check_violation then null; end;
+  begin
+    update productos set foto = v_alf || '/1.webp' where id = v_pines;
+    assert false, 'la carpeta es el id del producto';
+  exception when check_violation then null; end;
+end $$;
 set local request.jwt.claims = '{"sub":"00000000-0000-0000-0000-000000000003"}';
 insert into socios (empleado_id, categoria_id) select auth.uid(), id from categorias where nombre in ('Repelentes','Camisetas');
 set local request.jwt.claims = '{"sub":"00000000-0000-0000-0000-000000000004"}';
