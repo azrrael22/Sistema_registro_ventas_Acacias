@@ -45,13 +45,14 @@ export function Carrito({ productos }: { productos: Producto[] }) {
   const [mensaje, setMensaje] = useState<{ error?: string; ok?: string }>();
   const [enviando, startTransition] = useTransition();
 
-  const cambiar = (p: Producto, delta: number) => {
+  const fijar = (p: Producto, n: number) => {
     setMensaje(undefined);
-    const cant = Math.max(0, Math.min(p.stock, (cantidades[p.id] ?? 0) + delta));
+    const cant = Math.max(0, Math.min(p.stock, n || 0));
     setCantidades((c) => ({ ...c, [p.id]: cant }));
     // Si sale del carrito, vuelve a su precio de lista
     if (!cant) setPrecios((pr) => { const resto = { ...pr }; delete resto[p.id]; return resto; });
   };
+  const cambiar = (p: Producto, delta: number) => fijar(p, (cantidades[p.id] ?? 0) + delta);
 
   // Precio que se cobra: el de lista o uno menor. null si lo escrito no es válido.
   const precioDe = (p: Producto) => {
@@ -162,7 +163,20 @@ export function Carrito({ productos }: { productos: Producto[] }) {
                     <Boton variante="secundario" className="size-10 px-0" onClick={() => cambiar(p, -1)} disabled={cant === 0} aria-label={`Quitar un ${p.nombre}`}>
                       <IconoMenos />
                     </Boton>
-                    <span className="w-6 text-center font-medium tabular-nums" aria-live="polite">{cant}</span>
+                    {/* También se puede escribir la cantidad; se ajusta al stock disponible */}
+                    <Entrada
+                      type="number"
+                      inputMode="numeric"
+                      min={0}
+                      max={p.stock}
+                      step={1}
+                      value={cant}
+                      onChange={(e) => fijar(p, Math.trunc(Number(e.target.value)))}
+                      onFocus={(e) => e.target.select()}
+                      disabled={agotado}
+                      aria-label={`Cantidad de ${p.nombre}`}
+                      className="min-w-0 flex-1 px-1 text-center font-medium tabular-nums [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                    />
                     <Boton variante="secundario" className="size-10 px-0" onClick={() => cambiar(p, 1)} disabled={cant >= p.stock} aria-label={`Agregar un ${p.nombre}`}>
                       <IconoMas />
                     </Boton>
