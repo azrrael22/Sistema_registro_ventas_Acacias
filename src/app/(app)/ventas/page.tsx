@@ -20,7 +20,7 @@ export default async function VentasPage({ searchParams }: PageProps<"/ventas">)
   // Con !inner solo llegan las ventas con ítems que pasan el filtro, y solo esos ítems.
   let consulta = supabase
     .from("ventas")
-    .select("id, tipo, fecha, nota, empleado_id, venta_origen_id, empleados(nombre), venta_items!inner(id, cantidad, precio_unitario, productos(nombre))")
+    .select("id, tipo, fecha, nota, empleado_id, venta_origen_id, empleados(nombre), venta_items!inner(id, cantidad, precio_unitario, precio_lista, productos(nombre))")
     .order("fecha", { ascending: false })
     .limit(100);
   const ids = vista === "categorias" ? (await misProductos(empleado.id)).map((p) => p.id) : [];
@@ -73,7 +73,16 @@ export default async function VentasPage({ searchParams }: PageProps<"/ventas">)
                         <li key={i.id}>
                           {i.cantidad} × {i.productos?.nombre}{" "}
                           <span className="text-stone-500 dark:text-stone-400">
-                            (<Monto valor={i.precio_unitario} />)
+                            (
+                            {Number(i.precio_lista) > Number(i.precio_unitario) && (
+                              <>
+                                <s className="text-stone-400 dark:text-stone-500">
+                                  <span className="sr-only">antes </span>
+                                  <Monto valor={i.precio_lista} />
+                                </s>{" "}
+                              </>
+                            )}
+                            <Monto valor={i.precio_unitario} />)
                           </span>
                         </li>
                       ))}

@@ -351,6 +351,7 @@ export type Database = {
         Row: {
           cantidad: number
           id: number
+          precio_lista: number
           precio_unitario: number
           producto_id: number
           venta_id: number
@@ -358,6 +359,7 @@ export type Database = {
         Insert: {
           cantidad: number
           id?: never
+          precio_lista: number
           precio_unitario: number
           producto_id: number
           venta_id: number
@@ -365,6 +367,7 @@ export type Database = {
         Update: {
           cantidad?: number
           id?: never
+          precio_lista?: number
           precio_unitario?: number
           producto_id?: number
           venta_id?: number

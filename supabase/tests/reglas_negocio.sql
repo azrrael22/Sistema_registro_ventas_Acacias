@@ -119,6 +119,8 @@ insert into r select 'venta_b', registrar_venta(
   (select jsonb_agg(jsonb_build_object('producto_id', id, 'cantidad', 2)) from productos), 'venta', null, 'mixta');
 do $$ declare v_id bigint := (select v from r where k='venta_b'); begin
   assert (select count(*) from venta_items where venta_id = v_id) = 4, '4 items';
+  assert (select count(*) from venta_items where venta_id = v_id and precio_unitario = precio_lista) = 4,
+         'sin precio se cobra el de lista';
   -- Stock insuficiente
   begin
     perform registrar_venta(jsonb_build_array(jsonb_build_object('producto_id',
@@ -206,6 +208,32 @@ do $$ begin
   assert (select count(*) from notificaciones) = 1, 'B solo tiene aprobada';
   assert (select count(*) from reporte_socio('mes', '2020-01-01', '2100-01-01')) = 1, 'B ve solo pines';
   assert (select count(*) from inventario_socio('2020-01-01', '2100-01-01')) = 1, 'B: inventario solo de pines';
+end $$;
+
+-- ===== B vende con descuento (va al final para no alterar los conteos de arriba) =====
+insert into r select 'venta_desc', registrar_venta(jsonb_build_array(jsonb_build_object(
+  'producto_id', (select id from productos where nombre='Alfajores std'), 'cantidad', 1, 'precio_unitario', 2500)));
+do $$ declare v_id bigint := (select v from r where k='venta_desc'); begin
+  assert (select precio_unitario from venta_items where venta_id = v_id) = 2500, 'cobra el precio con descuento';
+  assert (select precio_lista from venta_items where venta_id = v_id) = 3000, 'guarda el precio de lista';
+  begin
+    perform registrar_venta(jsonb_build_array(jsonb_build_object(
+      'producto_id', (select id from productos where nombre='Alfajores std'), 'cantidad', 1, 'precio_unitario', 3500)));
+    assert false, 'no se cobra más que el precio de lista';
+  exception when raise_exception then null; end;
+  begin
+    perform registrar_venta(jsonb_build_array(jsonb_build_object(
+      'producto_id', (select id from productos where nombre='Alfajores std'), 'cantidad', 1, 'precio_unitario', -1)));
+    assert false, 'precio negativo';
+  exception when raise_exception then null; end;
+  -- La devolución reembolsa lo que se cobró, aunque el cliente mande otro precio
+  perform registrar_venta(jsonb_build_array(jsonb_build_object(
+    'producto_id', (select id from productos where nombre='Alfajores std'), 'cantidad', 1, 'precio_unitario', 0)),
+    'devolucion', v_id);
+  assert (select vi.precio_unitario from venta_items vi join ventas v on v.id = vi.venta_id
+          where v.venta_origen_id = v_id) = 2500, 'devolución al precio con descuento';
+  assert (select vi.precio_lista from venta_items vi join ventas v on v.id = vi.venta_id
+          where v.venta_origen_id = v_id) = 3000, 'devolución conserva el precio de lista';
 end $$;
 
 -- ===== anon no ve nada =====
