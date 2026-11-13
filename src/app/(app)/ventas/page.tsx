@@ -52,39 +52,39 @@ export default async function VentasPage({ searchParams }: PageProps<"/ventas">)
         <Vacio>{vista === "categorias" && !ids.length ? "Aún no eres socio de ninguna categoría" : "No hay ventas registradas"}</Vacio>
       ) : (
         <Tarjeta className="p-0">
-          <ul className="divide-y divide-stone-100">
+          <ul className="divide-y divide-stone-100 dark:divide-stone-700">
             {ventas.map((v) => {
               const total = v.venta_items.reduce((t, i) => t + i.cantidad * Number(i.precio_unitario), 0);
               const esDevolucion = v.tipo === "devolucion";
               return (
                 <li key={v.id} className="flex items-start justify-between gap-4 px-4 py-4 sm:px-5">
                   <div className="min-w-0">
-                    <p className="flex flex-wrap items-center gap-2 text-sm font-medium text-stone-900">
+                    <p className="flex flex-wrap items-center gap-2 text-sm font-medium text-stone-900 dark:text-stone-50">
                       <span>
                         {esDevolucion ? "Devolución" : "Venta"} #{v.id}
-                        {v.venta_origen_id && <span className="font-normal text-stone-500"> de #{v.venta_origen_id}</span>}
+                        {v.venta_origen_id && <span className="font-normal text-stone-500 dark:text-stone-400"> de #{v.venta_origen_id}</span>}
                       </span>
                       {esDevolucion && <Insignia variante="advertencia">Devolución</Insignia>}
                     </p>
-                    <p className="mt-0.5 text-xs text-stone-500">
+                    <p className="mt-0.5 text-xs text-stone-500 dark:text-stone-400">
                       {fecha(v.fecha)} · {v.empleado_id === empleado.id ? "tú" : v.empleados?.nombre}
                     </p>
-                    <ul className="mt-2 text-sm text-stone-700">
+                    <ul className="mt-2 text-sm text-stone-700 dark:text-stone-300">
                       {v.venta_items.map((i) => (
                         <li key={i.id}>
                           {i.cantidad} × {i.productos?.nombre}{" "}
-                          <span className="text-stone-500">
+                          <span className="text-stone-500 dark:text-stone-400">
                             (<Monto valor={i.precio_unitario} />)
                           </span>
                         </li>
                       ))}
                     </ul>
-                    {v.nota && <p className="mt-1 text-sm text-stone-500">“{v.nota}”</p>}
+                    {v.nota && <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">"{v.nota}"</p>}
                   </div>
                   <div className="flex shrink-0 flex-col items-end gap-2">
-                    <Monto valor={esDevolucion ? -total : total} className={cx("font-medium", esDevolucion ? "text-amber-800" : "text-stone-900")} />
+                    <Monto valor={esDevolucion ? -total : total} className={cx("font-medium", esDevolucion ? "text-amber-800 dark:text-amber-400" : "text-stone-900 dark:text-stone-50")} />
                     {!esDevolucion && (
-                      <Link href={`/ventas/${v.id}/devolver`} className="text-xs text-stone-500 transition-colors hover:text-stone-900 hover:underline">
+                      <Link href={`/ventas/${v.id}/devolver`} className="text-xs text-stone-500 transition-colors hover:text-stone-900 hover:underline dark:text-stone-400 dark:hover:text-stone-50">
                         Registrar devolución
                       </Link>
                     )}

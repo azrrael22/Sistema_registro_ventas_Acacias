@@ -35,7 +35,7 @@ export default async function RetirosPage() {
       ) : (
         <div className="grid gap-4 md:grid-cols-2">
           <Tarjeta>
-            <h2 className="mb-4 font-medium text-stone-900">Registrar retiro</h2>
+            <h2 className="mb-4 font-medium text-stone-900 dark:text-stone-50">Registrar retiro</h2>
             <FormAccion accion={registrarRetiro} className="flex flex-col gap-3">
               <Etiqueta texto="Producto">
                 <Selector name="producto_id" required>
@@ -57,31 +57,31 @@ export default async function RetirosPage() {
           </Tarjeta>
 
           <Tarjeta>
-            <h2 className="text-sm text-stone-500">Saldo disponible</h2>
-            <Monto valor={total} className="mt-1 block text-3xl font-medium text-stone-900" />
-            <ul className="mt-4 divide-y divide-stone-100 border-t border-stone-100 text-sm">
+            <h2 className="text-sm text-stone-500 dark:text-stone-400">Saldo disponible</h2>
+            <Monto valor={total} className="mt-1 block text-3xl font-medium text-stone-900 dark:text-stone-50" />
+            <ul className="mt-4 divide-y divide-stone-100 border-t border-stone-100 text-sm dark:divide-stone-700 dark:border-stone-700">
               {productos.map((p) => (
                 <li key={p.id} className="flex justify-between gap-4 py-2.5">
-                  <span className="text-stone-900">{p.nombre} <span className="text-stone-500">· {p.categorias?.nombre}</span></span>
-                  <Monto valor={saldoPor.get(p.id)} className="text-stone-900" />
+                  <span className="text-stone-900 dark:text-stone-50">{p.nombre} <span className="text-stone-500 dark:text-stone-400">· {p.categorias?.nombre}</span></span>
+                  <Monto valor={saldoPor.get(p.id)} className="text-stone-900 dark:text-stone-50" />
                 </li>
               ))}
             </ul>
           </Tarjeta>
 
           <Tarjeta className="md:col-span-2">
-            <h2 className="mb-2 font-medium text-stone-900">Últimos retiros</h2>
+            <h2 className="mb-2 font-medium text-stone-900 dark:text-stone-50">Últimos retiros</h2>
             {!retiros?.length ? (
-              <p className="text-sm text-stone-500">Sin retiros todavía</p>
+              <p className="text-sm text-stone-500 dark:text-stone-400">Sin retiros todavía</p>
             ) : (
-              <ul className="divide-y divide-stone-100 text-sm">
+              <ul className="divide-y divide-stone-100 text-sm dark:divide-stone-700">
                 {retiros.map((r) => (
                   <li key={r.id} className="flex flex-wrap justify-between gap-x-4 gap-y-1 py-2.5">
-                    <span className="text-stone-900">
+                    <span className="text-stone-900 dark:text-stone-50">
                       <Monto valor={r.monto} className="font-medium" /> de {r.productos?.nombre}
-                      <span className="text-stone-500"> · {r.empleado_id === empleado.id ? "tú" : r.empleados?.nombre}{r.nota ? ` · ${r.nota}` : ""}</span>
+                      <span className="text-stone-500 dark:text-stone-400"> · {r.empleado_id === empleado.id ? "tú" : r.empleados?.nombre}{r.nota ? ` · ${r.nota}` : ""}</span>
                     </span>
-                    <span className="text-stone-500">{fecha(r.fecha)}</span>
+                    <span className="text-stone-500 dark:text-stone-400">{fecha(r.fecha)}</span>
                   </li>
                 ))}
               </ul>

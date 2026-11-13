@@ -16,16 +16,16 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
 
   return (
     <div className="flex min-h-dvh flex-col">
-      <header className="sticky top-0 z-10 border-b border-stone-200 bg-white/95 backdrop-blur-sm print:hidden">
+      <header className="sticky top-0 z-10 border-b border-stone-200 bg-white/95 backdrop-blur-sm dark:border-stone-700 dark:bg-stone-900/95 print:hidden">
         <div className="mx-auto flex h-14 max-w-5xl items-center justify-between gap-3 px-4 sm:px-6">
-          <Link href="/" className="flex items-center gap-2 font-semibold text-stone-900">
+          <Link href="/" className="flex items-center gap-2 font-semibold text-stone-900 dark:text-stone-50">
             <Marca className="size-5" /> Las Acacias
           </Link>
           <div className="flex items-center gap-1">
             <Campanita empleadoId={empleado.id} sinLeer={count ?? 0} />
-            <span className="hidden px-2 text-sm text-stone-600 sm:inline">{empleado.nombre}</span>
+            <span className="hidden px-2 text-sm text-stone-600 dark:text-stone-400 sm:inline">{empleado.nombre}</span>
             <form action={cerrarSesion}>
-              <button className="h-9 rounded-lg px-3 text-sm text-stone-600 transition-colors hover:bg-stone-100 hover:text-stone-900">Salir</button>
+              <button className="h-9 rounded-lg px-3 text-sm text-stone-600 transition-colors hover:bg-stone-100 hover:text-stone-900 dark:text-stone-400 dark:hover:bg-stone-800 dark:hover:text-stone-50">Salir</button>
             </form>
           </div>
         </div>

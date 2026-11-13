@@ -73,9 +73,9 @@ async function ContenidoReporte({ filtros }: { filtros: Filtros }) {
           <p className="mb-2 hidden items-center gap-2 text-sm font-medium print:flex">
             <Marca className="size-4" /> Las Acacias · Reporte de mis productos
           </p>
-          <p className="text-sm text-stone-500">{nombre}</p>
-          <h2 className="mt-0.5 text-xl font-medium text-stone-900">{rango}</h2>
-          <p className="mt-1 text-sm text-stone-500">
+          <p className="text-sm text-stone-500 dark:text-stone-400">{nombre}</p>
+          <h2 className="mt-0.5 text-xl font-medium text-stone-900 dark:text-stone-50">{rango}</h2>
+          <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">
             Comparado con {rangoFechas(filtros.antDesde, filtros.antHasta)} · Generado el {fecha(new Date().toISOString())}
           </p>
         </div>
@@ -120,8 +120,8 @@ async function ContenidoReporte({ filtros }: { filtros: Filtros }) {
 function Indicador({ titulo, valor, children }: { titulo: string; valor: React.ReactNode; children: React.ReactNode }) {
   return (
     <Tarjeta className="flex flex-col gap-1">
-      <p className="text-sm text-stone-500">{titulo}</p>
-      <p className="text-xl font-medium text-stone-900 tabular-nums sm:text-2xl">{valor}</p>
+      <p className="text-sm text-stone-500 dark:text-stone-400">{titulo}</p>
+      <p className="text-xl font-medium text-stone-900 tabular-nums sm:text-2xl dark:text-stone-50">{valor}</p>
       {children}
     </Tarjeta>
   );
@@ -129,14 +129,14 @@ function Indicador({ titulo, valor, children }: { titulo: string; valor: React.R
 
 function Variacion({ actual, anterior, neutral }: { actual: number; anterior: number; neutral?: boolean }) {
   if (!anterior) {
-    return <p className="text-xs text-stone-500">{actual ? "Sin datos del periodo anterior" : "Sin cambios"}</p>;
+    return <p className="text-xs text-stone-500 dark:text-stone-400">{actual ? "Sin datos del periodo anterior" : "Sin cambios"}</p>;
   }
   const cambio = (actual - anterior) / Math.abs(anterior);
-  const color = neutral || !cambio ? "text-stone-600" : cambio > 0 ? "text-emerald-700" : "text-red-700";
+  const color = neutral || !cambio ? "text-stone-600 dark:text-stone-400" : cambio > 0 ? "text-emerald-700 dark:text-emerald-400" : "text-red-700 dark:text-red-400";
   return (
     <p className={cx("text-xs font-medium tabular-nums", color)}>
       <span aria-hidden>{cambio > 0 ? "▲" : cambio < 0 ? "▼" : "■"}</span> {porcentaje(cambio, true)}{" "}
-      <span className="font-normal text-stone-500">vs periodo anterior</span>
+      <span className="font-normal text-stone-500 dark:text-stone-400">vs periodo anterior</span>
     </p>
   );
 }
@@ -157,14 +157,14 @@ function Tendencia({ tramos, paso }: { tramos: Reporte["tramos"]; paso: number }
 
   return (
     <Tarjeta className="break-inside-avoid">
-      <h3 className="font-medium text-stone-900">{titulo}</h3>
-      <p className="mb-6 text-xs text-stone-500">En verde, el periodo más reciente. Pasa el cursor sobre una barra para ver el detalle.</p>
+      <h3 className="font-medium text-stone-900 dark:text-stone-50">{titulo}</h3>
+      <p className="mb-6 text-xs text-stone-500 dark:text-stone-400">En verde, el periodo más reciente. Pasa el cursor sobre una barra para ver el detalle.</p>
       {!max ? (
-        <p className="py-10 text-center text-sm text-stone-500">No hubo ventas en este periodo</p>
+        <p className="py-10 text-center text-sm text-stone-500 dark:text-stone-400">No hubo ventas en este periodo</p>
       ) : (
         <div className="flex gap-2" role="img" aria-label={`${titulo}: ${tramos.map((t) => `${rangoTramo(t)}, ${dinero(t.ventas)}`).join("; ")}`}>
           {/* Eje Y */}
-          <div className="relative h-44 w-14 shrink-0 text-right font-mono text-[11px] text-stone-500" aria-hidden>
+          <div className="relative h-44 w-14 shrink-0 text-right font-mono text-[11px] text-stone-500 dark:text-stone-400" aria-hidden>
             {[0, 0.5, 1].map((k) => (
               <span key={k} className="absolute right-0 translate-y-1/2" style={{ bottom: `${k * 100}%` }}>
                 {dineroCorto(k * tope)}
@@ -174,7 +174,7 @@ function Tendencia({ tramos, paso }: { tramos: Reporte["tramos"]; paso: number }
           <div className="min-w-0 flex-1">
             <div className="relative h-44">
               {[0, 0.5, 1].map((k) => (
-                <div key={k} className="absolute inset-x-0 border-t border-stone-200" style={{ bottom: `${k * 100}%` }} aria-hidden />
+                <div key={k} className="absolute inset-x-0 border-t border-stone-200 dark:border-stone-700" style={{ bottom: `${k * 100}%` }} aria-hidden />
               ))}
               <div className="absolute inset-0 flex gap-0.5">
                 {tramos.map((t, i) => {
@@ -184,19 +184,19 @@ function Tendencia({ tramos, paso }: { tramos: Reporte["tramos"]; paso: number }
                   // El tooltip se alinea al borde en las barras de los extremos para no salirse de la tarjeta
                   const lado = i < tramos.length / 3 ? "left-0" : i >= (tramos.length * 2) / 3 ? "right-0" : "left-1/2 -translate-x-1/2";
                   return (
-                    <div key={t.inicio} tabIndex={0} className="group relative flex-1 rounded-sm outline-none focus-visible:bg-stone-100">
+                    <div key={t.inicio} tabIndex={0} className="group relative flex-1 rounded-sm outline-none focus-visible:bg-stone-100 dark:focus-visible:bg-stone-800">
                       <div
                         className={cx(
                           "absolute inset-x-0 bottom-0 mx-auto w-full max-w-6 rounded-t transition-colors",
                           reciente
-                            ? "bg-emerald-600 group-hover:bg-emerald-700 group-focus-visible:bg-emerald-700"
-                            : "bg-stone-300 group-hover:bg-stone-400 group-focus-visible:bg-stone-400",
+                            ? "bg-emerald-600 group-hover:bg-emerald-700 group-focus-visible:bg-emerald-700 dark:bg-emerald-500 dark:group-hover:bg-emerald-400"
+                            : "bg-stone-300 group-hover:bg-stone-400 group-focus-visible:bg-stone-400 dark:bg-stone-600 dark:group-hover:bg-stone-500",
                         )}
                         style={{ height: `${alto}%` }}
                       />
                       {t.ventas === max && (
                         <span
-                          className="absolute inset-x-0 text-center font-mono text-[11px] whitespace-nowrap text-stone-700"
+                          className="absolute inset-x-0 text-center font-mono text-[11px] whitespace-nowrap text-stone-700 dark:text-stone-300"
                           style={{ bottom: `calc(${alto}% + 2px)` }}
                           aria-hidden
                         >
@@ -221,7 +221,7 @@ function Tendencia({ tramos, paso }: { tramos: Reporte["tramos"]; paso: number }
               </div>
             </div>
             {/* Eje X: fecha de inicio de cada tramo (en pantallas pequeñas, una sí y otra no si son muchas) */}
-            <div className="mt-1.5 flex gap-0.5 text-center font-mono text-[11px] text-stone-500" aria-hidden>
+            <div className="mt-1.5 flex gap-0.5 text-center font-mono text-[11px] text-stone-500 dark:text-stone-400" aria-hidden>
               {tramos.map((t, i) => (
                 <span key={t.inicio} className={cx("min-w-0 flex-1 truncate", tramos.length > 6 && i % 2 === 1 && "max-sm:invisible")}>
                   {fechaCorta(t.inicio, false)}
@@ -244,17 +244,17 @@ function TablaProductos({ productos, total }: { productos: Reporte["productos"];
 
   return (
     <Tarjeta className="overflow-hidden p-0">
-      <div className="border-b border-stone-200 px-4 py-4 sm:px-5">
-        <h3 className="font-medium text-stone-900">Detalle por producto</h3>
-        <p className="text-xs text-stone-500">
-          <strong className="font-medium text-stone-600">Base:</strong> stock al inicio del periodo + entradas ·{" "}
-          <strong className="font-medium text-stone-600">Quedan:</strong> stock al cierre del periodo
+      <div className="border-b border-stone-200 px-4 py-4 sm:px-5 dark:border-stone-700">
+        <h3 className="font-medium text-stone-900 dark:text-stone-50">Detalle por producto</h3>
+        <p className="text-xs text-stone-500 dark:text-stone-400">
+          <strong className="font-medium text-stone-600 dark:text-stone-300">Base:</strong> stock al inicio del periodo + entradas ·{" "}
+          <strong className="font-medium text-stone-600 dark:text-stone-300">Quedan:</strong> stock al cierre del periodo
         </p>
       </div>
       <div className="overflow-x-auto">
         <table className="w-full min-w-[40rem] text-sm">
-          <thead className="bg-stone-50 text-xs text-stone-500">
-            <tr className="border-b border-stone-200">
+          <thead className="bg-stone-50 text-xs text-stone-500 dark:bg-stone-900 dark:text-stone-400">
+            <tr className="border-b border-stone-200 dark:border-stone-700">
               <th className={cx(th, "text-left")}>Producto</th>
               <th className={cx(th, "text-right")}>Base</th>
               <th className={cx(th, "text-right")}>Vendidas</th>
@@ -263,25 +263,25 @@ function TablaProductos({ productos, total }: { productos: Reporte["productos"];
               <th className={cx(th, "text-right")}>Retiros</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-stone-100">
+          <tbody className="divide-y divide-stone-100 dark:divide-stone-700">
             {productos.map((p) => {
               const parte = total.ventas > 0 ? Math.max(0, p.ventas) / total.ventas : 0;
               return (
-                <tr key={p.id} className="hover:bg-stone-50">
+                <tr key={p.id} className="hover:bg-stone-50 dark:hover:bg-stone-800">
                   <td className={cx("px-3 py-2.5", borde)}>
-                    <p className="font-medium text-stone-900">{p.nombre}</p>
-                    <p className="text-xs text-stone-500">{p.categoria}</p>
+                    <p className="font-medium text-stone-900 dark:text-stone-50">{p.nombre}</p>
+                    <p className="text-xs text-stone-500 dark:text-stone-400">{p.categoria}</p>
                   </td>
                   <td className={td}>{num(p.base)}</td>
                   <td className={td}>{num(p.unidades)}</td>
-                  <td className={cx(td, p.quedan <= 3 ? "font-medium text-amber-700" : "text-stone-900")}>{num(p.quedan)}</td>
+                  <td className={cx(td, p.quedan <= 3 ? "font-medium text-amber-700 dark:text-amber-400" : "text-stone-900 dark:text-stone-50")}>{num(p.quedan)}</td>
                   <td className="px-3 py-2.5">
                     <div className="flex items-center gap-3">
-                      <div className="h-2 w-24 shrink-0 rounded-full bg-stone-100" aria-hidden>
+                      <div className="h-2 w-24 shrink-0 rounded-full bg-stone-100 dark:bg-stone-700" aria-hidden>
                         <div className="h-2 rounded-full bg-emerald-600" style={{ width: `${parte * 100}%` }} />
                       </div>
                       <Monto valor={p.ventas} />
-                      <span className="text-xs text-stone-500 tabular-nums">{porcentaje(parte)}</span>
+                      <span className="text-xs text-stone-500 tabular-nums dark:text-stone-400">{porcentaje(parte)}</span>
                     </div>
                   </td>
                   <td className={td}>
@@ -292,8 +292,8 @@ function TablaProductos({ productos, total }: { productos: Reporte["productos"];
             })}
           </tbody>
           {/* El total va después de la línea punteada, como en el tiquete */}
-          <tfoot className="bg-stone-50 font-medium text-stone-900">
-            <tr className="border-t border-dashed border-stone-300">
+          <tfoot className="bg-stone-50 font-medium text-stone-900 dark:bg-stone-900 dark:text-stone-50">
+            <tr className="border-t border-dashed border-stone-300 dark:border-stone-600">
               <td className={cx("px-3 py-2.5", borde)}>Total</td>
               <td className={td}>{num(total.base)}</td>
               <td className={td}>{num(total.unidades)}</td>
@@ -315,17 +315,17 @@ function TablaProductos({ productos, total }: { productos: Reporte["productos"];
 function Generando() {
   return (
     <div role="status" aria-live="polite" className="flex flex-col gap-4">
-      <p className="flex items-center gap-2 text-sm font-medium text-stone-600">
-        <span className="size-4 animate-spin rounded-full border-2 border-emerald-600 border-t-transparent" aria-hidden />
+      <p className="flex items-center gap-2 text-sm font-medium text-stone-600 dark:text-stone-400">
+        <span className="size-4 animate-spin rounded-full border-2 border-emerald-600 border-t-transparent dark:border-emerald-500" aria-hidden />
         Generando reporte…
       </p>
-      <div className="h-24 animate-pulse rounded-xl bg-stone-100" />
+      <div className="h-24 animate-pulse rounded-xl bg-stone-100 dark:bg-stone-800" />
       <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         {[0, 1, 2, 3].map((i) => (
-          <div key={i} className="h-24 animate-pulse rounded-xl bg-stone-100" />
+          <div key={i} className="h-24 animate-pulse rounded-xl bg-stone-100 dark:bg-stone-800" />
         ))}
       </div>
-      <div className="h-64 animate-pulse rounded-xl bg-stone-100" />
+      <div className="h-64 animate-pulse rounded-xl bg-stone-100 dark:bg-stone-800" />
     </div>
   );
 }

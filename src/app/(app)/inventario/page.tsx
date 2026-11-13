@@ -34,7 +34,7 @@ export default async function InventarioPage() {
       ) : (
         <div className="grid gap-4 md:grid-cols-2">
           <Tarjeta>
-            <h2 className="mb-4 font-medium text-stone-900">Registrar movimiento</h2>
+            <h2 className="mb-4 font-medium text-stone-900 dark:text-stone-50">Registrar movimiento</h2>
             <FormAccion accion={registrarMovimiento} className="flex flex-col gap-3">
               <Etiqueta texto="Producto">
                 <Selector name="producto_id" required>
@@ -60,14 +60,14 @@ export default async function InventarioPage() {
           </Tarjeta>
 
           <Tarjeta>
-            <h2 className="mb-2 font-medium text-stone-900">Stock actual</h2>
-            <ul className="divide-y divide-stone-100 text-sm">
+            <h2 className="mb-2 font-medium text-stone-900 dark:text-stone-50">Stock actual</h2>
+            <ul className="divide-y divide-stone-100 text-sm dark:divide-stone-700">
               {productos.map((p) => {
                 const disponibles = stockPor.get(p.id) ?? 0;
                 return (
                   <li key={p.id} className="flex justify-between gap-4 py-2.5">
-                    <span className="text-stone-900">{p.nombre} <span className="text-stone-500">· {p.categorias?.nombre}</span></span>
-                    <span className={cx("font-medium tabular-nums", disponibles <= 3 ? "text-amber-700" : "text-stone-900")}>{disponibles}</span>
+                    <span className="text-stone-900 dark:text-stone-50">{p.nombre} <span className="text-stone-500 dark:text-stone-400">· {p.categorias?.nombre}</span></span>
+                    <span className={cx("font-medium tabular-nums", disponibles <= 3 ? "text-amber-700 dark:text-amber-400" : "text-stone-900 dark:text-stone-50")}>{disponibles}</span>
                   </li>
                 );
               })}
@@ -75,18 +75,18 @@ export default async function InventarioPage() {
           </Tarjeta>
 
           <Tarjeta className="md:col-span-2">
-            <h2 className="mb-2 font-medium text-stone-900">Últimos movimientos</h2>
+            <h2 className="mb-2 font-medium text-stone-900 dark:text-stone-50">Últimos movimientos</h2>
             {!movimientos?.length ? (
-              <p className="text-sm text-stone-500">Sin movimientos todavía</p>
+              <p className="text-sm text-stone-500 dark:text-stone-400">Sin movimientos todavía</p>
             ) : (
-              <ul className="divide-y divide-stone-100 text-sm">
+              <ul className="divide-y divide-stone-100 text-sm dark:divide-stone-700">
                 {movimientos.map((m) => (
                   <li key={m.id} className="flex flex-wrap justify-between gap-x-4 gap-y-1 py-2.5">
-                    <span className="text-stone-900">
+                    <span className="text-stone-900 dark:text-stone-50">
                       <span className="font-medium tabular-nums">{m.cantidad > 0 ? "+" : "−"}{Math.abs(m.cantidad)}</span> {m.productos?.nombre}
-                      <span className="text-stone-500"> · {m.tipo === "entrada" ? "Entrada" : "Ajuste"} · {m.empleados?.nombre}{m.nota ? ` · ${m.nota}` : ""}</span>
+                      <span className="text-stone-500 dark:text-stone-400"> · {m.tipo === "entrada" ? "Entrada" : "Ajuste"} · {m.empleados?.nombre}{m.nota ? ` · ${m.nota}` : ""}</span>
                     </span>
-                    <span className="text-stone-500">{fecha(m.fecha)}</span>
+                    <span className="text-stone-500 dark:text-stone-400">{fecha(m.fecha)}</span>
                   </li>
                 ))}
               </ul>

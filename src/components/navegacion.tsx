@@ -34,10 +34,10 @@ export function Navegacion({ esAdmin }: { esAdmin: boolean }) {
               href={href}
               aria-current={activo === href ? "page" : undefined}
               className={cx(
-                "relative flex items-center gap-1.5 px-3 py-3 font-medium transition-colors focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-emerald-700",
+                "relative flex items-center gap-1.5 px-3 py-3 font-medium transition-colors focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-emerald-700 dark:focus-visible:outline-emerald-500",
                 activo === href
-                  ? "text-emerald-700 after:absolute after:inset-x-3 after:bottom-0 after:h-0.5 after:rounded-full after:bg-emerald-700"
-                  : "text-stone-500 hover:text-stone-900",
+                  ? "text-emerald-700 after:absolute after:inset-x-3 after:bottom-0 after:h-0.5 after:rounded-full after:bg-emerald-700 dark:text-emerald-400 dark:after:bg-emerald-400"
+                  : "text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-stone-50",
               )}
             >
               <Icono className="size-4 shrink-0" />

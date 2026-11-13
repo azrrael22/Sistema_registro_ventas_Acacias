@@ -31,19 +31,19 @@ export default async function EmpleadosPage() {
     <>
       <Titulo>Empleados</Titulo>
       <Tarjeta className="p-0">
-        <ul className="divide-y divide-stone-100">
+        <ul className="divide-y divide-stone-100 dark:divide-stone-700">
           {empleados?.map((e) => (
             <li key={e.id} className="flex flex-wrap items-center justify-between gap-3 px-4 py-4 sm:px-5">
               <div className="min-w-0">
-                <p className="flex flex-wrap items-center gap-2 font-medium text-stone-900">
+                <p className="flex flex-wrap items-center gap-2 font-medium text-stone-900 dark:text-stone-50">
                   {e.nombre}
-                  {e.es_admin && <span className="rounded-md bg-stone-100 px-1.5 py-0.5 text-xs font-normal text-stone-600">Admin</span>}
-                  {!e.activo && <span className="rounded-md bg-amber-50 px-1.5 py-0.5 text-xs font-normal text-amber-800">Pendiente</span>}
+                  {e.es_admin && <span className="rounded-md bg-stone-100 px-1.5 py-0.5 text-xs font-normal text-stone-600 dark:bg-stone-700 dark:text-stone-300">Admin</span>}
+                  {!e.activo && <span className="rounded-md bg-amber-50 px-1.5 py-0.5 text-xs font-normal text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">Pendiente</span>}
                 </p>
-                <p className="text-sm text-stone-500">{e.email} · desde {fecha(e.creado_en)}</p>
+                <p className="text-sm text-stone-500 dark:text-stone-400">{e.email} · desde {fecha(e.creado_en)}</p>
               </div>
               {e.id === yo.id ? (
-                <span className="text-sm text-stone-500">Tú</span>
+                <span className="text-sm text-stone-500 dark:text-stone-400">Tú</span>
               ) : (
                 <div className="flex flex-wrap gap-2">
                   {e.activo ? (

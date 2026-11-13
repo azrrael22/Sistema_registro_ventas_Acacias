@@ -40,26 +40,26 @@ export default async function NotificacionesPage() {
         <Vacio>No tienes notificaciones</Vacio>
       ) : (
         <Tarjeta className="p-0">
-          <ul className="divide-y divide-stone-100">
+          <ul className="divide-y divide-stone-100 dark:divide-stone-700">
             {notificaciones.map((n) => {
               const Icono = ICONOS[n.tipo] ?? IconoCampana;
               return (
                 <li key={n.id} className="flex gap-3 px-4 py-4 sm:px-5">
-                  <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-stone-100 text-stone-600">
+                  <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-stone-100 text-stone-600 dark:bg-stone-700 dark:text-stone-300">
                     <Icono />
                   </span>
                   <div className="min-w-0 flex-1">
-                    <p className={cx("flex items-center gap-2 text-sm", n.leida ? "text-stone-700" : "font-medium text-stone-900")}>
+                    <p className={cx("flex items-center gap-2 text-sm", n.leida ? "text-stone-700 dark:text-stone-300" : "font-medium text-stone-900 dark:text-stone-50")}>
                       {n.titulo}
                       {!n.leida && (
                         <>
-                          <span className="size-2 shrink-0 rounded-full bg-emerald-600" aria-hidden />
+                          <span className="size-2 shrink-0 rounded-full bg-emerald-600 dark:bg-emerald-500" aria-hidden />
                           <span className="sr-only">(sin leer)</span>
                         </>
                       )}
                     </p>
-                    <p className="text-sm text-stone-600">{n.mensaje}</p>
-                    <p className="mt-1 text-xs text-stone-500">{fecha(n.creada_en)}</p>
+                    <p className="text-sm text-stone-600 dark:text-stone-400">{n.mensaje}</p>
+                    <p className="mt-1 text-xs text-stone-500 dark:text-stone-500">{fecha(n.creada_en)}</p>
                   </div>
                 </li>
               );

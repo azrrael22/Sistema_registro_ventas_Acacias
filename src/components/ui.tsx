@@ -7,10 +7,10 @@ const cx = (...c: (string | false | null | undefined)[]) => c.filter(Boolean).jo
 // La base de .boton, .campo y .tarjeta está en globals.css; aquí solo van las variantes.
 type Variante = "primario" | "secundario" | "peligro" | "fantasma";
 const variantes: Record<Variante, string> = {
-  primario: "bg-emerald-700 text-white shadow-sm hover:bg-emerald-800 active:scale-[0.98] disabled:bg-stone-200 disabled:text-stone-500 disabled:shadow-none disabled:active:scale-100",
-  secundario: "border border-stone-300 bg-white text-stone-800 hover:bg-stone-50 active:bg-stone-100 disabled:opacity-50",
-  peligro: "border border-red-200 bg-white text-red-700 hover:bg-red-50 active:bg-red-100 disabled:opacity-50",
-  fantasma: "text-stone-700 hover:bg-stone-100 hover:text-stone-900 active:bg-stone-200 disabled:opacity-50",
+  primario: "bg-emerald-700 text-white shadow-sm hover:bg-emerald-800 active:scale-[0.98] disabled:bg-stone-200 disabled:text-stone-500 disabled:shadow-none disabled:active:scale-100 dark:bg-emerald-600 dark:hover:bg-emerald-500 dark:disabled:bg-stone-700 dark:disabled:text-stone-500",
+  secundario: "border border-stone-300 bg-white text-stone-800 hover:bg-stone-50 active:bg-stone-100 disabled:opacity-50 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700 dark:active:bg-stone-600",
+  peligro: "border border-red-200 bg-white text-red-700 hover:bg-red-50 active:bg-red-100 disabled:opacity-50 dark:border-red-800 dark:bg-transparent dark:text-red-400 dark:hover:bg-red-900/40",
+  fantasma: "text-stone-700 hover:bg-stone-100 hover:text-stone-900 active:bg-stone-200 disabled:opacity-50 dark:text-stone-300 dark:hover:bg-stone-700 dark:hover:text-stone-50 dark:active:bg-stone-700",
 };
 
 // También para enlaces que se ven como botón
@@ -30,7 +30,7 @@ export function Selector({ className, ...props }: ComponentProps<"select">) {
 
 export function Etiqueta({ texto, children, className }: { texto: string; children: React.ReactNode; className?: string }) {
   return (
-    <label className={cx("flex flex-col gap-1 text-sm font-medium text-stone-700", className)}>
+    <label className={cx("flex flex-col gap-1 text-sm font-medium text-stone-700 dark:text-stone-300", className)}>
       {texto}
       {children}
     </label>
@@ -45,8 +45,8 @@ export function Titulo({ children, descripcion, accion }: { children: React.Reac
   return (
     <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
       <div>
-        <h1 className="text-2xl font-semibold text-stone-900">{children}</h1>
-        {descripcion && <p className="mt-2 max-w-2xl text-sm text-stone-600">{descripcion}</p>}
+        <h1 className="text-2xl font-semibold text-stone-900 dark:text-stone-50">{children}</h1>
+        {descripcion && <p className="mt-2 max-w-2xl text-sm text-stone-600 dark:text-stone-400">{descripcion}</p>}
       </div>
       {accion}
     </div>
@@ -57,15 +57,15 @@ export function Titulo({ children, descripcion, accion }: { children: React.Reac
 export function Pestanas({ etiqueta, opciones }: { etiqueta: string; opciones: { href: string; texto: string; activa: boolean }[] }) {
   return (
     <nav aria-label={etiqueta} className="mb-4 overflow-x-auto print:hidden">
-      <ul className="inline-flex gap-1 rounded-lg bg-stone-100 p-1 text-sm whitespace-nowrap">
+      <ul className="inline-flex gap-1 rounded-lg bg-stone-100 p-1 text-sm whitespace-nowrap dark:bg-stone-800">
         {opciones.map((o) => (
           <li key={o.href}>
             <Link
               href={o.href}
               aria-current={o.activa ? "page" : undefined}
               className={cx(
-                "block rounded-md px-3 py-1.5 font-medium transition-colors focus-visible:outline-2 focus-visible:outline-emerald-700",
-                o.activa ? "bg-white text-stone-900 shadow-sm" : "text-stone-600 hover:text-stone-900",
+                "block rounded-md px-3 py-1.5 font-medium transition-colors focus-visible:outline-2 focus-visible:outline-emerald-700 dark:focus-visible:outline-emerald-500",
+                o.activa ? "bg-white text-stone-900 shadow-sm dark:bg-stone-700 dark:text-stone-50 dark:shadow-none" : "text-stone-600 hover:text-stone-900 dark:text-stone-400 dark:hover:text-stone-50",
               )}
             >
               {o.texto}
@@ -91,9 +91,9 @@ export function Monto({ valor, className }: { valor: number | string | null | un
 export function Aviso({ tipo = "error", children }: { tipo?: "error" | "ok" | "info"; children: React.ReactNode }) {
   if (!children) return null;
   const estilos = {
-    error: "border-red-100 bg-red-50 text-red-800 before:bg-red-500",
-    ok: "border-emerald-100 bg-emerald-50 text-emerald-800 before:bg-emerald-500",
-    info: "border-stone-200 bg-stone-50 text-stone-700 before:bg-stone-400",
+    error: "border-red-100 bg-red-50 text-red-800 before:bg-red-500 dark:border-red-900 dark:bg-red-950 dark:text-red-300",
+    ok: "border-emerald-100 bg-emerald-50 text-emerald-800 before:bg-emerald-500 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-300",
+    info: "border-stone-200 bg-stone-50 text-stone-700 before:bg-stone-400 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-300",
   };
   return (
     <p
@@ -111,7 +111,7 @@ export function Aviso({ tipo = "error", children }: { tipo?: "error" | "ok" | "i
 
 export function Vacio({ children }: { children: React.ReactNode }) {
   return (
-    <p className="rounded-xl border border-dashed border-stone-300 bg-stone-50 px-6 py-10 text-center text-sm text-stone-500">
+    <p className="rounded-xl border border-dashed border-stone-300 bg-stone-50 px-6 py-10 text-center text-sm text-stone-500 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-400">
       {children}
     </p>
   );
@@ -119,10 +119,10 @@ export function Vacio({ children }: { children: React.ReactNode }) {
 
 type VarianteInsignia = "normal" | "advertencia" | "peligro" | "ok";
 const insigniaEstilos: Record<VarianteInsignia, string> = {
-  normal: "bg-stone-100 text-stone-700",
-  advertencia: "bg-amber-100 text-amber-800",
-  peligro: "bg-red-100 text-red-800",
-  ok: "bg-emerald-100 text-emerald-800",
+  normal: "bg-stone-100 text-stone-700 dark:bg-stone-700 dark:text-stone-200",
+  advertencia: "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300",
+  peligro: "bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300",
+  ok: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300",
 };
 export function Insignia({ variante = "normal", className, children }: { variante?: VarianteInsignia; className?: string; children: React.ReactNode }) {
   return (

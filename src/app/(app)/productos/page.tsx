@@ -42,8 +42,8 @@ export default async function ProductosPage() {
             <Tarjeta key={cat.id}>
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
-                  <h2 className="font-medium text-stone-900">{cat.nombre}</h2>
-                  <p className="mt-0.5 text-sm text-stone-500">
+                  <h2 className="font-medium text-stone-900 dark:text-stone-50">{cat.nombre}</h2>
+                  <p className="mt-0.5 text-sm text-stone-500 dark:text-stone-400">
                     {sociosCat.length ? `Socios: ${sociosCat.map((s) => s.empleados?.nombre).join(", ")}` : "Sin socios todavía"}
                   </p>
                 </div>
@@ -55,22 +55,22 @@ export default async function ProductosPage() {
                 </form>
               </div>
 
-              <ul className="mt-4 divide-y divide-stone-100 border-t border-stone-100">
+              <ul className="mt-4 divide-y divide-stone-100 border-t border-stone-100 dark:divide-stone-700 dark:border-stone-700">
                 {cat.productos.map((p) => (
                   <li key={p.id} className="py-3">
                     <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 text-sm">
-                      <span className={p.activo ? "text-stone-900" : "text-stone-400"}>
+                      <span className={p.activo ? "text-stone-900 dark:text-stone-50" : "text-stone-400 dark:text-stone-600"}>
                         {p.nombre}
-                        {!p.activo && <span className="ml-2 rounded-md bg-stone-100 px-1.5 py-0.5 text-xs text-stone-500">Inactivo</span>}
+                        {!p.activo && <span className="ml-2 rounded-md bg-stone-100 px-1.5 py-0.5 text-xs text-stone-500 dark:bg-stone-700 dark:text-stone-400">Inactivo</span>}
                       </span>
                       <span className="flex items-center gap-4">
-                        <span className="text-stone-500 tabular-nums">{stockPor.get(p.id) ?? 0} en stock</span>
-                        <Monto valor={p.precio} className="min-w-20 text-right text-stone-900" />
+                        <span className="text-stone-500 tabular-nums dark:text-stone-400">{stockPor.get(p.id) ?? 0} en stock</span>
+                        <Monto valor={p.precio} className="min-w-20 text-right text-stone-900 dark:text-stone-50" />
                       </span>
                     </div>
                     {(puedeEditar || p.creado_por === empleado.id) && (
                       <details className="group mt-1">
-                        <summary className={`${resumen} text-sm text-stone-500 hover:text-stone-900`}>
+                        <summary className={`${resumen} text-sm text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-stone-50`}>
                           <IconoFlecha className="transition-transform group-open:rotate-90" /> Editar
                         </summary>
                         <FormAccion accion={actualizarProducto} className="mt-3 flex flex-wrap items-end gap-2">
@@ -81,7 +81,7 @@ export default async function ProductosPage() {
                           <Etiqueta texto="Precio" className="w-32">
                             <Entrada name="precio" type="number" min="0" step="50" defaultValue={p.precio} required />
                           </Etiqueta>
-                          <label className="flex min-h-10 items-center gap-2 text-sm text-stone-700">
+                          <label className="flex min-h-10 items-center gap-2 text-sm text-stone-700 dark:text-stone-300">
                             <input type="checkbox" name="activo" defaultChecked={p.activo} className="size-4" /> Activo
                           </label>
                           <BotonEnvio variante="secundario">Guardar</BotonEnvio>
@@ -94,7 +94,7 @@ export default async function ProductosPage() {
 
               {puedeEditar && (
                 <details className="mt-3">
-                  <summary className={`${resumen} text-sm text-stone-700 hover:text-stone-900`}>
+                  <summary className={`${resumen} text-sm text-stone-700 hover:text-stone-900 dark:text-stone-300 dark:hover:text-stone-50`}>
                     <IconoMas /> Agregar producto
                   </summary>
                   <FormAccion accion={crearProducto} className="mt-3 flex flex-wrap items-end gap-2">
@@ -114,12 +114,12 @@ export default async function ProductosPage() {
         })}
 
         <Tarjeta>
-          <h2 className="mb-3 font-medium text-stone-900">Nueva categoría</h2>
+          <h2 className="mb-3 font-medium text-stone-900 dark:text-stone-50">Nueva categoría</h2>
           <FormAccion accion={crearCategoria} className="flex flex-wrap items-end gap-2">
             <Etiqueta texto="Nombre" className="flex-1">
               <Entrada name="nombre" required />
             </Etiqueta>
-            <label className="flex min-h-10 items-center gap-2 text-sm text-stone-700">
+            <label className="flex min-h-10 items-center gap-2 text-sm text-stone-700 dark:text-stone-300">
               <input type="checkbox" name="ser_socio" defaultChecked className="size-4" /> Ser socio
             </label>
             <BotonEnvio>Crear</BotonEnvio>

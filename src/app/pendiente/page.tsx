@@ -16,8 +16,8 @@ export default async function PendientePage() {
     <main className="flex min-h-dvh items-center justify-center px-4 py-10">
       <div className="w-full max-w-sm">
         <Marca className="size-10" />
-        <h1 className="mt-4 text-2xl font-medium text-stone-900">Cuenta pendiente</h1>
-        <p className="mt-2 text-sm text-stone-600">
+        <h1 className="mt-4 text-2xl font-medium text-stone-900 dark:text-stone-50">Cuenta pendiente</h1>
+        <p className="mt-2 text-sm text-stone-600 dark:text-stone-400">
           {empleado.nombre}, tu cuenta está esperando la aprobación de un administrador. Cuando la aprueben podrás ingresar.
         </p>
         <form action={cerrarSesion} className="mt-8">
