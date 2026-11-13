@@ -85,37 +85,60 @@ const sumar = (filas: Cifras[]) =>
 export async function obtenerReporte(f: Filtros) {
   const supabase = await createClient();
   // Un solo pedido por día cubre el periodo actual y el anterior (para comparar)
-  const [mov, inv] = await Promise.all([
+  const [mov, ret, inv] = await Promise.all([
     supabase.rpc("reporte_socio", { p_granularidad: "dia", p_desde: f.antDesde, p_hasta: f.hasta }),
+    supabase.rpc("retiros_socio", { p_desde: f.antDesde, p_hasta: f.hasta }),
     supabase.rpc("inventario_socio", { p_desde: f.desde, p_hasta: f.hasta }),
   ]);
 
-  const filas = (mov.data ?? []).map((r) => ({
-    dia: r.periodo,
-    producto_id: r.producto_id,
-    unidades: Number(r.unidades),
-    ventas: Number(r.ventas_netas),
-    retiros: Number(r.retiros),
-  }));
+  // Las ventas son por producto y los retiros por categoría: van en filas separadas
+  const filas = [
+    ...(mov.data ?? []).map((r) => ({
+      dia: r.periodo,
+      producto_id: r.producto_id as number | null,
+      categoria: null as string | null,
+      unidades: Number(r.unidades),
+      ventas: Number(r.ventas_netas),
+      retiros: 0,
+    })),
+    ...(ret.data ?? []).map((r) => ({ dia: r.dia, producto_id: null, categoria: r.categoria, unidades: 0, ventas: 0, retiros: Number(r.retiros) })),
+  ];
   const actuales = filas.filter((r) => r.dia >= f.desde);
 
+  const porVentas = (a: { nombre: string; ventas: number }, b: { nombre: string; ventas: number }) =>
+    b.ventas - a.ventas || a.nombre.localeCompare(b.nombre);
+
   const productos = (inv.data ?? [])
-    .map((p) => ({
-      id: p.producto_id,
-      nombre: p.producto,
-      categoria: p.categoria,
-      base: Number(p.unidades_base),
-      quedan: Number(p.unidades_quedan),
-      ...sumar(actuales.filter((r) => r.producto_id === p.producto_id)),
+    .map((p) => {
+      const { unidades, ventas } = sumar(actuales.filter((r) => r.producto_id === p.producto_id));
+      return {
+        id: p.producto_id,
+        nombre: p.producto,
+        categoria: p.categoria,
+        base: Number(p.unidades_base),
+        quedan: Number(p.unidades_quedan),
+        unidades,
+        ventas,
+      };
+    })
+    .filter((p) => p.base || p.quedan || p.unidades || p.ventas)
+    .sort(porVentas);
+
+  // Balance por categoría (el nombre es único): ventas netas de sus productos − retiros de la categoría
+  const categorias = [...new Set([...productos.map((p) => p.categoria), ...actuales.flatMap((r) => r.categoria ?? [])])]
+    .map((nombre) => ({
+      nombre,
+      ventas: productos.filter((p) => p.categoria === nombre).reduce((t, p) => t + p.ventas, 0),
+      retiros: actuales.filter((r) => r.categoria === nombre).reduce((t, r) => t + r.retiros, 0),
     }))
-    .filter((p) => p.base || p.quedan || p.unidades || p.ventas || p.retiros)
-    .sort((a, b) => b.ventas - a.ventas || a.nombre.localeCompare(b.nombre));
+    .sort(porVentas);
 
   const { paso, lista } = tramos(f.desde, f.hasta);
   return {
-    error: mov.error ?? inv.error,
+    error: mov.error ?? ret.error ?? inv.error,
     esSocio: !!inv.data?.length,
     productos,
+    categorias,
     total: {
       ...sumar(actuales),
       base: productos.reduce((t, p) => t + p.base, 0),

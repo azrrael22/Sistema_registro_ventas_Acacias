@@ -9,19 +9,20 @@ export default async function InicioPage() {
   const empleado = await requerirEmpleadoActivo();
   const productos = await misProductos(empleado.id);
   const ids = productos.map((p) => p.id);
+  const categorias = [...new Set(productos.map((p) => p.categoria_id))];
   const supabase = await createClient();
   const [{ data: saldos }, { data: stock }, { count: pendientes }] = await Promise.all([
-    supabase.from("saldo_producto").select("producto_id, saldo").in("producto_id", ids),
+    supabase.from("saldo_categoria").select("categoria_id, saldo").in("categoria_id", categorias),
     supabase.from("stock_producto").select("producto_id, stock").in("producto_id", ids),
     empleado.es_admin
       ? supabase.from("empleados").select("id", { count: "exact", head: true }).eq("activo", false)
       : Promise.resolve({ count: 0 }),
   ]);
-  const saldoPor = new Map(saldos?.map((s) => [s.producto_id, Number(s.saldo ?? 0)]));
+  const saldoPor = new Map(saldos?.map((s) => [s.categoria_id, Number(s.saldo ?? 0)]));
   const stockPor = new Map(stock?.map((s) => [s.producto_id, Number(s.stock ?? 0)]));
-  const sociedades = [...new Set(productos.map((p) => p.categorias?.nombre ?? ""))].map((cat) => {
-    const prods = productos.filter((p) => (p.categorias?.nombre ?? "") === cat);
-    return { cat, prods, saldo: prods.reduce((t, p) => t + (saldoPor.get(p.id) ?? 0), 0) };
+  const sociedades = categorias.map((id) => {
+    const prods = productos.filter((p) => p.categoria_id === id);
+    return { id, cat: prods[0].categorias?.nombre ?? "", prods, saldo: saldoPor.get(id) ?? 0 };
   });
 
   return (
@@ -58,8 +59,8 @@ export default async function InicioPage() {
           </Tarjeta>
         ) : (
           <div className="grid gap-4 sm:grid-cols-2">
-            {sociedades.map(({ cat, prods, saldo }) => (
-              <Tarjeta key={cat}>
+            {sociedades.map(({ id, cat, prods, saldo }) => (
+              <Tarjeta key={id}>
                 <h3 className="font-medium text-stone-900 dark:text-stone-50">{cat}</h3>
                 <p className="mt-4 text-sm text-stone-500 dark:text-stone-400">Por retirar</p>
                 <Monto valor={saldo} className="mt-1 block text-3xl font-medium text-stone-900 dark:text-stone-50" />

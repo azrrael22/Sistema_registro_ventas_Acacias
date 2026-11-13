@@ -170,7 +170,7 @@ do $$ declare v_id bigint := (select v from r where k='venta_b'); begin
   exception when insufficient_privilege then null; end;
   -- Retiro de repelentes: B no es socio
   begin
-    insert into retiros (producto_id, monto) select id, 1000 from productos where nombre='Repelentes std';
+    insert into retiros (categoria_id, monto) select id, 1000 from categorias where nombre='Repelentes';
     assert false, 'B no retira repelentes';
   exception when insufficient_privilege or raise_exception then null; end;
 end $$;
@@ -192,14 +192,14 @@ set local request.jwt.claims = '{"sub":"00000000-0000-0000-0000-000000000001"}';
 do $$ begin
   assert (select stock from stock_producto where nombre='Pines std') = 10, 'stock pines repuesto';
   assert (select stock from stock_producto where nombre='Repelentes std') = 8, 'stock repelentes';
-  assert (select saldo from saldo_producto where nombre='Repelentes std') = 24000, 'saldo repelentes';
-  assert (select saldo from saldo_producto where nombre='Pines std') = 0, 'saldo pines tras devolución';
+  assert (select saldo from saldo_categoria where nombre='Repelentes') = 24000, 'saldo repelentes';
+  assert (select saldo from saldo_categoria where nombre='Pines') = 0, 'saldo pines tras devolución';
   begin
-    insert into retiros (producto_id, monto) select id, 30000 from productos where nombre='Repelentes std';
+    insert into retiros (categoria_id, monto) select id, 30000 from categorias where nombre='Repelentes';
     assert false, 'supera saldo';
   exception when raise_exception then null; end;
 end $$;
-insert into retiros (producto_id, monto) select id, 20000 from productos where nombre='Repelentes std';
+insert into retiros (categoria_id, monto) select id, 20000 from categorias where nombre='Repelentes';
 -- Salir de la sociedad de pines y no poder reactivar por update
 update socios set activo = false, salio_en = now()
 where empleado_id = auth.uid() and categoria_id = (select id from categorias where nombre='Pines');
@@ -217,7 +217,8 @@ do $$ begin
   assert (select count(*) from notificaciones where tipo='nuevo_socio') = 1, 'C notificado de D en camisetas';
   assert (select count(*) from notificaciones) = 3, 'C: aprobada + retiro + nuevo socio';
   assert (select count(*) from reporte_socio('trimestre', '2020-01-01', '2100-01-01')) = 2, 'C ve 2 productos';
-  assert (select retiros from reporte_socio('anio', '2020-01-01', '2100-01-01') where producto='Repelentes std') = 20000;
+  assert (select sum(retiros) from retiros_socio('2020-01-01', '2100-01-01') where categoria='Repelentes') = 20000, 'retiros por categoría';
+  assert (select mensaje from notificaciones where tipo='retiro') = 'Ana retiró $20000.00 de Repelentes', 'el aviso nombra la categoría';
   assert (select sum(ventas_netas) from reporte_socio('dia', '2020-01-01', '2100-01-01'))
        = (select sum(ventas_netas) from reporte_socio('anio', '2020-01-01', '2100-01-01')), 'por día suma igual que por año';
   assert (select unidades_base from inventario_socio('2020-01-01', '2100-01-01') where producto='Repelentes std') = 10, 'base repelentes';
@@ -264,6 +265,26 @@ do $$ declare v_id bigint := (select v from r where k='venta_desc'); begin
           where v.venta_origen_id = v_id) = 2500, 'devolución al precio con descuento';
   assert (select vi.precio_lista from venta_items vi join ventas v on v.id = vi.venta_id
           where v.venta_origen_id = v_id) = 3000, 'devolución conserva el precio de lista';
+end $$;
+
+-- ===== El saldo es de toda la categoría, no de un producto suelto =====
+-- A agrega otro repelente y lo vende: la categoría junta lo de ambos productos
+set local request.jwt.claims = '{"sub":"00000000-0000-0000-0000-000000000001"}';
+insert into productos (categoria_id, nombre, precio) select id, 'Repelentes XL', 10000 from categorias where nombre='Repelentes';
+insert into inventario_movimientos (producto_id, tipo, cantidad) select id, 'entrada', 5 from productos where nombre='Repelentes XL';
+do $$ begin
+  perform registrar_venta(jsonb_build_array(jsonb_build_object(
+    'producto_id', (select id from productos where nombre='Repelentes XL'), 'cantidad', 1)));
+  assert (select saldo from saldo_categoria where nombre='Repelentes') = 14000, 'saldo de la categoría: 4.000 + 10.000';
+  begin
+    insert into retiros (categoria_id, monto) select id, 15000 from categorias where nombre='Repelentes';
+    assert false, 'supera el saldo de la categoría';
+  exception when raise_exception then null; end;
+end $$;
+-- 12.000 es más de lo que dejó cada producto por separado, pero cabe en la categoría
+insert into retiros (categoria_id, monto) select id, 12000 from categorias where nombre='Repelentes';
+do $$ begin
+  assert (select saldo from saldo_categoria where nombre='Repelentes') = 2000, 'saldo tras retirar de la categoría';
 end $$;
 
 -- ===== anon no ve nada =====

@@ -140,13 +140,6 @@ export type Database = {
             foreignKeyName: "inventario_movimientos_producto_id_fkey"
             columns: ["producto_id"]
             isOneToOne: false
-            referencedRelation: "saldo_producto"
-            referencedColumns: ["producto_id"]
-          },
-          {
-            foreignKeyName: "inventario_movimientos_producto_id_fkey"
-            columns: ["producto_id"]
-            isOneToOne: false
             referencedRelation: "socios_por_producto"
             referencedColumns: ["producto_id"]
           },
@@ -240,6 +233,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "productos_categoria_id_fkey"
+            columns: ["categoria_id"]
+            isOneToOne: false
+            referencedRelation: "saldo_categoria"
+            referencedColumns: ["categoria_id"]
+          },
+          {
             foreignKeyName: "productos_creado_por_fkey"
             columns: ["creado_por"]
             isOneToOne: false
@@ -250,64 +250,50 @@ export type Database = {
       }
       retiros: {
         Row: {
+          categoria_id: number
           empleado_id: string
           fecha: string
           id: number
           monto: number
           nota: string | null
-          producto_id: number
         }
         Insert: {
+          categoria_id: number
           empleado_id?: string
           fecha?: string
           id?: never
           monto: number
           nota?: string | null
-          producto_id: number
         }
         Update: {
+          categoria_id?: number
           empleado_id?: string
           fecha?: string
           id?: never
           monto?: number
           nota?: string | null
-          producto_id?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "retiros_categoria_id_fkey"
+            columns: ["categoria_id"]
+            isOneToOne: false
+            referencedRelation: "categorias"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "retiros_categoria_id_fkey"
+            columns: ["categoria_id"]
+            isOneToOne: false
+            referencedRelation: "saldo_categoria"
+            referencedColumns: ["categoria_id"]
+          },
           {
             foreignKeyName: "retiros_empleado_id_fkey"
             columns: ["empleado_id"]
             isOneToOne: false
             referencedRelation: "empleados"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "retiros_producto_id_fkey"
-            columns: ["producto_id"]
-            isOneToOne: false
-            referencedRelation: "productos"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "retiros_producto_id_fkey"
-            columns: ["producto_id"]
-            isOneToOne: false
-            referencedRelation: "saldo_producto"
-            referencedColumns: ["producto_id"]
-          },
-          {
-            foreignKeyName: "retiros_producto_id_fkey"
-            columns: ["producto_id"]
-            isOneToOne: false
-            referencedRelation: "socios_por_producto"
-            referencedColumns: ["producto_id"]
-          },
-          {
-            foreignKeyName: "retiros_producto_id_fkey"
-            columns: ["producto_id"]
-            isOneToOne: false
-            referencedRelation: "stock_producto"
-            referencedColumns: ["producto_id"]
           },
         ]
       }
@@ -343,6 +329,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "categorias"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "socios_categoria_id_fkey"
+            columns: ["categoria_id"]
+            isOneToOne: false
+            referencedRelation: "saldo_categoria"
+            referencedColumns: ["categoria_id"]
           },
           {
             foreignKeyName: "socios_empleado_id_fkey"
@@ -385,13 +378,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "productos"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "venta_items_producto_id_fkey"
-            columns: ["producto_id"]
-            isOneToOne: false
-            referencedRelation: "saldo_producto"
-            referencedColumns: ["producto_id"]
           },
           {
             foreignKeyName: "venta_items_producto_id_fkey"
@@ -480,13 +466,6 @@ export type Database = {
             foreignKeyName: "venta_items_producto_id_fkey"
             columns: ["producto_id"]
             isOneToOne: false
-            referencedRelation: "saldo_producto"
-            referencedColumns: ["producto_id"]
-          },
-          {
-            foreignKeyName: "venta_items_producto_id_fkey"
-            columns: ["producto_id"]
-            isOneToOne: false
             referencedRelation: "socios_por_producto"
             referencedColumns: ["producto_id"]
           },
@@ -506,20 +485,20 @@ export type Database = {
           },
         ]
       }
-      saldo_producto: {
+      saldo_categoria: {
         Row: {
+          categoria_id: number | null
           nombre: string | null
-          producto_id: number | null
           saldo: number | null
         }
         Insert: {
+          categoria_id?: number | null
           nombre?: string | null
-          producto_id?: number | null
           saldo?: never
         }
         Update: {
+          categoria_id?: number | null
           nombre?: string | null
-          producto_id?: number | null
           saldo?: never
         }
         Relationships: []
@@ -574,6 +553,10 @@ export type Database = {
       es_activo: { Args: never; Returns: boolean }
       es_admin: { Args: never; Returns: boolean }
       es_mi_venta: { Args: { p_venta: number }; Returns: boolean }
+      es_socio_categoria: {
+        Args: { p_categoria: number; p_empleado: string }
+        Returns: boolean
+      }
       es_socio_producto: {
         Args: { p_empleado: string; p_producto: number }
         Returns: boolean
@@ -604,9 +587,17 @@ export type Database = {
           periodo: string
           producto: string
           producto_id: number
-          retiros: number
           unidades: number
           ventas_netas: number
+        }[]
+      }
+      retiros_socio: {
+        Args: { p_desde: string; p_hasta: string }
+        Returns: {
+          categoria: string
+          categoria_id: number
+          dia: string
+          retiros: number
         }[]
       }
       venta_de_mis_productos: { Args: { p_venta: number }; Returns: boolean }

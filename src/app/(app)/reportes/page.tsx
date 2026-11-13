@@ -63,6 +63,7 @@ async function ContenidoReporte({ filtros }: { filtros: Filtros }) {
   const nombre = filtros.g === "rango" ? "Reporte personalizado" : `Reporte ${PERIODOS[filtros.g].texto.toLowerCase()}`;
   const rango = rangoFechas(filtros.desde, filtros.hasta);
   const { total, anterior } = r;
+  const conDatos = r.productos.length > 0 || r.categorias.length > 0;
 
   return (
     <div className="flex flex-col gap-4">
@@ -79,7 +80,7 @@ async function ContenidoReporte({ filtros }: { filtros: Filtros }) {
             Comparado con {rangoFechas(filtros.antDesde, filtros.antHasta)} · Generado el {fecha(new Date().toISOString())}
           </p>
         </div>
-        {r.productos.length > 0 && (
+        {conDatos && (
           <div className="flex flex-wrap gap-2 print:hidden">
             <a href={`/reportes/csv?${filtros.qs}`} className={claseBoton("secundario")}>
               Descargar CSV
@@ -105,12 +106,13 @@ async function ContenidoReporte({ filtros }: { filtros: Filtros }) {
         </Indicador>
       </div>
 
-      {!r.productos.length ? (
+      {!conDatos ? (
         <Vacio>Tus productos no tienen movimientos ni inventario en el periodo {rango}</Vacio>
       ) : (
         <>
           <Tendencia tramos={r.tramos} paso={r.paso} />
-          <TablaProductos productos={r.productos} total={total} />
+          {r.categorias.length > 0 && <TablaCategorias categorias={r.categorias} total={total} />}
+          {r.productos.length > 0 && <TablaProductos productos={r.productos} total={total} />}
         </>
       )}
     </div>
@@ -235,12 +237,69 @@ function Tendencia({ tramos, paso }: { tramos: Reporte["tramos"]; paso: number }
   );
 }
 
+// La primera y la última columna se alinean con el relleno de la tarjeta
+const borde = "first:pl-4 last:pr-4 sm:first:pl-5 sm:last:pr-5";
+const th = cx("px-3 py-2 font-medium", borde);
+const td = cx("px-3 py-2.5 text-right tabular-nums", borde);
+
+// Los retiros son por categoría: aquí se ve cuánto queda de lo vendido en cada sociedad
+function TablaCategorias({ categorias, total }: { categorias: Reporte["categorias"]; total: Reporte["total"] }) {
+  return (
+    <Tarjeta className="overflow-hidden p-0 break-inside-avoid">
+      <div className="border-b border-stone-200 px-4 py-4 sm:px-5 dark:border-stone-700">
+        <h3 className="font-medium text-stone-900 dark:text-stone-50">Resumen por categoría</h3>
+        <p className="text-xs text-stone-500 dark:text-stone-400">
+          <strong className="font-medium text-stone-600 dark:text-stone-300">Balance:</strong> ventas netas − retiros del periodo
+        </p>
+      </div>
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[28rem] text-sm">
+          <thead className="bg-stone-50 text-xs text-stone-500 dark:bg-stone-900 dark:text-stone-400">
+            <tr className="border-b border-stone-200 dark:border-stone-700">
+              <th className={cx(th, "text-left")}>Categoría</th>
+              <th className={cx(th, "text-right")}>Ventas netas</th>
+              <th className={cx(th, "text-right")}>Retiros</th>
+              <th className={cx(th, "text-right")}>Balance</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-stone-100 dark:divide-stone-700">
+            {categorias.map((c) => (
+              <tr key={c.nombre} className="hover:bg-stone-50 dark:hover:bg-stone-800">
+                <td className={cx("px-3 py-2.5 font-medium text-stone-900 dark:text-stone-50", borde)}>{c.nombre}</td>
+                <td className={td}>
+                  <Monto valor={c.ventas} />
+                </td>
+                <td className={td}>
+                  <Monto valor={c.retiros} />
+                </td>
+                <td className={td}>
+                  <Monto valor={c.ventas - c.retiros} />
+                </td>
+              </tr>
+            ))}
+          </tbody>
+          <tfoot className="bg-stone-50 font-medium text-stone-900 dark:bg-stone-900 dark:text-stone-50">
+            <tr className="border-t border-dashed border-stone-300 dark:border-stone-600">
+              <td className={cx("px-3 py-2.5", borde)}>Total</td>
+              <td className={td}>
+                <Monto valor={total.ventas} />
+              </td>
+              <td className={td}>
+                <Monto valor={total.retiros} />
+              </td>
+              <td className={td}>
+                <Monto valor={total.ventas - total.retiros} />
+              </td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </Tarjeta>
+  );
+}
+
 function TablaProductos({ productos, total }: { productos: Reporte["productos"]; total: Reporte["total"] }) {
   const num = (n: number) => n.toLocaleString("es-CO");
-  // La primera y la última columna se alinean con el relleno de la tarjeta
-  const borde = "first:pl-4 last:pr-4 sm:first:pl-5 sm:last:pr-5";
-  const th = cx("px-3 py-2 font-medium", borde);
-  const td = cx("px-3 py-2.5 text-right tabular-nums", borde);
 
   return (
     <Tarjeta className="overflow-hidden p-0">
@@ -252,7 +311,7 @@ function TablaProductos({ productos, total }: { productos: Reporte["productos"];
         </p>
       </div>
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[40rem] text-sm">
+        <table className="w-full min-w-[34rem] text-sm">
           <thead className="bg-stone-50 text-xs text-stone-500 dark:bg-stone-900 dark:text-stone-400">
             <tr className="border-b border-stone-200 dark:border-stone-700">
               <th className={cx(th, "text-left")}>Producto</th>
@@ -260,7 +319,6 @@ function TablaProductos({ productos, total }: { productos: Reporte["productos"];
               <th className={cx(th, "text-right")}>Vendidas</th>
               <th className={cx(th, "text-right")}>Quedan</th>
               <th className={cx(th, "text-left")}>Ventas netas</th>
-              <th className={cx(th, "text-right")}>Retiros</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-stone-100 dark:divide-stone-700">
@@ -275,7 +333,7 @@ function TablaProductos({ productos, total }: { productos: Reporte["productos"];
                   <td className={td}>{num(p.base)}</td>
                   <td className={td}>{num(p.unidades)}</td>
                   <td className={cx(td, p.quedan <= 3 ? "font-medium text-amber-700 dark:text-amber-400" : "text-stone-900 dark:text-stone-50")}>{num(p.quedan)}</td>
-                  <td className="px-3 py-2.5">
+                  <td className={cx("px-3 py-2.5", borde)}>
                     <div className="flex items-center gap-3">
                       <div className="h-2 w-24 shrink-0 rounded-full bg-stone-100 dark:bg-stone-700" aria-hidden>
                         <div className="h-2 rounded-full bg-emerald-600" style={{ width: `${parte * 100}%` }} />
@@ -283,9 +341,6 @@ function TablaProductos({ productos, total }: { productos: Reporte["productos"];
                       <Monto valor={p.ventas} />
                       <span className="text-xs text-stone-500 tabular-nums dark:text-stone-400">{porcentaje(parte)}</span>
                     </div>
-                  </td>
-                  <td className={td}>
-                    <Monto valor={p.retiros} />
                   </td>
                 </tr>
               );
@@ -298,11 +353,8 @@ function TablaProductos({ productos, total }: { productos: Reporte["productos"];
               <td className={td}>{num(total.base)}</td>
               <td className={td}>{num(total.unidades)}</td>
               <td className={td}>{num(total.quedan)}</td>
-              <td className="px-3 py-2.5">
+              <td className={cx("px-3 py-2.5", borde)}>
                 <Monto valor={total.ventas} />
-              </td>
-              <td className={td}>
-                <Monto valor={total.retiros} />
               </td>
             </tr>
           </tfoot>

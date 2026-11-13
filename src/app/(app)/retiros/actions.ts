@@ -12,7 +12,7 @@ export async function registrarRetiro(_: Resultado, form: FormData): Promise<Res
   if (!Number.isFinite(monto) || monto <= 0) return { error: "El monto debe ser mayor que 0" };
   const supabase = await createClient();
   const { error } = await supabase.from("retiros").insert({
-    producto_id: Number(form.get("producto_id")),
+    categoria_id: Number(form.get("categoria_id")),
     monto,
     nota: String(form.get("nota") ?? "").trim() || null,
   });
