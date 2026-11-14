@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { createClient } from "@/server/supabase";
 import { requerirEmpleadoActivo } from "@/server/sesion";
-import { Boton, Entrada, Etiqueta, Insignia, Monto, Tarjeta, Titulo, Vacio } from "@/components/ui";
+import { Boton, Entrada, Etiqueta, Insignia, Monto, Pestanas, Tarjeta, Titulo, Vacio } from "@/components/ui";
 import { IconoFlecha, IconoMas } from "@/components/iconos";
 import { BotonEnvio } from "@/components/boton-envio";
 import { FormAccion } from "@/components/form-accion";
@@ -15,8 +15,12 @@ export const metadata: Metadata = { title: "Productos y socios" };
 // <summary> sin el triángulo del navegador
 const resumen = "inline-flex cursor-pointer list-none items-center gap-2 font-medium transition-colors [&::-webkit-details-marker]:hidden";
 
-export default async function ProductosPage() {
+// "1 producto", "3 productos"
+const cuenta = (n: number, uno: string, varios: string) => `${n} ${n === 1 ? uno : varios}`;
+
+export default async function ProductosPage({ searchParams }: PageProps<"/productos">) {
   const empleado = await requerirEmpleadoActivo();
+  const { categoria } = await searchParams;
   const supabase = await createClient();
   const [{ data: categorias }, { data: socios }, { data: stock }] = await Promise.all([
     supabase
@@ -27,27 +31,59 @@ export default async function ProductosPage() {
     supabase.from("socios").select("categoria_id, empleado_id, empleados(nombre)").eq("activo", true),
     supabase.from("stock_producto").select("producto_id, stock"),
   ]);
-  const stockPor = new Map(stock?.map((s) => [s.producto_id, s.stock]));
+  const stockPor = new Map(stock?.map((s) => [s.producto_id, Number(s.stock ?? 0)]));
+  const mias = new Set(socios?.filter((s) => s.empleado_id === empleado.id).map((s) => s.categoria_id));
+  // "mias" o el id de una categoría; cualquier otro valor muestra todas.
+  const filtro = typeof categoria === "string" && (categoria === "mias" || categorias?.some((c) => String(c.id) === categoria)) ? categoria : undefined;
+  const visibles = categorias?.filter((c) => !filtro || (filtro === "mias" ? mias.has(c.id) : String(c.id) === filtro)) ?? [];
 
   return (
     <>
       <Titulo descripcion="Ser socio de una categoría te hace dueño de todos sus productos: puedes registrar inventario y retirar el dinero de sus ventas. Cualquier empleado puede vender cualquier producto.">
         Productos y socios
       </Titulo>
+      {!!categorias?.length && (
+        <Pestanas
+          etiqueta="Categorías que se muestran"
+          opciones={[
+            { href: "/productos", texto: "Todas", activa: !filtro },
+            { href: "/productos?categoria=mias", texto: "Mis categorías", activa: filtro === "mias" },
+            ...categorias.map((c) => ({ href: `/productos?categoria=${c.id}`, texto: c.nombre, activa: filtro === String(c.id) })),
+          ]}
+        />
+      )}
 
       <div className="flex flex-col gap-4">
         {!categorias?.length && <Vacio>Aún no hay categorías</Vacio>}
-        {categorias?.map((cat) => {
+        {filtro === "mias" && !visibles.length && <Vacio>Aún no eres socio de ninguna categoría</Vacio>}
+        {visibles.map((cat) => {
           const sociosCat = socios?.filter((s) => s.categoria_id === cat.id) ?? [];
-          const soySocio = sociosCat.some((s) => s.empleado_id === empleado.id);
+          const soySocio = mias.has(cat.id);
           const puedeEditar = empleado.es_admin || soySocio;
+          const activos = cat.productos.filter((p) => p.activo).length;
+          const unidades = cat.productos.reduce((t, p) => t + (stockPor.get(p.id) ?? 0), 0);
           return (
             <Tarjeta key={cat.id}>
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
-                  <h2 className="font-medium text-stone-900 dark:text-stone-50">{cat.nombre}</h2>
-                  <p className="mt-0.5 text-sm text-stone-500 dark:text-stone-400">
-                    {sociosCat.length ? `Socios: ${sociosCat.map((s) => s.empleados?.nombre).join(", ")}` : "Sin socios todavía"}
+                  <h2 className="flex flex-wrap items-center gap-2 font-medium text-stone-900 dark:text-stone-50">
+                    {cat.nombre}
+                    {soySocio && <Insignia variante="ok">Eres socio</Insignia>}
+                  </h2>
+                  <p className="mt-0.5 text-sm text-stone-500 tabular-nums dark:text-stone-400">
+                    {cat.productos.length
+                      ? `${cuenta(cat.productos.length, "producto", "productos")} · ${cuenta(activos, "activo", "activos")} · ${cuenta(unidades, "unidad", "unidades")} en stock`
+                      : "Sin productos"}
+                  </p>
+                  <p className="mt-2 flex flex-wrap items-center gap-1.5 text-sm text-stone-500 dark:text-stone-400">
+                    {sociosCat.length ? (
+                      <>
+                        Socios:
+                        {sociosCat.map((s) => <Insignia key={s.empleado_id}>{s.empleados?.nombre}</Insignia>)}
+                      </>
+                    ) : (
+                      "Sin socios todavía"
+                    )}
                   </p>
                 </div>
                 <form action={soySocio ? salirCategoria : unirseCategoria}>

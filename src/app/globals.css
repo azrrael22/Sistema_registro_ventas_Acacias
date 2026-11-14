@@ -26,6 +26,18 @@ body {
   body { accent-color: var(--color-emerald-500); }
 }
 
+/* Sin flechas de incremento en los campos numéricos */
+input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
 /* Base de los componentes de ui.tsx. Va en la capa components para que las clases
    que llegan por className (p-0, w-24, text-base…) siempre la reemplacen. */
 @layer components {
