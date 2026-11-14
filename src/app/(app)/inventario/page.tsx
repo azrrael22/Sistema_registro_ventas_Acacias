@@ -46,7 +46,8 @@ export default async function InventarioPage() {
               <Etiqueta texto="Tipo">
                 <Selector name="tipo">
                   <option value="entrada">Entrada de mercancía (+)</option>
-                  <option value="ajuste">Ajuste (+ o −, p. ej. pérdida o conteo)</option>
+                  <option value="conteo">Conteo físico (escribe cuántas hay)</option>
+                  <option value="ajuste">Ajuste manual (+ o −)</option>
                 </Selector>
               </Etiqueta>
               <Etiqueta texto="Cantidad">
@@ -84,7 +85,8 @@ export default async function InventarioPage() {
                   <li key={m.id} className="flex flex-wrap justify-between gap-x-4 gap-y-1 py-2.5">
                     <span className="text-stone-900 dark:text-stone-50">
                       <span className="font-medium tabular-nums">{m.cantidad > 0 ? "+" : "−"}{Math.abs(m.cantidad)}</span> {m.productos?.nombre}
-                      <span className="text-stone-500 dark:text-stone-400"> · {m.tipo === "entrada" ? "Entrada" : "Ajuste"} · {m.empleados?.nombre}{m.nota ? ` · ${m.nota}` : ""}</span>
+                      {/* Un ajuste que resta es una pérdida: así aparece en los reportes */}
+                      <span className="text-stone-500 dark:text-stone-400"> · {m.tipo === "entrada" ? "Entrada" : m.cantidad < 0 ? "Pérdida" : "Ajuste"} · {m.empleados?.nombre}{m.nota ? ` · ${m.nota}` : ""}</span>
                     </span>
                     <span className="text-stone-500 dark:text-stone-400">{fecha(m.fecha)}</span>
                   </li>

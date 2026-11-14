@@ -90,18 +90,24 @@ async function ContenidoReporte({ filtros }: { filtros: Filtros }) {
         )}
       </Tarjeta>
 
-      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-5">
         <Indicador titulo="Ventas netas" valor={<Monto valor={total.ventas} />}>
           <Variacion actual={total.ventas} anterior={anterior.ventas} />
         </Indicador>
         <Indicador titulo="Unidades vendidas" valor={total.unidades.toLocaleString("es-CO")}>
           <Variacion actual={total.unidades} anterior={anterior.unidades} />
         </Indicador>
+        <Indicador titulo="Unidades perdidas" valor={total.perdidas.toLocaleString("es-CO")}>
+          <p className="text-xs text-stone-500 dark:text-stone-400">
+            ≈ <Monto valor={total.valorPerdido} /> a precio actual
+          </p>
+        </Indicador>
         <Indicador titulo="Retiros" valor={<Monto valor={total.retiros} />}>
           {/* Más retiros no es bueno ni malo: variación en color neutro */}
           <Variacion actual={total.retiros} anterior={anterior.retiros} neutral />
         </Indicador>
-        <Indicador titulo="Balance del periodo" valor={<Monto valor={total.ventas - total.retiros} />}>
+        {/* Cinco tarjetas en dos columnas: el balance ocupa la fila de abajo entera */}
+        <Indicador titulo="Balance del periodo" valor={<Monto valor={total.ventas - total.retiros} />} className="col-span-2 lg:col-span-1">
           <p className="text-xs text-stone-500 dark:text-stone-400">Ventas netas − retiros</p>
         </Indicador>
       </div>
@@ -119,11 +125,12 @@ async function ContenidoReporte({ filtros }: { filtros: Filtros }) {
   );
 }
 
-function Indicador({ titulo, valor, children }: { titulo: string; valor: React.ReactNode; children: React.ReactNode }) {
+function Indicador({ titulo, valor, className, children }: { titulo: string; valor: React.ReactNode; className?: string; children: React.ReactNode }) {
   return (
-    <Tarjeta className="flex flex-col gap-1">
+    <Tarjeta className={cx("flex flex-col gap-1", className)}>
       <p className="text-sm text-stone-500 dark:text-stone-400">{titulo}</p>
-      <p className="text-xl font-medium text-stone-900 tabular-nums sm:text-2xl dark:text-stone-50">{valor}</p>
+      {/* En lg son cinco columnas: el tamaño baja para que los montos quepan */}
+      <p className="text-xl font-medium text-stone-900 tabular-nums sm:text-2xl lg:text-xl dark:text-stone-50">{valor}</p>
       {children}
     </Tarjeta>
   );
@@ -307,16 +314,18 @@ function TablaProductos({ productos, total }: { productos: Reporte["productos"];
         <h3 className="font-medium text-stone-900 dark:text-stone-50">Detalle por producto</h3>
         <p className="text-xs text-stone-500 dark:text-stone-400">
           <strong className="font-medium text-stone-600 dark:text-stone-300">Base:</strong> stock al inicio del periodo + entradas ·{" "}
+          <strong className="font-medium text-stone-600 dark:text-stone-300">Perdidas:</strong> faltantes de ajustes y conteos (valor a precio actual) ·{" "}
           <strong className="font-medium text-stone-600 dark:text-stone-300">Quedan:</strong> stock al cierre del periodo
         </p>
       </div>
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[34rem] text-sm">
+        <table className="w-full min-w-[38rem] text-sm">
           <thead className="bg-stone-50 text-xs text-stone-500 dark:bg-stone-900 dark:text-stone-400">
             <tr className="border-b border-stone-200 dark:border-stone-700">
               <th className={cx(th, "text-left")}>Producto</th>
               <th className={cx(th, "text-right")}>Base</th>
               <th className={cx(th, "text-right")}>Vendidas</th>
+              <th className={cx(th, "text-right")}>Perdidas</th>
               <th className={cx(th, "text-right")}>Quedan</th>
               <th className={cx(th, "text-left")}>Ventas netas</th>
             </tr>
@@ -332,6 +341,9 @@ function TablaProductos({ productos, total }: { productos: Reporte["productos"];
                   </td>
                   <td className={td}>{num(p.base)}</td>
                   <td className={td}>{num(p.unidades)}</td>
+                  <td className={td}>
+                    <Perdidas unidades={p.perdidas} valor={p.valorPerdido} />
+                  </td>
                   <td className={cx(td, p.quedan <= 3 ? "font-medium text-amber-700 dark:text-amber-400" : "text-stone-900 dark:text-stone-50")}>{num(p.quedan)}</td>
                   <td className={cx("px-3 py-2.5", borde)}>
                     <div className="flex items-center gap-3">
@@ -352,6 +364,9 @@ function TablaProductos({ productos, total }: { productos: Reporte["productos"];
               <td className={cx("px-3 py-2.5", borde)}>Total</td>
               <td className={td}>{num(total.base)}</td>
               <td className={td}>{num(total.unidades)}</td>
+              <td className={td}>
+                <Perdidas unidades={total.perdidas} valor={total.valorPerdido} />
+              </td>
               <td className={td}>{num(total.quedan)}</td>
               <td className={cx("px-3 py-2.5", borde)}>
                 <Monto valor={total.ventas} />
@@ -364,6 +379,17 @@ function TablaProductos({ productos, total }: { productos: Reporte["productos"];
   );
 }
 
+// Unidades perdidas en rojo, con su valor debajo; sin pérdidas, un 0 normal
+function Perdidas({ unidades, valor }: { unidades: number; valor: number }) {
+  if (!unidades) return <>0</>;
+  return (
+    <>
+      <p className="font-medium text-red-700 dark:text-red-400">{unidades.toLocaleString("es-CO")}</p>
+      <Monto valor={valor} className="text-xs font-normal text-stone-500 dark:text-stone-400" />
+    </>
+  );
+}
+
 function Generando() {
   return (
     <div role="status" aria-live="polite" className="flex flex-col gap-4">
@@ -372,9 +398,9 @@ function Generando() {
         Generando reporte…
       </p>
       <div className="h-24 animate-pulse rounded-xl bg-stone-100 dark:bg-stone-800" />
-      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-        {[0, 1, 2, 3].map((i) => (
-          <div key={i} className="h-24 animate-pulse rounded-xl bg-stone-100 dark:bg-stone-800" />
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-5">
+        {[0, 1, 2, 3, 4].map((i) => (
+          <div key={i} className={cx("h-24 animate-pulse rounded-xl bg-stone-100 dark:bg-stone-800", i === 4 && "col-span-2 lg:col-span-1")} />
         ))}
       </div>
       <div className="h-64 animate-pulse rounded-xl bg-stone-100 dark:bg-stone-800" />

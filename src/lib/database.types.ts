@@ -565,13 +565,19 @@ export type Database = {
         Args: { p_desde: string; p_hasta: string }
         Returns: {
           categoria: string
+          precio: number
           producto: string
           producto_id: number
           unidades_base: number
+          unidades_perdidas: number
           unidades_quedan: number
         }[]
       }
       puede_editar_producto: { Args: { p_producto: number }; Returns: boolean }
+      registrar_conteo: {
+        Args: { p_contadas: number; p_nota?: string; p_producto: number }
+        Returns: number
+      }
       registrar_venta: {
         Args: {
           p_items: Json

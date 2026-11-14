@@ -14,9 +14,9 @@ export async function GET(request: NextRequest) {
     ...categorias.map((c) => [c.nombre, c.ventas, c.retiros, c.ventas - c.retiros]),
     ["Total", total.ventas, total.retiros, total.ventas - total.retiros],
     [],
-    ["Producto", "Categoría", "Unidades base", "Vendidas", "Quedan", "Ventas netas"],
-    ...productos.map((p) => [p.nombre, p.categoria, p.base, p.unidades, p.quedan, p.ventas]),
-    ["Total", "", total.base, total.unidades, total.quedan, total.ventas],
+    ["Producto", "Categoría", "Unidades base", "Vendidas", "Perdidas", "Valor perdido", "Quedan", "Ventas netas"],
+    ...productos.map((p) => [p.nombre, p.categoria, p.base, p.unidades, p.perdidas, p.valorPerdido, p.quedan, p.ventas]),
+    ["Total", "", total.base, total.unidades, total.perdidas, total.valorPerdido, total.quedan, total.ventas],
   ].map((fila) => fila.map(celda).join(","));
   const nombre = PERIODOS[filtros.g].texto.toLowerCase();
   // BOM para que Excel reconozca las tildes

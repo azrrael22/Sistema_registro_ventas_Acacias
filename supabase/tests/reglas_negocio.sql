@@ -223,8 +223,8 @@ do $$ begin
        = (select sum(ventas_netas) from reporte_socio('anio', '2020-01-01', '2100-01-01')), 'por día suma igual que por año';
   assert (select unidades_base from inventario_socio('2020-01-01', '2100-01-01') where producto='Repelentes std') = 10, 'base repelentes';
   assert (select unidades_quedan from inventario_socio('2020-01-01', '2100-01-01') where producto='Repelentes std') = 8, 'quedan repelentes';
-  assert (select sum(unidades_base - unidades_quedan) from inventario_socio('2020-01-01', '2100-01-01'))
-       = (select sum(unidades) from reporte_socio('anio', '2020-01-01', '2100-01-01')), 'base - quedan = vendidas';
+  assert (select sum(unidades_base - unidades_perdidas - unidades_quedan) from inventario_socio('2020-01-01', '2100-01-01'))
+       = (select sum(unidades) from reporte_socio('anio', '2020-01-01', '2100-01-01')), 'base - perdidas - quedan = vendidas';
   assert (select unidades_base from inventario_socio('2100-01-01', '2100-01-01') where producto='Repelentes std') = 8,
          'periodo futuro: la base es el stock que quedó';
   assert (select count(*) from ventas) = 1, 'C ve la venta de B (es socio de items)';
@@ -285,6 +285,38 @@ end $$;
 insert into retiros (categoria_id, monto) select id, 12000 from categorias where nombre='Repelentes';
 do $$ begin
   assert (select saldo from saldo_categoria where nombre='Repelentes') = 2000, 'saldo tras retirar de la categoría';
+end $$;
+
+-- ===== Conteo físico: el faltante queda como ajuste y el reporte lo muestra como perdidas =====
+-- A sigue en sesión. Repelentes XL: entraron 5 y se vendió 1, el sistema dice 4
+do $$ declare v_id bigint := (select id from productos where nombre='Repelentes XL'); begin
+  assert registrar_conteo(v_id, 3) = -1, 'se contaron 3: falta 1';
+  assert (select stock from stock_producto where producto_id = v_id) = 3, 'el stock queda en lo contado';
+  assert (select nota from inventario_movimientos where producto_id = v_id and tipo = 'ajuste') = 'Conteo físico: 3 (sistema: 4)',
+         'la nota deja el conteo y lo que decía el sistema';
+  assert registrar_conteo(v_id, 3) = 0, 'cuadra';
+  assert (select count(*) from inventario_movimientos where producto_id = v_id and tipo = 'ajuste') = 1, 'si cuadra no registra nada';
+  assert (select unidades_perdidas from inventario_socio('2020-01-01', '2100-01-01') where producto='Repelentes XL') = 1, 'perdidas';
+  assert (select unidades_base - unidades_perdidas - unidades_quedan from inventario_socio('2020-01-01', '2100-01-01')
+          where producto='Repelentes XL') = 1, 'base - perdidas - quedan = vendidas';
+  -- Un sobrante suma al stock pero no borra la pérdida
+  assert registrar_conteo(v_id, 4) = 1, 'se contaron 4: sobra 1';
+  assert (select unidades_perdidas from inventario_socio('2020-01-01', '2100-01-01') where producto='Repelentes XL') = 1,
+         'el sobrante no descuenta perdidas';
+  assert (select unidades_perdidas from inventario_socio('2100-01-01', '2100-01-01') where producto='Repelentes XL') = 0,
+         'las perdidas son del periodo';
+  begin
+    perform registrar_conteo(v_id, -1);
+    assert false, 'conteo negativo';
+  exception when raise_exception then null; end;
+end $$;
+-- B no es socio de repelentes: no puede contarlos
+set local request.jwt.claims = '{"sub":"00000000-0000-0000-0000-000000000002"}';
+do $$ begin
+  begin
+    perform registrar_conteo((select id from productos where nombre='Repelentes XL'), 0);
+    assert false, 'conteo de quien no es socio';
+  exception when insufficient_privilege then null; end;
 end $$;
 
 -- ===== anon no ve nada =====

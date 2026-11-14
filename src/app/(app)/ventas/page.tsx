@@ -79,7 +79,8 @@ export default async function VentasPage({ searchParams }: PageProps<"/ventas">)
                     const total = v.venta_items.reduce((t, i) => t + i.cantidad * Number(i.precio_unitario), 0);
                     return (
                       <li key={v.id} className="px-4 py-4 sm:px-5">
-                        <div className="flex items-start justify-between gap-4">
+                        {/* Mismo ancho que el tiquete: la acción queda sobre el total y no al otro lado de la tarjeta */}
+                        <div className="flex items-start justify-between gap-4 sm:max-w-sm">
                           <div className="min-w-0">
                             <p className="text-sm font-medium text-stone-900 dark:text-stone-50">
                               {esDevolucion ? "Devolución" : "Venta"} #{v.id}

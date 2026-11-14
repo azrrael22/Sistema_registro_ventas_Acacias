@@ -116,12 +116,15 @@ export async function obtenerReporte(f: Filtros) {
         nombre: p.producto,
         categoria: p.categoria,
         base: Number(p.unidades_base),
+        perdidas: Number(p.unidades_perdidas),
+        // Estimado al precio actual: el precio del día de la pérdida no se guarda
+        valorPerdido: Number(p.unidades_perdidas) * Number(p.precio),
         quedan: Number(p.unidades_quedan),
         unidades,
         ventas,
       };
     })
-    .filter((p) => p.base || p.quedan || p.unidades || p.ventas)
+    .filter((p) => p.base || p.perdidas || p.quedan || p.unidades || p.ventas)
     .sort(porVentas);
 
   // Balance por categoría (el nombre es único): ventas netas de sus productos − retiros de la categoría
@@ -142,6 +145,8 @@ export async function obtenerReporte(f: Filtros) {
     total: {
       ...sumar(actuales),
       base: productos.reduce((t, p) => t + p.base, 0),
+      perdidas: productos.reduce((t, p) => t + p.perdidas, 0),
+      valorPerdido: productos.reduce((t, p) => t + p.valorPerdido, 0),
       quedan: productos.reduce((t, p) => t + p.quedan, 0),
     },
     anterior: sumar(filas.filter((r) => r.dia <= f.antHasta)),
