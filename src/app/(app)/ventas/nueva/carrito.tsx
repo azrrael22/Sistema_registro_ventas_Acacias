@@ -221,12 +221,13 @@ export function Carrito({ productos }: { productos: Producto[] }) {
         )}
       </div>
 
-      {/* En celular es la barra fija de abajo; en escritorio, un panel al lado */}
+      {/* En celular es la barra fija de abajo; en escritorio, un panel al lado que queda
+          bajo el encabezado fijo (~101px) y nunca es más alto que la ventana */}
       <aside
         aria-label="Venta actual"
-        className="fixed inset-x-0 bottom-0 z-10 border-t border-stone-200 bg-white px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-[0_-4px_12px_rgba(0,0,0,0.05)] dark:border-stone-700 dark:bg-stone-900 dark:shadow-[0_-4px_12px_rgba(0,0,0,0.3)] lg:sticky lg:inset-auto lg:top-6 lg:z-auto lg:rounded-xl lg:border lg:bg-white lg:p-4 lg:shadow-sm lg:dark:bg-stone-800 lg:dark:shadow-none"
+        className="fixed inset-x-0 bottom-0 z-10 border-t border-stone-200 bg-white px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-[0_-4px_12px_rgba(0,0,0,0.05)] dark:border-stone-700 dark:bg-stone-900 dark:shadow-[0_-4px_12px_rgba(0,0,0,0.3)] lg:sticky lg:inset-auto lg:top-32 lg:z-auto lg:rounded-xl lg:border lg:bg-white lg:p-4 lg:shadow-sm lg:dark:bg-stone-800 lg:dark:shadow-none"
       >
-        <div className="mx-auto flex max-w-5xl flex-col gap-2 sm:px-6 lg:px-0">
+        <div className="mx-auto flex max-w-5xl flex-col gap-2 sm:px-6 lg:max-h-[calc(100dvh-12rem)] lg:px-0">
           <div className="flex items-center justify-between gap-3">
             <h2 className="font-medium text-stone-900 dark:text-stone-50">Venta actual</h2>
             {items.length > 0 && preciosValidos && (
@@ -236,10 +237,12 @@ export function Carrito({ productos }: { productos: Producto[] }) {
             )}
           </div>
 
-          <div id="detalle-venta" className={cx(!verDetalle && "hidden", "lg:block")}>
+          {/* En escritorio solo la lista cede espacio cuando el panel llega al alto de la ventana */}
+          <div id="detalle-venta" className={cx(!verDetalle && "hidden", "lg:flex lg:min-h-0 lg:flex-col")}>
             {items.length ? (
-              // Se lee como el tiquete: «2 × Cold brew» y su monto, en la misma columna que el total
-              <ul className="flex max-h-[45vh] flex-col gap-3 overflow-y-auto py-1 lg:max-h-[50vh]">
+              // Se lee como el tiquete: «2 × Cold brew» y su monto, en la misma columna que el total.
+              // -mx-3 px-3: el -mr-2 de «Quitar» y los contornos de foco caben sin scroll horizontal
+              <ul className="-mx-3 flex max-h-[45vh] flex-col gap-3 overflow-y-auto px-3 py-1 lg:max-h-none">
                 {items.map((p) => {
                   const cant = cantidades[p.id];
                   const precio = precioDe(p);
@@ -312,7 +315,7 @@ export function Carrito({ productos }: { productos: Producto[] }) {
               <Monto valor={total} className="text-xl font-medium text-stone-900 dark:text-stone-50" />
             </div>
           </div>
-          <Boton onClick={confirmar} disabled={!unidades || !preciosValidos || enviando} className="h-12 w-full text-base">
+          <Boton onClick={confirmar} disabled={!unidades || !preciosValidos || enviando} className="h-12 w-full shrink-0 text-base">
             {enviando ? "Registrando…" : !unidades ? "Selecciona productos" : preciosValidos ? "Registrar venta" : "Revisa los precios"}
           </Boton>
         </div>
