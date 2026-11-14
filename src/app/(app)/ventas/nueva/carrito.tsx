@@ -9,6 +9,10 @@ import { registrarVenta } from "../actions";
 
 type Producto = { id: number; nombre: string; precio: number; foto: string | null; categoria: string; stock: number };
 
+// Botones − y + del control de cantidad (el contenedor recorta el fondo a su esquina)
+const paso =
+  "grid h-full w-10 shrink-0 cursor-pointer place-items-center text-stone-700 transition-colors enabled:hover:bg-stone-100 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-emerald-700 disabled:cursor-not-allowed disabled:text-stone-300 dark:text-stone-300 dark:enabled:hover:bg-stone-700 dark:focus-visible:outline-emerald-500 dark:disabled:text-stone-600";
+
 // Filtro por categoría: mismo aspecto que Pestanas, pero con botones porque es estado del cliente
 function Chips({ opciones, activa, onCambiar }: { opciones: string[]; activa: string | null; onCambiar: (c: string | null) => void }) {
   return (
@@ -72,6 +76,17 @@ export function Carrito({ productos }: { productos: Producto[] }) {
     );
   }, [busqueda, categoria, productos]);
 
+  // Una cuadrícula por categoría, en el orden en que llegan
+  const grupos = useMemo(() => {
+    const porCategoria = new Map<string, Producto[]>();
+    for (const p of filtrados) {
+      const lista = porCategoria.get(p.categoria);
+      if (lista) lista.push(p);
+      else porCategoria.set(p.categoria, [p]);
+    }
+    return [...porCategoria];
+  }, [filtrados]);
+
   const items = productos.filter((p) => cantidades[p.id] > 0);
   const preciosValidos = items.every((p) => precioDe(p) !== null);
   const total = items.reduce((t, p) => t + (precioDe(p) ?? p.precio) * cantidades[p.id], 0);
@@ -112,79 +127,95 @@ export function Carrito({ productos }: { productos: Producto[] }) {
         {mensaje?.ok && <div className="mt-4"><Aviso tipo="ok">{mensaje.ok}</Aviso></div>}
 
         {filtrados.length ? (
-          <ul className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
-            {filtrados.map((p) => {
-              const cant = cantidades[p.id] ?? 0;
-              const agotado = p.stock <= 0;
-              const precio = precioDe(p);
-              return (
-                <li
-                  key={p.id}
-                  className={cx(
-                    "flex flex-col rounded-xl border bg-white transition-colors dark:bg-stone-800",
-                    cant > 0 ? "border-emerald-600 ring-1 ring-emerald-600 dark:border-emerald-500 dark:ring-emerald-500" : "border-stone-200 dark:border-stone-700",
-                    agotado && "opacity-50",
-                  )}
-                >
-                  {/* Tocar el producto suma una unidad */}
-                  <button
-                    type="button"
-                    onClick={() => cambiar(p, 1)}
-                    disabled={cant >= p.stock}
-                    aria-label={`Agregar un ${p.nombre}`}
-                    className="flex flex-1 cursor-pointer flex-col rounded-t-xl p-2 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-700 disabled:cursor-not-allowed dark:focus-visible:outline-emerald-500"
-                  >
-                    <span className="relative block">
-                      <FotoProducto src={p.foto} className="aspect-square h-auto w-full" />
-                      {cant > 0 && (
-                        <span aria-hidden className="absolute top-1.5 right-1.5 grid h-6 min-w-6 place-items-center rounded-full bg-emerald-700 px-1.5 text-xs font-medium text-white tabular-nums shadow-sm dark:bg-emerald-600">
-                          {cant}
-                        </span>
-                      )}
-                    </span>
-                    <span className="mt-2 block px-1 text-xs text-stone-500 dark:text-stone-400">{p.categoria}</span>
-                    <span className="block px-1 font-medium leading-snug text-stone-900 line-clamp-2 dark:text-stone-50">{p.nombre}</span>
-                    <span className="mt-auto block px-1 pt-1 text-sm text-stone-600 dark:text-stone-400">
-                      {precio !== null && precio < p.precio && (
-                        <>
-                          <s className="text-stone-400 dark:text-stone-500">
-                            <span className="sr-only">antes </span>
-                            <Monto valor={p.precio} />
-                          </s>{" "}
-                        </>
-                      )}
-                      <Monto valor={precio ?? p.precio} className="text-stone-900 dark:text-stone-50" />
-                      <span className={cx("block text-xs", p.stock <= 3 && "text-amber-700 dark:text-amber-400")}>
-                        {agotado ? "Agotado" : `${p.stock} disponibles`}
-                      </span>
-                    </span>
-                  </button>
-                  <div className="flex items-center justify-between gap-2 border-t border-stone-100 p-2 dark:border-stone-700">
-                    <Boton variante="secundario" className="size-10 px-0" onClick={() => cambiar(p, -1)} disabled={cant === 0} aria-label={`Quitar un ${p.nombre}`}>
-                      <IconoMenos />
-                    </Boton>
-                    {/* También se puede escribir la cantidad; se ajusta al stock disponible */}
-                    <Entrada
-                      type="number"
-                      inputMode="numeric"
-                      min={0}
-                      max={p.stock}
-                      step={1}
-                      value={cant}
-                      onChange={(e) => fijar(p, Math.trunc(Number(e.target.value)))}
-                      onFocus={(e) => e.target.select()}
-                      disabled={agotado}
-                      aria-label={`Cantidad de ${p.nombre}`}
-                      className="min-w-0 flex-1 px-1 text-center font-medium tabular-nums [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                    />
-                    <Boton variante="secundario" className="size-10 px-0" onClick={() => cambiar(p, 1)} disabled={cant >= p.stock} aria-label={`Agregar un ${p.nombre}`}>
-                      <IconoMas />
-                    </Boton>
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
+          <div className="mt-4 flex flex-col gap-6">
+            {grupos.map(([cat, lista]) => (
+              <div key={cat}>
+                {/* Con una categoría elegida en el filtro, el encabezado sobra */}
+                {cat && !categoria && <h2 className="mb-2 text-sm font-medium text-stone-500 dark:text-stone-400">{cat}</h2>}
+                <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                  {lista.map((p) => {
+                    const cant = cantidades[p.id] ?? 0;
+                    const agotado = p.stock <= 0;
+                    const precio = precioDe(p);
+                    return (
+                      // rounded-2xl: 8 de la foto y del control de cantidad + 8 de relleno
+                      <li
+                        key={p.id}
+                        className={cx(
+                          "flex flex-col rounded-2xl border bg-white transition-colors dark:bg-stone-800",
+                          cant > 0 ? "border-emerald-600 ring-1 ring-emerald-600 dark:border-emerald-500 dark:ring-emerald-500" : "border-stone-200 dark:border-stone-700",
+                          agotado && "opacity-50",
+                        )}
+                      >
+                        {/* Tocar el producto suma una unidad */}
+                        <button
+                          type="button"
+                          onClick={() => cambiar(p, 1)}
+                          disabled={cant >= p.stock}
+                          aria-label={`Agregar un ${p.nombre}`}
+                          className="flex flex-1 cursor-pointer flex-col rounded-t-2xl p-2 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-700 disabled:cursor-not-allowed dark:focus-visible:outline-emerald-500"
+                        >
+                          <FotoProducto src={p.foto} className="aspect-square h-auto w-full" />
+                          <span className="mt-2 block px-1 font-medium leading-snug text-stone-900 line-clamp-2 dark:text-stone-50">{p.nombre}</span>
+                          <span className="mt-auto block px-1 pt-1 text-sm">
+                            {precio !== null && precio < p.precio && (
+                              <>
+                                <s className="text-stone-500 dark:text-stone-400">
+                                  <span className="sr-only">antes </span>
+                                  <Monto valor={p.precio} />
+                                </s>{" "}
+                              </>
+                            )}
+                            <Monto valor={precio ?? p.precio} className="text-stone-900 dark:text-stone-50" />
+                            <span className={cx("block text-xs", p.stock <= 3 ? "text-amber-700 dark:text-amber-400" : "text-stone-500 dark:text-stone-400")}>
+                              {agotado ? "Agotado" : `${p.stock} en stock`}
+                            </span>
+                          </span>
+                        </button>
+
+                        {/* Cantidad en un solo control: − n +. También se puede escribir; se ajusta al stock */}
+                        <div className="px-2 pb-2">
+                          <div className="flex h-10 items-center overflow-hidden rounded-lg border border-stone-300 bg-white transition-colors focus-within:border-emerald-600 focus-within:ring-2 focus-within:ring-emerald-600/20 dark:border-stone-600 dark:bg-stone-800 dark:focus-within:border-emerald-500 dark:focus-within:ring-emerald-500/20">
+                            <button
+                              type="button"
+                              onClick={() => cambiar(p, -1)}
+                              disabled={cant === 0}
+                              aria-label={`Quitar un ${p.nombre}`}
+                              className={paso}
+                            >
+                              <IconoMenos />
+                            </button>
+                            <input
+                              type="number"
+                              inputMode="numeric"
+                              min={0}
+                              max={p.stock}
+                              step={1}
+                              value={cant}
+                              onChange={(e) => fijar(p, Math.trunc(Number(e.target.value)))}
+                              onFocus={(e) => e.target.select()}
+                              disabled={agotado}
+                              aria-label={`Cantidad de ${p.nombre}`}
+                              className="h-full min-w-0 flex-1 bg-transparent text-center text-sm font-medium text-stone-900 tabular-nums focus:outline-none dark:text-stone-50"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => cambiar(p, 1)}
+                              disabled={cant >= p.stock}
+                              aria-label={`Agregar un ${p.nombre}`}
+                              className={paso}
+                            >
+                              <IconoMas />
+                            </button>
+                          </div>
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            ))}
+          </div>
         ) : (
           <div className="mt-4"><Vacio>Sin resultados</Vacio></div>
         )}
@@ -207,60 +238,62 @@ export function Carrito({ productos }: { productos: Producto[] }) {
 
           <div id="detalle-venta" className={cx(!verDetalle && "hidden", "lg:block")}>
             {items.length ? (
-              <ul className="max-h-[45vh] divide-y divide-stone-100 overflow-y-auto lg:max-h-[50vh] dark:divide-stone-700">
+              // Se lee como el tiquete: «2 × Cold brew» y su monto, en la misma columna que el total
+              <ul className="flex max-h-[45vh] flex-col gap-3 overflow-y-auto py-1 lg:max-h-[50vh]">
                 {items.map((p) => {
                   const cant = cantidades[p.id];
                   const precio = precioDe(p);
                   return (
-                    <li key={p.id} className="py-3 first:pt-1">
-                      <div className="flex items-center justify-between gap-3">
-                        <p className="min-w-0 truncate text-sm font-medium text-stone-900 dark:text-stone-50">
-                          {p.nombre} <span className="font-normal text-stone-500 tabular-nums dark:text-stone-400">× {cant}</span>
+                    <li key={p.id}>
+                      <div className="flex items-baseline justify-between gap-3 text-sm">
+                        <p className="min-w-0 truncate text-stone-900 dark:text-stone-50">
+                          <span className="tabular-nums">{cant}</span> × {p.nombre}
                         </p>
-                        <Boton variante="fantasma" className="min-h-8 shrink-0 px-2 text-stone-500" onClick={() => cambiar(p, -cant)} aria-label={`Quitar ${p.nombre} de la venta`}>
-                          Quitar
-                        </Boton>
+                        {precio === null ? (
+                          <span className="shrink-0 text-stone-500 dark:text-stone-400" aria-hidden>—</span>
+                        ) : (
+                          <Monto valor={precio * cant} className="shrink-0 text-stone-900 dark:text-stone-50" />
+                        )}
                       </div>
                       {/* Descuento: solo se puede bajar el precio, nunca subirlo */}
                       <div className="mt-1 flex items-center justify-between gap-3">
-                        <label htmlFor={`precio-${p.id}`} className="text-sm text-stone-600 dark:text-stone-400">
-                          Precio unitario
-                          {precio === null ? (
-                            <span id={`precio-${p.id}-error`} className="block text-xs text-red-700 dark:text-red-400">
-                              Entre $0 y {dinero(p.precio)}
-                            </span>
-                          ) : (
-                            <span className="block text-xs">
-                              Subtotal <Monto valor={precio * cant} />
-                            </span>
-                          )}
+                        <label htmlFor={`precio-${p.id}`} className="flex items-center gap-2 text-xs text-stone-500 dark:text-stone-400">
+                          Precio c/u
+                          <Entrada
+                            id={`precio-${p.id}`}
+                            type="number"
+                            inputMode="numeric"
+                            min={0}
+                            max={p.precio}
+                            step={50}
+                            value={precios[p.id] ?? p.precio}
+                            onChange={(e) => {
+                              setMensaje(undefined);
+                              setPrecios((pr) => ({ ...pr, [p.id]: e.target.value }));
+                            }}
+                            aria-invalid={precio === null}
+                            aria-describedby={precio === null ? `precio-${p.id}-error` : undefined}
+                            className={cx(
+                              "h-8 min-h-8 w-24 px-2 text-right font-mono tabular-nums",
+                              precio === null && "border-red-500 focus:border-red-500 focus:ring-red-500/20 dark:border-red-500 dark:focus:border-red-500",
+                            )}
+                          />
                         </label>
-                        <Entrada
-                          id={`precio-${p.id}`}
-                          type="number"
-                          inputMode="numeric"
-                          min={0}
-                          max={p.precio}
-                          step={50}
-                          value={precios[p.id] ?? p.precio}
-                          onChange={(e) => {
-                            setMensaje(undefined);
-                            setPrecios((pr) => ({ ...pr, [p.id]: e.target.value }));
-                          }}
-                          aria-invalid={precio === null}
-                          aria-describedby={precio === null ? `precio-${p.id}-error` : undefined}
-                          className={cx(
-                            "w-28 text-right font-mono tabular-nums",
-                            precio === null && "border-red-500 focus:border-red-500 focus:ring-red-500/20 dark:border-red-500 dark:focus:border-red-500",
-                          )}
-                        />
+                        <Boton variante="fantasma" className="-mr-2 min-h-8 shrink-0 px-2 text-xs text-stone-500" onClick={() => cambiar(p, -cant)} aria-label={`Quitar ${p.nombre} de la venta`}>
+                          Quitar
+                        </Boton>
                       </div>
+                      {precio === null && (
+                        <p id={`precio-${p.id}-error`} className="mt-1 text-xs text-red-700 dark:text-red-400">
+                          Entre {dinero(0)} y {dinero(p.precio)}
+                        </p>
+                      )}
                     </li>
                   );
                 })}
               </ul>
             ) : (
-              <p className="py-2 text-sm text-stone-500 dark:text-stone-400">Toca un producto para agregarlo.</p>
+              <p className="py-2 text-sm text-stone-500 dark:text-stone-400">Toca un producto para agregarlo</p>
             )}
           </div>
 

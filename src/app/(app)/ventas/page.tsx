@@ -48,7 +48,7 @@ export default async function VentasPage({ searchParams }: PageProps<"/ventas">)
       <Titulo
         accion={
           <Link href="/ventas/nueva" className={claseBoton("primario")}>
-            <IconoMas /> Nueva venta
+            <IconoMas /> Registrar venta
           </Link>
         }
       >
