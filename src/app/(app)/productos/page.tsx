@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { createClient } from "@/server/supabase";
 import { requerirEmpleadoActivo } from "@/server/sesion";
-import { Boton, Entrada, Etiqueta, Insignia, Monto, Pestanas, Tarjeta, Titulo, Vacio } from "@/components/ui";
+import { Boton, Entrada, Etiqueta, Insignia, Monto, Pestanas, Tarjeta, Titulo, Vacio, cx } from "@/components/ui";
 import { IconoFlecha, IconoMas } from "@/components/iconos";
 import { BotonEnvio } from "@/components/boton-envio";
 import { FormAccion } from "@/components/form-accion";
@@ -65,7 +65,7 @@ export default async function ProductosPage({ searchParams }: PageProps<"/produc
           return (
             <Tarjeta key={cat.id}>
               <div className="flex flex-wrap items-start justify-between gap-3">
-                <div>
+                <div className="min-w-0 sm:flex-1">
                   <h2 className="flex flex-wrap items-center gap-2 font-medium text-stone-900 dark:text-stone-50">
                     {cat.nombre}
                     {soySocio && <Insignia variante="ok">Eres socio</Insignia>}
@@ -86,53 +86,73 @@ export default async function ProductosPage({ searchParams }: PageProps<"/produc
                     )}
                   </p>
                 </div>
-                <form action={soySocio ? salirCategoria : unirseCategoria}>
+                {/* En celular el botón siempre baja a su propia línea. El fantasma no tiene borde, así que
+                    se corre lo que mide su relleno para que el texto quede alineado con el contenido
+                    (a la izquierda en celular, con los precios en escritorio). */}
+                <form action={soySocio ? salirCategoria : unirseCategoria} className="max-sm:w-full">
                   <input type="hidden" name="categoria_id" value={cat.id} />
-                  <Boton variante={soySocio ? "fantasma" : "secundario"}>
+                  <Boton variante={soySocio ? "fantasma" : "secundario"} className={soySocio ? "max-sm:-ml-4 sm:-mr-4" : undefined}>
                     {soySocio ? "Dejar de ser socio" : "Ser socio"}
                   </Boton>
                 </form>
               </div>
 
               <ul className="mt-4 divide-y divide-stone-100 border-t border-stone-100 dark:divide-stone-700 dark:border-stone-700">
-                {cat.productos.map((p) => (
-                  <li key={p.id} className="py-3">
-                    <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 text-sm">
-                      <span className={`flex items-center gap-3 ${p.activo ? "text-stone-900 dark:text-stone-50" : "text-stone-500 dark:text-stone-400"}`}>
-                        <FotoProducto src={urlFoto(p.foto)} className={p.activo ? undefined : "opacity-60"} />
-                        <span>
+                {cat.productos.map((p) => {
+                  const disponibles = stockPor.get(p.id) ?? 0;
+                  // La misma fila para los productos que se editan y los que no: foto, nombre con su stock y precio
+                  const fila = (
+                    <>
+                      <FotoProducto src={urlFoto(p.foto)} className={p.activo ? undefined : "opacity-60"} />
+                      <span className="min-w-0 flex-1">
+                        <span className={cx("block", p.activo ? "text-stone-900 dark:text-stone-50" : "text-stone-500 dark:text-stone-400")}>
                           {p.nombre}
                           {!p.activo && <Insignia className="ml-2">Inactivo</Insignia>}
                         </span>
+                        {/* Stock bajo en ámbar, como en Inicio, Inventario y Vender (no en los inactivos) */}
+                        <span className={cx("block text-xs tabular-nums", p.activo && disponibles <= 3 ? "text-amber-700 dark:text-amber-400" : "text-stone-500 dark:text-stone-400")}>
+                          {disponibles} en stock
+                        </span>
                       </span>
-                      <span className="flex items-center gap-4">
-                        <span className="text-stone-500 tabular-nums dark:text-stone-400">{stockPor.get(p.id) ?? 0} en stock</span>
-                        <Monto valor={p.precio} className="min-w-20 text-right text-stone-900 dark:text-stone-50" />
-                      </span>
-                    </div>
-                    {(puedeEditar || p.creado_por === empleado.id) && (
-                      <details className="group mt-1">
-                        <summary className={`${resumen} text-sm text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-stone-50`}>
-                          <IconoFlecha className="transition-transform group-open:rotate-90" /> Editar
-                        </summary>
-                        <FormAccion accion={actualizarProducto} className="mt-3 flex flex-wrap items-end gap-2">
-                          <input type="hidden" name="id" value={p.id} />
-                          <Etiqueta texto="Nombre" className="flex-1">
-                            <Entrada name="nombre" defaultValue={p.nombre} required />
-                          </Etiqueta>
-                          <Etiqueta texto="Precio" className="w-32">
-                            <Entrada name="precio" type="number" min="0" step="50" defaultValue={p.precio} required />
-                          </Etiqueta>
-                          <CampoFoto texto="Cambiar foto" actual={urlFoto(p.foto)} className="min-w-64 flex-1" />
-                          <label className="flex min-h-10 items-center gap-2 text-sm text-stone-700 dark:text-stone-300">
-                            <input type="checkbox" name="activo" defaultChecked={p.activo} className="size-4" /> Activo
-                          </label>
-                          <BotonEnvio variante="secundario">Guardar</BotonEnvio>
-                        </FormAccion>
-                      </details>
-                    )}
-                  </li>
-                ))}
+                      <Monto valor={p.precio} className="shrink-0 text-stone-900 dark:text-stone-50" />
+                    </>
+                  );
+                  return (
+                    <li key={p.id} className="py-2 text-sm">
+                      {puedeEditar || p.creado_por === empleado.id ? (
+                        <details className="group">
+                          {/* Toda la fila abre el formulario. rounded-xl: 8 de la foto + 4 de relleno */}
+                          <summary className="-mx-2 flex cursor-pointer list-none items-center gap-3 rounded-xl px-2 py-1 transition-colors hover:bg-stone-50 focus-visible:outline-2 focus-visible:outline-emerald-700 dark:hover:bg-stone-700/50 dark:focus-visible:outline-emerald-500 [&::-webkit-details-marker]:hidden">
+                            {fila}
+                            <IconoFlecha className="text-stone-500 transition-transform group-open:rotate-90 dark:text-stone-400" />
+                            <span className="sr-only">Editar</span>
+                          </summary>
+                          {/* Alineado con la columna del nombre: 40 de la foto + 12 de separación */}
+                          <FormAccion accion={actualizarProducto} className="mt-3 mb-2 flex flex-wrap items-end gap-2 sm:pl-13">
+                            <input type="hidden" name="id" value={p.id} />
+                            <Etiqueta texto="Nombre" className="flex-1">
+                              <Entrada name="nombre" defaultValue={p.nombre} required />
+                            </Etiqueta>
+                            <Etiqueta texto="Precio" className="w-32">
+                              <Entrada name="precio" type="number" min="0" step="50" defaultValue={p.precio} required />
+                            </Etiqueta>
+                            <CampoFoto texto="Cambiar foto" actual={urlFoto(p.foto)} className="min-w-64 flex-1" />
+                            <label className="flex min-h-10 items-center gap-2 text-sm text-stone-700 dark:text-stone-300">
+                              <input type="checkbox" name="activo" defaultChecked={p.activo} className="size-4" /> Activo
+                            </label>
+                            <BotonEnvio variante="secundario">Guardar</BotonEnvio>
+                          </FormAccion>
+                        </details>
+                      ) : (
+                        <div className="flex items-center gap-3 py-1">
+                          {fila}
+                          {/* Mismo ancho que la flecha, para que los precios queden en una columna */}
+                          <span className="size-4.5 shrink-0" aria-hidden />
+                        </div>
+                      )}
+                    </li>
+                  );
+                })}
               </ul>
 
               {puedeEditar && (
