@@ -3,7 +3,7 @@ import Link from "next/link";
 import { createClient } from "@/server/supabase";
 import { requerirEmpleadoActivo } from "@/server/sesion";
 import { misProductos } from "@/server/consultas";
-import { ayer, diaDe, fechaCorta, horaDe, hoy } from "@/lib/formato";
+import { horaDe, porDia, tituloDia } from "@/lib/formato";
 import { Monto, Pestanas, Tarjeta, Titulo, Vacio, claseBoton, cx } from "@/components/ui";
 import { IconoMas } from "@/components/iconos";
 
@@ -30,18 +30,7 @@ export default async function VentasPage({ searchParams }: PageProps<"/ventas">)
 
   // Agrupadas por día, de la más reciente a la más antigua. Sin total diario: con el
   // límite de 100 ventas, el día más antiguo de la lista puede llegar incompleto.
-  type Venta = NonNullable<typeof ventas>[number];
-  const dias = new Map<string, Venta[]>();
-  for (const v of ventas ?? []) {
-    const dia = diaDe(v.fecha);
-    const delDia = dias.get(dia);
-    if (delDia) delDia.push(v);
-    else dias.set(dia, [v]);
-  }
-  const hoyDia = hoy();
-  const ayerDia = ayer();
-  const tituloDia = (dia: string) =>
-    dia === hoyDia ? `Hoy · ${fechaCorta(dia)}` : dia === ayerDia ? `Ayer · ${fechaCorta(dia)}` : fechaCorta(dia);
+  const dias = porDia(ventas ?? []);
 
   return (
     <>
@@ -67,7 +56,7 @@ export default async function VentasPage({ searchParams }: PageProps<"/ventas">)
         <Vacio>{vista === "categorias" && !ids.length ? "Aún no eres socio de ninguna categoría" : "No hay ventas registradas"}</Vacio>
       ) : (
         <div className="flex flex-col gap-6">
-          {[...dias].map(([dia, delDia]) => (
+          {dias.map(([dia, delDia]) => (
             <div key={dia}>
               <h2 className="mb-2 text-sm font-medium text-stone-500 dark:text-stone-400">{tituloDia(dia)}</h2>
               <Tarjeta className="p-0">
