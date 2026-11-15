@@ -92,6 +92,19 @@ do $$ begin
   exception when unique_violation then null; end;
 end $$;
 
+-- ===== Perfil: cada uno cambia solo su nombre; el correo se copia desde Auth =====
+set local request.jwt.claims = '{"sub":"00000000-0000-0000-0000-000000000001"}';
+do $$ begin
+  update empleados set nombre = 'hack' where id = '00000000-0000-0000-0000-000000000002';
+  assert (select nombre from empleados where id = '00000000-0000-0000-0000-000000000002') = 'Beto', 'no cambia el nombre de otro';
+end $$;
+reset role;
+update auth.users set email = 'dario@x.co' where id = '00000000-0000-0000-0000-000000000004';
+do $$ begin
+  assert (select email from empleados where id = '00000000-0000-0000-0000-000000000004') = 'dario@x.co', 'correo sincronizado';
+end $$;
+set local role authenticated;
+
 -- ===== Como A: crea categorías y productos, se hace socio de todo =====
 set local request.jwt.claims = '{"sub":"00000000-0000-0000-0000-000000000001"}';
 insert into categorias (nombre) values ('Pines'),('Repelentes'),('Camisetas'),('Alfajores');

@@ -4,6 +4,7 @@ import { createClient } from "@/server/supabase";
 import { Navegacion } from "@/components/navegacion";
 import { Campanita } from "@/components/campanita";
 import { Marca } from "@/components/marca";
+import { IconoUsuario } from "@/components/iconos";
 import { cerrarSesion } from "../(auth)/actions";
 
 export default async function AppLayout({ children }: LayoutProps<"/">) {
@@ -23,7 +24,14 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
           </Link>
           <div className="flex items-center gap-1">
             <Campanita empleadoId={empleado.id} sinLeer={count ?? 0} />
-            <span className="hidden px-2 text-sm text-stone-600 dark:text-stone-400 sm:inline">{empleado.nombre}</span>
+            <Link
+              href="/perfil"
+              aria-label="Mi perfil"
+              className="flex h-9 items-center gap-2 rounded-lg px-2.5 text-sm text-stone-600 transition-colors hover:bg-stone-100 hover:text-stone-900 dark:text-stone-400 dark:hover:bg-stone-800 dark:hover:text-stone-50"
+            >
+              <IconoUsuario />
+              <span className="hidden sm:inline">{empleado.nombre}</span>
+            </Link>
             <form action={cerrarSesion}>
               <button className="h-9 rounded-lg px-3 text-sm text-stone-600 transition-colors hover:bg-stone-100 hover:text-stone-900 dark:text-stone-400 dark:hover:bg-stone-800 dark:hover:text-stone-50">Salir</button>
             </form>
