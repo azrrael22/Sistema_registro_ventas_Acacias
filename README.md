@@ -87,6 +87,30 @@ update empleados set es_admin = true, activo = true where email = 'TU_CORREO';
    - Tipo **Supabase Edge Functions** → `enviar-notificacion`, método POST
    - HTTP Header: `x-webhook-secret` = el mismo `WEBHOOK_SECRET`
 
+### 4. Despliegue automático
+
+Después de la primera puesta en producción, un push a `main` lo despliega todo:
+
+- **Vercel** publica la app (integración con GitHub).
+- **GitHub Actions** ([.github/workflows/supabase.yml](.github/workflows/supabase.yml)) corre
+  `supabase db push` y `supabase functions deploy enviar-notificacion`. Solo se activa si el push
+  cambia `supabase/migrations/`, `supabase/functions/` o `supabase/config.toml`, y también se puede
+  lanzar a mano desde **Actions → Desplegar Supabase → Run workflow**.
+
+El workflow necesita tres secretos en GitHub → **Settings → Secrets and variables → Actions**:
+
+| Secreto | De dónde sale |
+| --- | --- |
+| `SUPABASE_ACCESS_TOKEN` | [supabase.com/dashboard/account/tokens](https://supabase.com/dashboard/account/tokens) |
+| `SUPABASE_DB_PASSWORD` | La contraseña de la base del proyecto (Project Settings → Database) |
+| `SUPABASE_PROJECT_ID` | El REF de la URL del dashboard: `supabase.com/dashboard/project/<REF>` |
+
+Vercel y el workflow corren en paralelo. La migración suele terminar antes que el build de Vercel,
+pero durante unos segundos puede quedar la app vieja contra el esquema nuevo. Por eso cada migración
+debe funcionar también con la versión anterior de la app: primero se agrega, y lo viejo se quita en
+un despliegue posterior. Los secretos de la Edge Function (`supabase secrets set`) siguen siendo
+manuales, y los comandos de los pasos 1 y 3 sirven para desplegar a mano si hace falta.
+
 ## Estructura
 
 ```
