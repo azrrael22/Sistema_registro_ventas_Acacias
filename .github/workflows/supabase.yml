@@ -27,9 +27,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # La misma versión del CLI que se usa en local (`supabase --version`). La v3 cambió el
+      # formato de config.toml (p. ej. [inbucket] → [local_smtp]): subirla aquí y en local a la vez.
       - uses: supabase/setup-cli@v1
         with:
-          version: latest
+          version: 2.84.2
 
       - name: Vincular el proyecto
         run: supabase link --project-ref "$SUPABASE_PROJECT_ID"
