@@ -63,6 +63,9 @@ update empleados set es_admin = true, activo = true where email = 'TU_CORREO';
 2. En **Environment Variables** agrega:
    - `NEXT_PUBLIC_SUPABASE_URL` → Supabase → Project Settings → API (Project URL)
    - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` → Supabase → Project Settings → API Keys (Publishable key)
+   - `CRON_SECRET` → una clave larga inventada (ej. `openssl rand -hex 32`). Protege `/api/latido`, el
+     cron diario que programa [vercel.json](vercel.json): el plan gratuito de Supabase pausa el proyecto
+     tras 7 días sin actividad, y el latido lo evita. Se revisa en Vercel → Settings → Cron Jobs.
 3. **Deploy**. Cada push a `main` publica en producción; cada push a otra rama crea una vista previa.
 4. En Supabase → **Authentication → URL Configuration**:
    - **Site URL**: la URL de Vercel (ej. `https://acacias-ventas.vercel.app`)

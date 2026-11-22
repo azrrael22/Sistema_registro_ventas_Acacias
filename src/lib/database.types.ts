@@ -588,6 +588,7 @@ export type Database = {
           unidades_quedan: number
         }[]
       }
+      latido: { Args: never; Returns: string }
       puede_editar_producto: { Args: { p_producto: number }; Returns: boolean }
       registrar_conteo: {
         Args: { p_contadas: number; p_nota?: string; p_producto: number }

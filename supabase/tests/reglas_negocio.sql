@@ -366,6 +366,8 @@ set local role anon;
 do $$ begin
   begin perform 1 from stock_producto; assert false, 'anon stock';
   exception when insufficient_privilege then null; end;
+  -- …salvo el latido del cron, que no lee ninguna tabla
+  assert latido() is not null, 'anon latido';
 end $$;
 
 reset role;
