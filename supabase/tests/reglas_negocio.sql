@@ -8,37 +8,49 @@ delete from productos; delete from categorias;
 
 -- Usuarios: admin + A, B, C, D, E(pendiente)
 insert into auth.users (id, email, aud, role, raw_user_meta_data) values
- ('00000000-0000-0000-0000-00000000000a','admin@x.co','authenticated','authenticated','{"nombre":"Admin"}');
+ ('00000000-0000-0000-0000-00000000000a','admin@x.co','authenticated','authenticated','{"primer_nombre":"Admin","primer_apellido":"Sistema","segundo_apellido":"Acacias"}');
 update empleados set es_admin = true, activo = true where email = 'admin@x.co';
 insert into auth.users (id, email, aud, role, raw_user_meta_data) values
- ('00000000-0000-0000-0000-000000000001','a@x.co','authenticated','authenticated','{"nombre":"Ana","tipo_documento":"CC","numero_documento":"1032456789"}'),
- ('00000000-0000-0000-0000-000000000002','b@x.co','authenticated','authenticated','{"nombre":"Beto","tipo_documento":"TI","numero_documento":"1032456789"}'),
- ('00000000-0000-0000-0000-000000000003','c@x.co','authenticated','authenticated','{"nombre":"Caro","tipo_documento":"Pasaporte","numero_documento":"AB123456"}'),
- ('00000000-0000-0000-0000-000000000004','d@x.co','authenticated','authenticated','{}'),
- ('00000000-0000-0000-0000-000000000005','e@x.co','authenticated','authenticated','{"nombre":"Eva"}');
+ ('00000000-0000-0000-0000-000000000001','a@x.co','authenticated','authenticated','{"primer_nombre":"Ana","segundo_nombre":" María ","primer_apellido":"Ruiz","segundo_apellido":"Gómez","tipo_documento":"CC","numero_documento":"1032456789"}'),
+ ('00000000-0000-0000-0000-000000000002','b@x.co','authenticated','authenticated','{"primer_nombre":"Beto","primer_apellido":"Pardo","segundo_apellido":"Rojas","tipo_documento":"TI","numero_documento":"1032456789"}'),
+ ('00000000-0000-0000-0000-000000000003','c@x.co','authenticated','authenticated','{"primer_nombre":"Caro","primer_apellido":"Díaz","segundo_apellido":"Mora","tipo_documento":"Pasaporte","numero_documento":"AB123456"}'),
+ ('00000000-0000-0000-0000-000000000004','d@x.co','authenticated','authenticated','{"primer_nombre":"Darío","primer_apellido":"Gil","segundo_apellido":"León"}'),
+ ('00000000-0000-0000-0000-000000000005','e@x.co','authenticated','authenticated','{"primer_nombre":"Eva","primer_apellido":"Soto","segundo_apellido":"Vega"}');
 
 do $$ begin
   assert (select count(*) from empleados) = 6, 'perfiles creados';
   assert (select count(*) from empleados where activo) = 1, 'solo admin activo';
   assert (select count(*) from notificaciones where tipo='registro_pendiente') = 5, 'admin notificado 5 veces';
-  assert (select nombre from empleados where email='d@x.co') = 'd', 'nombre por defecto';
+  assert (select nombre from empleados where email='a@x.co') = 'Ana Ruiz', 'nombre visible: primer nombre + primer apellido';
+  assert (select nombre_completo from empleados where email='a@x.co') = 'Ana María Ruiz Gómez', 'nombre completo sin espacios sobrantes';
+  assert (select segundo_nombre is null from empleados where email='b@x.co'), 'segundo nombre opcional';
   assert (select tipo_documento::text || ' ' || numero_documento from empleados where email='a@x.co') = 'CC 1032456789', 'documento del registro';
   assert (select tipo_documento is null and numero_documento is null from empleados where email='d@x.co'), 'sin documento';
   begin
     insert into auth.users (id, email, aud, role, raw_user_meta_data) values
-     ('00000000-0000-0000-0000-000000000009','f@x.co','authenticated','authenticated','{"tipo_documento":"CC","numero_documento":"1032456789"}');
+     ('00000000-0000-0000-0000-000000000009','f@x.co','authenticated','authenticated','{"primer_nombre":"Fer","primer_apellido":"Gil","segundo_apellido":"Paz","tipo_documento":"CC","numero_documento":"1032456789"}');
     assert false, 'documento repetido';
   exception when unique_violation then null; end;
   begin
     insert into auth.users (id, email, aud, role, raw_user_meta_data) values
-     ('00000000-0000-0000-0000-000000000009','f@x.co','authenticated','authenticated','{"tipo_documento":"CC","numero_documento":"12AB34"}');
+     ('00000000-0000-0000-0000-000000000009','f@x.co','authenticated','authenticated','{"primer_nombre":"Fer","primer_apellido":"Gil","segundo_apellido":"Paz","tipo_documento":"CC","numero_documento":"12AB34"}');
     assert false, 'cédula solo con dígitos';
   exception when check_violation then null; end;
   begin
     insert into auth.users (id, email, aud, role, raw_user_meta_data) values
-     ('00000000-0000-0000-0000-000000000009','f@x.co','authenticated','authenticated','{"tipo_documento":"CC"}');
+     ('00000000-0000-0000-0000-000000000009','f@x.co','authenticated','authenticated','{"primer_nombre":"Fer","primer_apellido":"Gil","segundo_apellido":"Paz","tipo_documento":"CC"}');
     assert false, 'tipo sin número';
   exception when check_violation then null; end;
+  begin
+    insert into auth.users (id, email, aud, role, raw_user_meta_data) values
+     ('00000000-0000-0000-0000-000000000009','f@x.co','authenticated','authenticated','{"primer_nombre":"Fer","primer_apellido":"Gil"}');
+    assert false, 'segundo apellido obligatorio';
+  exception when raise_exception then null; end;
+  begin
+    insert into auth.users (id, email, aud, role, raw_user_meta_data) values
+     ('00000000-0000-0000-0000-000000000009','f@x.co','authenticated','authenticated','{"primer_apellido":"Gil","segundo_apellido":"Paz"}');
+    assert false, 'primer nombre obligatorio';
+  exception when not_null_violation then null; end;
 end $$;
 
 create temp table r(k text primary key, v bigint);
@@ -73,8 +85,24 @@ do $$ begin
     insert into categorias (nombre) values ('hack');
     assert false, 'pendiente no crea categorias';
   exception when insufficient_privilege then null; end;
+  begin
+    update empleados set nombre = 'hack' where id = auth.uid();
+    assert false, 'nombre es generado';
+  exception when generated_always then null; end;
+  begin
+    update empleados set primer_nombre = ' Eva' where id = auth.uid();
+    assert false, 'nombre con espacios sobrantes';
+  exception when check_violation then null; end;
+  begin
+    update empleados set segundo_apellido = null where id = auth.uid();
+    assert false, 'no puede borrar su apellido';
+  exception when raise_exception then null; end;
 end $$;
-update empleados set nombre = 'Eva M' where id = auth.uid();  -- sí puede cambiar su nombre
+-- sí puede cambiar su nombre
+update empleados set segundo_nombre = 'Marcela', primer_apellido = 'Soto Ramos' where id = auth.uid();
+do $$ begin
+  assert (select nombre_completo from empleados where id = auth.uid()) = 'Eva Marcela Soto Ramos Vega', 'cambia su nombre';
+end $$;
 
 -- ===== Admin aprueba A, B, C, D =====
 reset role;
@@ -95,8 +123,8 @@ end $$;
 -- ===== Perfil: cada uno cambia solo su nombre; el correo se copia desde Auth =====
 set local request.jwt.claims = '{"sub":"00000000-0000-0000-0000-000000000001"}';
 do $$ begin
-  update empleados set nombre = 'hack' where id = '00000000-0000-0000-0000-000000000002';
-  assert (select nombre from empleados where id = '00000000-0000-0000-0000-000000000002') = 'Beto', 'no cambia el nombre de otro';
+  update empleados set primer_nombre = 'hack' where id = '00000000-0000-0000-0000-000000000002';
+  assert (select nombre from empleados where id = '00000000-0000-0000-0000-000000000002') = 'Beto Pardo', 'no cambia el nombre de otro';
 end $$;
 reset role;
 update auth.users set email = 'dario@x.co' where id = '00000000-0000-0000-0000-000000000004';
@@ -231,7 +259,7 @@ do $$ begin
   assert (select count(*) from notificaciones) = 3, 'C: aprobada + retiro + nuevo socio';
   assert (select count(*) from reporte_socio('trimestre', '2020-01-01', '2100-01-01')) = 2, 'C ve 2 productos';
   assert (select sum(retiros) from retiros_socio('2020-01-01', '2100-01-01') where categoria='Repelentes') = 20000, 'retiros por categoría';
-  assert (select mensaje from notificaciones where tipo='retiro') = 'Ana retiró $20000.00 de Repelentes', 'el aviso nombra la categoría';
+  assert (select mensaje from notificaciones where tipo='retiro') = 'Ana Ruiz retiró $20000.00 de Repelentes', 'el aviso nombra la categoría';
   assert (select sum(ventas_netas) from reporte_socio('dia', '2020-01-01', '2100-01-01'))
        = (select sum(ventas_netas) from reporte_socio('anio', '2020-01-01', '2100-01-01')), 'por día suma igual que por año';
   assert (select unidades_base from inventario_socio('2020-01-01', '2100-01-01') where producto='Repelentes std') = 10, 'base repelentes';

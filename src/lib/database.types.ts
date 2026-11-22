@@ -68,7 +68,12 @@ export type Database = {
           es_admin: boolean
           id: string
           nombre: string
+          nombre_completo: string
           numero_documento: string | null
+          primer_apellido: string | null
+          primer_nombre: string
+          segundo_apellido: string | null
+          segundo_nombre: string | null
           tipo_documento: Database["public"]["Enums"]["tipo_documento"] | null
         }
         Insert: {
@@ -77,8 +82,13 @@ export type Database = {
           email: string
           es_admin?: boolean
           id: string
-          nombre: string
+          nombre?: string
+          nombre_completo?: string
           numero_documento?: string | null
+          primer_apellido?: string | null
+          primer_nombre: string
+          segundo_apellido?: string | null
+          segundo_nombre?: string | null
           tipo_documento?: Database["public"]["Enums"]["tipo_documento"] | null
         }
         Update: {
@@ -88,7 +98,12 @@ export type Database = {
           es_admin?: boolean
           id?: string
           nombre?: string
+          nombre_completo?: string
           numero_documento?: string | null
+          primer_apellido?: string | null
+          primer_nombre?: string
+          segundo_apellido?: string | null
+          segundo_nombre?: string | null
           tipo_documento?: Database["public"]["Enums"]["tipo_documento"] | null
         }
         Relationships: []

@@ -6,6 +6,7 @@ import { Aviso, Entrada, Etiqueta, Tarjeta, Titulo } from "@/components/ui";
 import { BotonEnvio } from "@/components/boton-envio";
 import { FormAccion } from "@/components/form-accion";
 import { EntradaContrasena } from "@/components/entrada-contrasena";
+import { CamposNombre } from "@/components/campos-nombre";
 import { actualizarNombre, cambiarContrasena, cambiarCorreo } from "./actions";
 
 export const metadata: Metadata = { title: "Mi perfil" };
@@ -55,9 +56,7 @@ export default async function PerfilPage() {
               )}
             </Dato>
             <FormAccion accion={actualizarNombre} className="flex flex-col gap-3">
-              <Etiqueta texto="Nombre">
-                <Entrada name="nombre" required maxLength={80} defaultValue={yo.nombre} autoComplete="name" />
-              </Etiqueta>
+              <CamposNombre valores={yo} />
               <BotonEnvio variante="secundario" className="self-start">Guardar nombre</BotonEnvio>
             </FormAccion>
           </div>

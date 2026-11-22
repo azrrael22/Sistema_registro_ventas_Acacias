@@ -6,7 +6,8 @@ export function CamposDocumento({ tipo, numero, className }: { tipo?: TipoDocume
   return (
     <>
       <Etiqueta texto="Tipo de documento" className={className}>
-        <Selector name="tipo_documento" required defaultValue={tipo ?? ""}>
+        {/* React no actualiza el defaultValue de un <select>: la key lo vuelve a montar si cambia */}
+        <Selector key={tipo ?? ""} name="tipo_documento" required defaultValue={tipo ?? ""}>
           <option value="" disabled>Elige uno</option>
           {TIPOS_DOCUMENTO.map((t) => (
             <option key={t.valor} value={t.valor}>{t.texto}</option>

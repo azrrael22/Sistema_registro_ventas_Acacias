@@ -5,6 +5,8 @@ import { Navegacion } from "@/components/navegacion";
 import { Campanita } from "@/components/campanita";
 import { Marca } from "@/components/marca";
 import { EnlacePerfil } from "@/components/enlace-perfil";
+import { Aviso } from "@/components/ui";
+import { faltanApellidos } from "@/lib/nombres";
 import { cerrarSesion } from "../(auth)/actions";
 
 export default async function AppLayout({ children }: LayoutProps<"/">) {
@@ -32,7 +34,17 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
         </div>
         <Navegacion esAdmin={empleado.es_admin} />
       </header>
-      <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-6 sm:px-6 sm:py-8 print:max-w-none print:p-0">{children}</main>
+      <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-6 sm:px-6 sm:py-8 print:max-w-none print:p-0">
+        {faltanApellidos(empleado) && (
+          <div className="mb-6 print:hidden">
+            <Aviso tipo="info">
+              Faltan tus apellidos.{" "}
+              <Link href="/perfil" className="font-medium text-emerald-700 hover:underline dark:text-emerald-400">Complétalos en Mi perfil</Link>
+            </Aviso>
+          </div>
+        )}
+        {children}
+      </main>
     </div>
   );
 }

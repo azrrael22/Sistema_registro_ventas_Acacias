@@ -5,15 +5,15 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/server/supabase";
 import { requerirEmpleadoActivo } from "@/server/sesion";
 import { mensajeError } from "@/lib/formato";
+import { leerNombres } from "@/lib/nombres";
 import type { Resultado } from "@/lib/acciones";
 
 export async function actualizarNombre(_: Resultado, form: FormData): Promise<Resultado> {
   const yo = await requerirEmpleadoActivo();
-  const nombre = String(form.get("nombre")).trim();
-  if (!nombre) return { error: "Escribe tu nombre" };
-  if (nombre.length > 80) return { error: "El nombre puede tener hasta 80 caracteres" };
+  const nombres = leerNombres(form);
+  if ("error" in nombres) return nombres;
   const supabase = await createClient();
-  const { error } = await supabase.from("empleados").update({ nombre }).eq("id", yo.id);
+  const { error } = await supabase.from("empleados").update(nombres).eq("id", yo.id);
   if (error) return { error: mensajeError(error)! };
   // El nombre también se ve en el encabezado
   revalidatePath("/", "layout");

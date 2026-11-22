@@ -3,6 +3,7 @@ import { createClient } from "@/server/supabase";
 import { requerirAdmin } from "@/server/sesion";
 import { fecha } from "@/lib/formato";
 import { documento } from "@/lib/documentos";
+import { faltanApellidos } from "@/lib/nombres";
 import { Insignia, Tarjeta, Titulo } from "@/components/ui";
 import { IconoFlecha } from "@/components/iconos";
 import { BotonEnvio } from "@/components/boton-envio";
@@ -20,7 +21,7 @@ export default async function EmpleadosPage() {
   const supabase = await createClient();
   const { data: empleados } = await supabase
     .from("empleados")
-    .select("id, nombre, email, tipo_documento, numero_documento, activo, es_admin, creado_en")
+    .select("id, nombre_completo, primer_apellido, segundo_apellido, email, tipo_documento, numero_documento, activo, es_admin, creado_en")
     .order("activo")
     .order("nombre");
 
@@ -42,10 +43,11 @@ export default async function EmpleadosPage() {
             <li key={e.id} className="flex flex-wrap items-center justify-between gap-3 px-4 py-4 sm:px-5">
               <div className="min-w-0">
                 <p className="flex flex-wrap items-center gap-2 font-medium text-stone-900 dark:text-stone-50">
-                  {e.nombre}
+                  {e.nombre_completo}
                   {e.es_admin && <Insignia>Admin</Insignia>}
                   {!e.activo && <Insignia variante="advertencia">Pendiente</Insignia>}
                   {!e.tipo_documento && <Insignia>Sin documento</Insignia>}
+                  {faltanApellidos(e) && <Insignia>Faltan apellidos</Insignia>}
                 </p>
                 <p className="text-sm text-stone-500 dark:text-stone-400">
                   {e.tipo_documento && e.numero_documento && <span className="tabular-nums">{documento(e.tipo_documento, e.numero_documento)} · </span>}
