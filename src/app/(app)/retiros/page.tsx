@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import { createClient } from "@/server/supabase";
 import { requerirEmpleadoActivo } from "@/server/sesion";
-import { misProductos } from "@/server/consultas";
-import { dinero, fecha } from "@/lib/formato";
-import { Entrada, Etiqueta, Selector, Tarjeta, Titulo, Vacio } from "@/components/ui";
+import { misCategorias } from "@/server/consultas";
+import { dinero, horaDe, porDia, tituloDia } from "@/lib/formato";
+import { Entrada, Etiqueta, Monto, Selector, Tarjeta, Titulo, Vacio } from "@/components/ui";
 import { BotonEnvio } from "@/components/boton-envio";
 import { FormAccion } from "@/components/form-accion";
 import { registrarRetiro } from "./actions";
@@ -12,36 +12,36 @@ export const metadata: Metadata = { title: "Retiros" };
 
 export default async function RetirosPage() {
   const empleado = await requerirEmpleadoActivo();
-  const productos = await misProductos(empleado.id);
-  const ids = productos.map((p) => p.id);
+  const ids = await misCategorias(empleado.id);
   const supabase = await createClient();
   const [{ data: saldos }, { data: retiros }] = await Promise.all([
-    supabase.from("saldo_producto").select("producto_id, saldo").in("producto_id", ids),
+    supabase.from("saldo_categoria").select("categoria_id, nombre, saldo").in("categoria_id", ids).order("nombre"),
     supabase
       .from("retiros")
-      .select("id, monto, fecha, nota, empleado_id, productos(nombre), empleados(nombre)")
-      .in("producto_id", ids)
+      .select("id, monto, fecha, nota, empleado_id, categorias(nombre), empleados(nombre)")
+      .in("categoria_id", ids)
       .order("fecha", { ascending: false })
       .limit(30),
   ]);
-  const saldoPor = new Map(saldos?.map((s) => [s.producto_id, Number(s.saldo ?? 0)]));
-  const total = [...saldoPor.values()].reduce((a, b) => a + b, 0);
+  const categorias = saldos?.map((s) => ({ id: s.categoria_id!, nombre: s.nombre, saldo: Number(s.saldo ?? 0) })) ?? [];
+  const total = categorias.reduce((t, c) => t + c.saldo, 0);
 
   return (
     <>
       <Titulo>Retiros de dinero</Titulo>
-      {!productos.length ? (
+      {!categorias.length ? (
         <Vacio>Solo los socios pueden retirar dinero. Hazte socio de una categoría en “Productos y socios”.</Vacio>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2">
+        // items-start: cada tarjeta con su altura, sin franja vacía al fondo de la más corta
+        <div className="grid gap-4 md:grid-cols-2 md:items-start">
           <Tarjeta>
-            <h2 className="mb-3 font-semibold">Registrar retiro</h2>
+            <h2 className="mb-4 font-medium text-stone-900 dark:text-stone-50">Registrar retiro</h2>
             <FormAccion accion={registrarRetiro} className="flex flex-col gap-3">
-              <Etiqueta texto="Producto">
-                <Selector name="producto_id" required>
-                  {productos.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.nombre} · disponible {dinero(saldoPor.get(p.id))}
+              <Etiqueta texto="Categoría">
+                <Selector name="categoria_id" required>
+                  {categorias.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.nombre} · disponible {dinero(c.saldo)}
                     </option>
                   ))}
                 </Selector>
@@ -57,34 +57,45 @@ export default async function RetirosPage() {
           </Tarjeta>
 
           <Tarjeta>
-            <h2 className="mb-1 font-semibold">Saldo disponible</h2>
-            <p className="mb-3 text-2xl font-semibold tabular-nums">{dinero(total)}</p>
-            <ul className="divide-y divide-stone-100 text-sm">
-              {productos.map((p) => (
-                <li key={p.id} className="flex justify-between py-2">
-                  <span>{p.nombre} <span className="text-stone-500">· {p.categorias?.nombre}</span></span>
-                  <span className="font-medium tabular-nums">{dinero(saldoPor.get(p.id))}</span>
+            <h2 className="text-sm text-stone-500 dark:text-stone-400">Saldo disponible</h2>
+            <Monto valor={total} className="mt-1 block text-3xl font-medium text-stone-900 dark:text-stone-50" />
+            <ul className="mt-4 divide-y divide-stone-100 border-t border-stone-100 text-sm dark:divide-stone-700 dark:border-stone-700">
+              {categorias.map((c) => (
+                <li key={c.id} className="flex justify-between gap-4 py-2.5">
+                  <span className="text-stone-900 dark:text-stone-50">{c.nombre}</span>
+                  <Monto valor={c.saldo} className="text-stone-900 dark:text-stone-50" />
                 </li>
               ))}
             </ul>
           </Tarjeta>
 
           <Tarjeta className="md:col-span-2">
-            <h2 className="mb-3 font-semibold">Últimos retiros</h2>
+            <h2 className="mb-3 font-medium text-stone-900 dark:text-stone-50">Últimos retiros</h2>
             {!retiros?.length ? (
-              <p className="text-sm text-stone-500">Sin retiros todavía.</p>
+              <p className="text-sm text-stone-500 dark:text-stone-400">Sin retiros todavía</p>
             ) : (
-              <ul className="divide-y divide-stone-100 text-sm">
-                {retiros.map((r) => (
-                  <li key={r.id} className="flex flex-wrap justify-between gap-2 py-2">
-                    <span>
-                      <span className="font-medium">{dinero(r.monto)}</span> de {r.productos?.nombre}
-                      <span className="text-stone-500"> · {r.empleado_id === empleado.id ? "tú" : r.empleados?.nombre}{r.nota ? ` · ${r.nota}` : ""}</span>
-                    </span>
-                    <span className="text-stone-500">{fecha(r.fecha)}</span>
-                  </li>
+              // Por día, como en Ventas e Inventario. El monto va a la derecha, en la misma columna que el saldo
+              <div className="flex flex-col gap-4">
+                {porDia(retiros).map(([dia, delDia]) => (
+                  <div key={dia}>
+                    <h3 className="text-sm font-medium text-stone-500 dark:text-stone-400">{tituloDia(dia)}</h3>
+                    <ul className="divide-y divide-stone-100 text-sm dark:divide-stone-700">
+                      {delDia.map((r) => (
+                        <li key={r.id} className="flex items-baseline justify-between gap-4 py-2.5">
+                          <span className="min-w-0">
+                            <span className="block text-stone-900 dark:text-stone-50">{r.categorias?.nombre}</span>
+                            <span className="block text-xs text-stone-500 dark:text-stone-400">
+                              {horaDe(r.fecha)} · {r.empleado_id === empleado.id ? "tú" : r.empleados?.nombre}
+                              {r.nota && <> · “{r.nota}”</>}
+                            </span>
+                          </span>
+                          <Monto valor={r.monto} className="shrink-0 font-medium text-stone-900 dark:text-stone-50" />
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                 ))}
-              </ul>
+              </div>
             )}
           </Tarjeta>
         </div>

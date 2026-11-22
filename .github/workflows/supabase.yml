@@ -1,0 +1,44 @@
+# Despliega a Supabase lo que llega a main: las migraciones nuevas y la Edge Function.
+# La app la despliega Vercel por su cuenta (integración con GitHub).
+name: Desplegar Supabase
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "supabase/migrations/**"
+      - "supabase/functions/**"
+      - "supabase/config.toml"
+  # Permite lanzarlo a mano desde la pestaña Actions.
+  workflow_dispatch:
+
+# Nunca dos despliegues a la vez contra la base de producción.
+concurrency:
+  group: supabase-produccion
+  cancel-in-progress: false
+
+jobs:
+  desplegar:
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Vincular el proyecto
+        run: supabase link --project-ref "$SUPABASE_PROJECT_ID"
+
+      # Solo aplica las migraciones que todavía no están en producción.
+      - name: Aplicar migraciones
+        run: supabase db push
+
+      # Toma verify_jwt = false de supabase/config.toml. Los secretos de la función
+      # (RESEND_API_KEY, WEBHOOK_SECRET…) se ponen a mano con `supabase secrets set`.
+      - name: Desplegar la Edge Function
+        run: supabase functions deploy enviar-notificacion --project-ref "$SUPABASE_PROJECT_ID"

@@ -3,6 +3,10 @@ import { requerirEmpleadoActivo } from "@/server/sesion";
 import { createClient } from "@/server/supabase";
 import { Navegacion } from "@/components/navegacion";
 import { Campanita } from "@/components/campanita";
+import { Marca } from "@/components/marca";
+import { EnlacePerfil } from "@/components/enlace-perfil";
+import { Aviso } from "@/components/ui";
+import { faltanApellidos } from "@/lib/nombres";
 import { cerrarSesion } from "../(auth)/actions";
 
 export default async function AppLayout({ children }: LayoutProps<"/">) {
@@ -15,22 +19,32 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
 
   return (
     <div className="flex min-h-dvh flex-col">
-      <header className="sticky top-0 z-10 border-b border-stone-200 bg-white/95 backdrop-blur print:hidden">
-        <div className="mx-auto flex max-w-5xl items-center justify-between gap-3 px-4 py-3">
-          <Link href="/" className="flex items-center gap-2 font-semibold">
-            <span aria-hidden>🌳</span> Las Acacias
+      <header className="sticky top-0 z-10 border-b border-stone-200 bg-white/95 backdrop-blur-sm dark:border-stone-700 dark:bg-stone-900/95 print:hidden">
+        <div className="mx-auto flex h-14 max-w-5xl items-center justify-between gap-3 px-4 sm:px-6">
+          <Link href="/" className="flex items-center gap-2 font-semibold text-stone-900 dark:text-stone-50">
+            <Marca className="size-5" /> Las Acacias
           </Link>
           <div className="flex items-center gap-1">
             <Campanita empleadoId={empleado.id} sinLeer={count ?? 0} />
-            <span className="hidden text-sm text-stone-600 sm:inline">{empleado.nombre}</span>
+            <EnlacePerfil nombre={empleado.nombre} />
             <form action={cerrarSesion}>
-              <button className="rounded-lg px-2 py-2 text-sm text-stone-600 hover:bg-stone-100">Salir</button>
+              <button className="h-9 rounded-lg px-3 text-sm text-stone-600 transition-colors hover:bg-stone-100 hover:text-stone-900 dark:text-stone-400 dark:hover:bg-stone-800 dark:hover:text-stone-50">Salir</button>
             </form>
           </div>
         </div>
         <Navegacion esAdmin={empleado.es_admin} />
       </header>
-      <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-6 print:max-w-none print:p-0">{children}</main>
+      <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-6 sm:px-6 sm:py-8 print:max-w-none print:p-0">
+        {faltanApellidos(empleado) && (
+          <div className="mb-6 print:hidden">
+            <Aviso tipo="info">
+              Faltan tus apellidos.{" "}
+              <Link href="/perfil" className="font-medium text-emerald-700 hover:underline dark:text-emerald-400">Complétalos en Mi perfil</Link>
+            </Aviso>
+          </div>
+        )}
+        {children}
+      </main>
     </div>
   );
 }

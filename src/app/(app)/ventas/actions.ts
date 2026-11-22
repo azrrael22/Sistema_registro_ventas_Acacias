@@ -7,17 +7,21 @@ import { requerirEmpleadoActivo } from "@/server/sesion";
 import { mensajeError } from "@/lib/formato";
 import type { Resultado } from "@/lib/acciones";
 
-export type ItemVenta = { producto_id: number; cantidad: number };
+// precio_unitario solo se envía si hay descuento; la BD impide que supere el precio del producto
+export type ItemVenta = { producto_id: number; cantidad: number; precio_unitario?: number };
 
 export async function registrarVenta(items: ItemVenta[], nota: string): Promise<Resultado> {
   await requerirEmpleadoActivo();
   const validos = items.filter((i) => Number.isInteger(i.cantidad) && i.cantidad > 0);
-  if (!validos.length) return { error: "Agrega al menos un producto." };
+  if (!validos.length) return { error: "Agrega al menos un producto" };
+  if (validos.some((i) => i.precio_unitario !== undefined && !(Number.isFinite(i.precio_unitario) && i.precio_unitario >= 0))) {
+    return { error: "Precio inválido" };
+  }
   const supabase = await createClient();
   const { error } = await supabase.rpc("registrar_venta", { p_items: validos, p_nota: nota });
   if (error) return { error: mensajeError(error)! };
   revalidatePath("/", "layout");
-  return { ok: "Venta registrada." };
+  return { ok: "Venta registrada" };
 }
 
 export async function registrarDevolucion(_: Resultado, form: FormData): Promise<Resultado> {
@@ -30,7 +34,7 @@ export async function registrarDevolucion(_: Resultado, form: FormData): Promise
       items.push({ producto_id: Number(clave.slice("cantidad_".length)), cantidad });
     }
   }
-  if (!items.length) return { error: "Indica cuántas unidades se devuelven." };
+  if (!items.length) return { error: "Indica cuántas unidades se devuelven" };
   const supabase = await createClient();
   const { error } = await supabase.rpc("registrar_venta", {
     p_items: items,

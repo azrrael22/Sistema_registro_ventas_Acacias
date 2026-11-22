@@ -5,6 +5,9 @@ import { useActionState } from "react";
 import { Aviso, Entrada, Etiqueta } from "@/components/ui";
 import { BotonEnvio } from "@/components/boton-envio";
 import { EntradaContrasena } from "@/components/entrada-contrasena";
+import { CamposDocumento } from "@/components/campos-documento";
+import { CamposNombre } from "@/components/campos-nombre";
+import type { TipoDocumento } from "@/lib/documentos";
 import { iniciarSesion, registrarse } from "./actions";
 
 export function FormularioAuth({ modo }: { modo: "login" | "registro" }) {
@@ -12,15 +15,19 @@ export function FormularioAuth({ modo }: { modo: "login" | "registro" }) {
 
   if (estado?.ok) return <Aviso tipo="ok">{estado.ok}</Aviso>;
 
+  // Lo que se envió, para que un error no vacíe el formulario
+  const v = estado?.valores;
+
   return (
     <form action={accion} className="flex flex-col gap-4">
       {modo === "registro" && (
-        <Etiqueta texto="Nombre">
-          <Entrada name="nombre" required autoComplete="name" />
-        </Etiqueta>
+        <>
+          <CamposNombre valores={v} />
+          <CamposDocumento tipo={v?.tipo_documento as TipoDocumento | undefined} numero={v?.numero_documento} />
+        </>
       )}
       <Etiqueta texto="Correo">
-        <Entrada name="email" type="email" required autoComplete="email" />
+        <Entrada name="email" type="email" required autoComplete="email" defaultValue={v?.email} />
       </Etiqueta>
       <Etiqueta texto="Contraseña">
         <EntradaContrasena
@@ -37,11 +44,11 @@ export function FormularioAuth({ modo }: { modo: "login" | "registro" }) {
       )}
       <Aviso>{estado?.error}</Aviso>
       <BotonEnvio pendiente="Un momento…">{modo === "login" ? "Ingresar" : "Crear cuenta"}</BotonEnvio>
-      <p className="text-center text-sm text-stone-600">
+      <p className="text-center text-sm text-stone-600 dark:text-stone-400">
         {modo === "login" ? (
-          <>¿No tienes cuenta? <Link className="font-medium text-emerald-700 hover:underline" href="/registro">Regístrate</Link></>
+          <>¿No tienes cuenta? <Link className="font-medium text-emerald-700 hover:underline dark:text-emerald-400" href="/registro">Regístrate</Link></>
         ) : (
-          <>¿Ya tienes cuenta? <Link className="font-medium text-emerald-700 hover:underline" href="/login">Ingresa</Link></>
+          <>¿Ya tienes cuenta? <Link className="font-medium text-emerald-700 hover:underline dark:text-emerald-400" href="/login">Ingresa</Link></>
         )}
       </p>
     </form>
