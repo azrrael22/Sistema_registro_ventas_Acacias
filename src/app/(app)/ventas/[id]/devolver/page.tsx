@@ -19,8 +19,9 @@ export default async function DevolverPage({ params }: PageProps<"/ventas/[id]/d
       .select("id, fecha, tipo, venta_items(producto_id, cantidad, precio_unitario, productos(nombre))")
       .eq("id", id)
       .eq("tipo", "venta")
-      .maybeSingle(),
-    supabase.from("ventas").select("venta_items(producto_id, cantidad)").eq("venta_origen_id", id),
+      .maybeSingle()
+      .throwOnError(),
+    supabase.from("ventas").select("venta_items(producto_id, cantidad)").eq("venta_origen_id", id).throwOnError(),
   ]);
   if (!venta) notFound();
 
@@ -53,7 +54,7 @@ export default async function DevolverPage({ params }: PageProps<"/ventas/[id]/d
                       max={max}
                       defaultValue={0}
                       disabled={max <= 0}
-                      className="w-20 text-right tabular-nums"
+                      className="cifra w-20 text-right"
                     />
                   </label>
                 </li>

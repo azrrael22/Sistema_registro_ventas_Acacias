@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Form from "next/form";
 import { Suspense } from "react";
-import { dinero, dineroCorto, fecha, fechaCorta, hoy, mensajeError, porcentaje, rangoFechas } from "@/lib/formato";
+import { stockBajo, dinero,dineroCorto, fecha, fechaCorta, hoy, porcentaje, rangoFechas } from "@/lib/formato";
 import { PERIODOS, leerFiltros, obtenerReporte, type Filtros, type Periodo } from "@/server/reportes";
-import { Aviso, Boton, Entrada, Etiqueta, Monto, Pestanas, Tarjeta, Titulo, Vacio, claseBoton, cx } from "@/components/ui";
+import { Aviso, Boton, Entrada, Esqueleto, Etiqueta, Monto, Pestanas, Tarjeta, Titulo, Vacio, claseBoton, cx } from "@/components/ui";
 import { BotonImprimir } from "@/components/boton-imprimir";
 import { Marca } from "@/components/marca";
 
@@ -50,7 +50,12 @@ export default async function ReportesPage({ searchParams }: PageProps<"/reporte
 
 async function ContenidoReporte({ filtros }: { filtros: Filtros }) {
   const r = await obtenerReporte(filtros);
-  if (r.error) return <Aviso>{mensajeError(r.error)}</Aviso>;
+  // Las RPCs de reportes no tienen reglas que fallen: un error es del sistema. El aviso va bajo los
+  // filtros, que siguen a mano para reintentar.
+  if (r.error) {
+    console.error("No se pudo generar el reporte:", r.error);
+    return <Aviso>No se pudo generar el reporte porque el sistema tuvo un problema al leer los datos. Recarga la página para intentarlo de nuevo; si sigue pasando, avísale a un administrador.</Aviso>;
+  }
   if (!r.esSocio) {
     return (
       <Vacio>
@@ -130,7 +135,7 @@ function Indicador({ titulo, valor, className, children }: { titulo: string; val
     <Tarjeta className={cx("flex flex-col gap-1", className)}>
       <p className="text-sm text-stone-500 dark:text-stone-400">{titulo}</p>
       {/* En lg son cinco columnas: el tamaño baja para que los montos quepan */}
-      <p className="text-xl font-medium text-stone-900 tabular-nums sm:text-2xl lg:text-xl dark:text-stone-50">{valor}</p>
+      <p className="cifra text-xl font-medium text-stone-900 sm:text-2xl lg:text-xl dark:text-stone-50">{valor}</p>
       {children}
     </Tarjeta>
   );
@@ -143,8 +148,8 @@ function Variacion({ actual, anterior, neutral }: { actual: number; anterior: nu
   const cambio = (actual - anterior) / Math.abs(anterior);
   const color = neutral || !cambio ? "text-stone-600 dark:text-stone-400" : cambio > 0 ? "text-emerald-700 dark:text-emerald-400" : "text-red-700 dark:text-red-400";
   return (
-    <p className={cx("text-xs font-medium tabular-nums", color)}>
-      <span aria-hidden>{cambio > 0 ? "▲" : cambio < 0 ? "▼" : "■"}</span> {porcentaje(cambio, true)}{" "}
+    <p className={cx("text-xs font-medium", color)}>
+      <span aria-hidden>{cambio > 0 ? "▲" : cambio < 0 ? "▼" : "■"}</span> <span className="cifra">{porcentaje(cambio, true)}</span>{" "}
       <span className="font-normal text-stone-500 dark:text-stone-400">vs periodo anterior</span>
     </p>
   );
@@ -215,13 +220,13 @@ function Tendencia({ tramos, paso }: { tramos: Reporte["tramos"]; paso: number }
                       <div
                         role="tooltip"
                         className={cx(
-                          "pointer-events-none absolute bottom-full z-10 mb-2 hidden rounded-lg bg-stone-900 px-3 py-2 text-xs whitespace-nowrap text-white shadow-lg group-hover:block group-focus-visible:block print:hidden",
+                          "pointer-events-none absolute bottom-full z-10 mb-2 hidden rounded-lg bg-stone-900 px-3 py-2 text-xs whitespace-nowrap text-white group-hover:block group-focus-visible:block print:hidden",
                           lado,
                         )}
                       >
                         <p className="font-medium">{rangoTramo(t)}</p>
                         <p>Ventas netas: <Monto valor={t.ventas} /></p>
-                        <p className="tabular-nums">Unidades: {t.unidades}</p>
+                        <p>Unidades: <span className="cifra">{t.unidades}</span></p>
                         {t.retiros > 0 && <p>Retiros: <Monto valor={t.retiros} /></p>}
                       </div>
                     </div>
@@ -247,7 +252,7 @@ function Tendencia({ tramos, paso }: { tramos: Reporte["tramos"]; paso: number }
 // La primera y la última columna se alinean con el relleno de la tarjeta
 const borde = "first:pl-4 last:pr-4 sm:first:pl-5 sm:last:pr-5";
 const th = cx("px-3 py-2 font-medium", borde);
-const td = cx("px-3 py-2.5 text-right tabular-nums", borde);
+const td = cx("cifra px-3 py-2.5 text-right", borde);
 
 // Los retiros son por categoría: aquí se ve cuánto queda de lo vendido en cada sociedad
 function TablaCategorias({ categorias, total }: { categorias: Reporte["categorias"]; total: Reporte["total"] }) {
@@ -316,6 +321,11 @@ function TablaProductos({ productos, total }: { productos: Reporte["productos"];
           <strong className="font-medium text-stone-600 dark:text-stone-300">Base:</strong> stock al inicio del periodo + entradas ·{" "}
           <strong className="font-medium text-stone-600 dark:text-stone-300">Perdidas:</strong> faltantes de ajustes y conteos (valor a precio actual) ·{" "}
           <strong className="font-medium text-stone-600 dark:text-stone-300">Quedan:</strong> stock al cierre del periodo
+          {productos.some((p) => p.quedan === null) && (
+            <>
+              {" "}· <strong className="font-medium text-stone-600 dark:text-stone-300">—:</strong> el producto no lleva inventario
+            </>
+          )}
         </p>
       </div>
       <div className="overflow-x-auto">
@@ -339,19 +349,21 @@ function TablaProductos({ productos, total }: { productos: Reporte["productos"];
                     <p className="font-medium text-stone-900 dark:text-stone-50">{p.nombre}</p>
                     <p className="text-xs text-stone-500 dark:text-stone-400">{p.categoria}</p>
                   </td>
-                  <td className={td}>{num(p.base)}</td>
+                  <td className={td}>{p.base === null ? <SinInventario /> : num(p.base)}</td>
                   <td className={td}>{num(p.unidades)}</td>
                   <td className={td}>
-                    <Perdidas unidades={p.perdidas} valor={p.valorPerdido} />
+                    {p.perdidas === null ? <SinInventario /> : <Perdidas unidades={p.perdidas} valor={p.valorPerdido ?? 0} />}
                   </td>
-                  <td className={cx(td, p.quedan <= 3 ? "font-medium text-amber-700 dark:text-amber-400" : "text-stone-900 dark:text-stone-50")}>{num(p.quedan)}</td>
+                  <td className={cx(td, stockBajo(p.quedan) ? "font-medium text-amber-700 dark:text-amber-400" : "text-stone-900 dark:text-stone-50")}>
+                    {p.quedan === null ? <SinInventario /> : num(p.quedan)}
+                  </td>
                   <td className={cx("px-3 py-2.5", borde)}>
                     <div className="flex items-center gap-3">
                       <div className="h-2 w-24 shrink-0 rounded-full bg-stone-100 dark:bg-stone-700" aria-hidden>
                         <div className="h-2 rounded-full bg-emerald-600" style={{ width: `${parte * 100}%` }} />
                       </div>
                       <Monto valor={p.ventas} />
-                      <span className="text-xs text-stone-500 tabular-nums dark:text-stone-400">{porcentaje(parte)}</span>
+                      <span className="cifra text-xs text-stone-500 dark:text-stone-400">{porcentaje(parte)}</span>
                     </div>
                   </td>
                 </tr>
@@ -379,6 +391,16 @@ function TablaProductos({ productos, total }: { productos: Reporte["productos"];
   );
 }
 
+// Base, Perdidas y Quedan de un producto que no lleva inventario
+function SinInventario() {
+  return (
+    <>
+      <span aria-hidden className="text-stone-500 dark:text-stone-400">—</span>
+      <span className="sr-only">Sin inventario</span>
+    </>
+  );
+}
+
 // Unidades perdidas en rojo, con su valor debajo; sin pérdidas, un 0 normal
 function Perdidas({ unidades, valor }: { unidades: number; valor: number }) {
   if (!unidades) return <>0</>;
@@ -397,13 +419,13 @@ function Generando() {
         <span className="size-4 animate-spin rounded-full border-2 border-emerald-600 border-t-transparent dark:border-emerald-500" aria-hidden />
         Generando reporte…
       </p>
-      <div className="h-24 animate-pulse rounded-xl bg-stone-100 dark:bg-stone-800" />
+      <Esqueleto className="h-24" />
       <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-5">
         {[0, 1, 2, 3, 4].map((i) => (
-          <div key={i} className={cx("h-24 animate-pulse rounded-xl bg-stone-100 dark:bg-stone-800", i === 4 && "col-span-2 lg:col-span-1")} />
+          <Esqueleto key={i} className={cx("h-24", i === 4 && "col-span-2 lg:col-span-1")} />
         ))}
       </div>
-      <div className="h-64 animate-pulse rounded-xl bg-stone-100 dark:bg-stone-800" />
+      <Esqueleto className="h-64" />
     </div>
   );
 }

@@ -4,7 +4,7 @@ import { createClient } from "@/server/supabase";
 import { requerirEmpleadoActivo } from "@/server/sesion";
 import { misProductos } from "@/server/consultas";
 import { horaDe, porDia, tituloDia } from "@/lib/formato";
-import { Monto, Pestanas, Tarjeta, Titulo, Vacio, claseBoton, cx } from "@/components/ui";
+import { Monto, Pestanas, Tiquete, Titulo, Vacio, claseBoton, cx } from "@/components/ui";
 import { IconoMas } from "@/components/iconos";
 
 export const metadata: Metadata = { title: "Ventas" };
@@ -26,7 +26,7 @@ export default async function VentasPage({ searchParams }: PageProps<"/ventas">)
   const ids = vista === "categorias" ? (await misProductos(empleado.id)).map((p) => p.id) : [];
   if (!vista) consulta = consulta.eq("empleado_id", empleado.id);
   if (vista === "categorias") consulta = consulta.in("venta_items.producto_id", ids);
-  const { data: ventas } = vista === "categorias" && !ids.length ? { data: [] } : await consulta;
+  const { data: ventas } = vista === "categorias" && !ids.length ? { data: [] } : await consulta.throwOnError();
 
   // Agrupadas por día, de la más reciente a la más antigua. Sin total diario: con el
   // límite de 100 ventas, el día más antiguo de la lista puede llegar incompleto.
@@ -58,20 +58,20 @@ export default async function VentasPage({ searchParams }: PageProps<"/ventas">)
         <div className="flex flex-col gap-6">
           {dias.map(([dia, delDia]) => (
             <div key={dia}>
-              <h2 className="mb-2 text-sm font-medium text-stone-500 dark:text-stone-400">{tituloDia(dia)}</h2>
-              <Tarjeta className="p-0">
-                <ul className="divide-y divide-stone-100 dark:divide-stone-700">
-                  {delDia.map((v) => {
-                    const esDevolucion = v.tipo === "devolucion";
-                    // En una devolución las líneas y el total salen en negativo, como en una nota crédito
-                    const signo = esDevolucion ? -1 : 1;
-                    const total = v.venta_items.reduce((t, i) => t + i.cantidad * Number(i.precio_unitario), 0);
-                    return (
-                      <li key={v.id} className="px-4 py-4 sm:px-5">
-                        {/* Mismo ancho que el tiquete: la acción queda sobre el total y no al otro lado de la tarjeta */}
-                        <div className="flex items-start justify-between gap-4 sm:max-w-sm">
+              <h2 className="mb-3 text-sm font-medium text-stone-600 dark:text-stone-400">{tituloDia(dia)}</h2>
+              {/* Cada venta es su tiquete, como el que se ve al ingresar: encabezado, líneas, punteado y total */}
+              <ul className="grid items-start gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {delDia.map((v) => {
+                  const esDevolucion = v.tipo === "devolucion";
+                  // En una devolución las líneas y el total salen en negativo, como en una nota crédito
+                  const signo = esDevolucion ? -1 : 1;
+                  const total = v.venta_items.reduce((t, i) => t + i.cantidad * Number(i.precio_unitario), 0);
+                  return (
+                    <li key={v.id}>
+                      <Tiquete>
+                        <div className="flex items-start justify-between gap-3">
                           <div className="min-w-0">
-                            <p className="text-sm font-medium text-stone-900 dark:text-stone-50">
+                            <p className="font-medium text-stone-900 dark:text-stone-50">
                               {esDevolucion ? "Devolución" : "Venta"} #{v.id}
                               {v.venta_origen_id && <span className="font-normal text-stone-500 dark:text-stone-400"> de #{v.venta_origen_id}</span>}
                             </p>
@@ -79,52 +79,50 @@ export default async function VentasPage({ searchParams }: PageProps<"/ventas">)
                               {horaDe(v.fecha)} · {v.empleado_id === empleado.id ? "tú" : v.empleados?.nombre}
                             </p>
                           </div>
+                          {/* La acción no es parte del tiquete: va en la letra de la app */}
                           {!esDevolucion && (
                             <Link
                               href={`/ventas/${v.id}/devolver`}
-                              className="-my-2 -mr-2 shrink-0 rounded-md p-2 text-sm text-stone-500 transition-colors hover:bg-stone-100 hover:text-stone-900 focus-visible:outline-2 focus-visible:outline-emerald-700 dark:text-stone-400 dark:hover:bg-stone-700 dark:hover:text-stone-50 dark:focus-visible:outline-emerald-500"
+                              className="-my-2 -mr-2 shrink-0 rounded-md p-2 font-sans text-sm text-stone-500 transition-colors hover:bg-stone-100 hover:text-stone-900 focus-visible:outline-2 focus-visible:outline-emerald-700 pointer-coarse:-my-3 pointer-coarse:py-3 dark:text-stone-400 dark:hover:bg-stone-700 dark:hover:text-stone-50 dark:focus-visible:outline-emerald-500"
                             >
                               Registrar devolución
                             </Link>
                           )}
                         </div>
 
-                        {/* Cada venta se lee como su tiquete: líneas, línea punteada y total */}
-                        <div className="mt-3 sm:max-w-sm">
-                          <ul className="flex flex-col gap-1 text-sm">
-                            {v.venta_items.map((i) => (
-                              <li key={i.id} className="flex justify-between gap-4">
-                                <span className="min-w-0 text-stone-700 dark:text-stone-300">
-                                  {i.cantidad} × {i.productos?.nombre}
-                                </span>
-                                <span className="shrink-0 text-stone-900 dark:text-stone-50">
-                                  {Number(i.precio_lista) > Number(i.precio_unitario) && (
-                                    <>
-                                      <s className="text-stone-500 dark:text-stone-400">
-                                        <span className="sr-only">antes </span>
-                                        <Monto valor={signo * i.cantidad * Number(i.precio_lista)} />
-                                      </s>{" "}
-                                    </>
-                                  )}
-                                  <Monto valor={signo * i.cantidad * Number(i.precio_unitario)} />
-                                </span>
-                              </li>
-                            ))}
-                          </ul>
-                          <div className="mt-2 flex items-baseline justify-between border-t border-dashed border-stone-300 pt-2 dark:border-stone-600">
-                            <span className="text-sm text-stone-600 dark:text-stone-400">Total</span>
-                            <Monto
-                              valor={signo * total}
-                              className={cx("font-medium", esDevolucion ? "text-amber-800 dark:text-amber-400" : "text-stone-900 dark:text-stone-50")}
-                            />
-                          </div>
-                          {v.nota && <p className="mt-2 text-sm text-stone-500 dark:text-stone-400">“{v.nota}”</p>}
+                        <ul className="mt-3 flex flex-col gap-1 border-t border-dashed border-stone-300 pt-3 dark:border-stone-600">
+                          {v.venta_items.map((i) => (
+                            <li key={i.id} className="flex justify-between gap-3">
+                              <span className="min-w-0 text-stone-700 dark:text-stone-300">
+                                {i.cantidad} × {i.productos?.nombre}
+                              </span>
+                              <span className="shrink-0 text-right text-stone-900 dark:text-stone-50">
+                                {Number(i.precio_lista) > Number(i.precio_unitario) && (
+                                  <>
+                                    <s className="text-stone-500 dark:text-stone-400">
+                                      <span className="sr-only">antes </span>
+                                      <Monto valor={signo * i.cantidad * Number(i.precio_lista)} />
+                                    </s>{" "}
+                                  </>
+                                )}
+                                <Monto valor={signo * i.cantidad * Number(i.precio_unitario)} />
+                              </span>
+                            </li>
+                          ))}
+                        </ul>
+                        <div className="mt-3 flex items-baseline justify-between border-t border-dashed border-stone-300 pt-3 dark:border-stone-600">
+                          <span className="text-stone-600 dark:text-stone-400">Total</span>
+                          <Monto
+                            valor={signo * total}
+                            className={cx("text-base font-medium", esDevolucion ? "text-amber-800 dark:text-amber-400" : "text-stone-900 dark:text-stone-50")}
+                          />
                         </div>
-                      </li>
-                    );
-                  })}
-                </ul>
-              </Tarjeta>
+                        {v.nota && <p className="mt-3 text-stone-500 dark:text-stone-400">“{v.nota}”</p>}
+                      </Tiquete>
+                    </li>
+                  );
+                })}
+              </ul>
             </div>
           ))}
         </div>

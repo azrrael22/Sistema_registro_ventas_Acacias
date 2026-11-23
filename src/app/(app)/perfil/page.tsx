@@ -17,7 +17,7 @@ function Seccion({ titulo, explicacion, children }: { titulo: string; explicacio
     <section className="grid gap-3 lg:grid-cols-[16rem_minmax(0,36rem)] lg:gap-8">
       <div>
         <h2 className="font-medium text-stone-900 dark:text-stone-50">{titulo}</h2>
-        <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">{explicacion}</p>
+        <p className="mt-1 text-sm text-stone-600 dark:text-stone-400">{explicacion}</p>
       </div>
       <Tarjeta>{children}</Tarjeta>
     </section>
@@ -35,8 +35,10 @@ function Dato({ etiqueta, children, ayuda }: { etiqueta: string; children: React
   );
 }
 
-export default async function PerfilPage() {
+export default async function PerfilPage({ searchParams }: PageProps<"/perfil">) {
   const yo = await requerirEmpleadoActivo();
+  // auth/callback manda aquí cuando el enlace para cambiar el correo venció o ya se usó
+  const { error } = await searchParams;
   const supabase = await createClient();
   // new_email: cambio de correo que todavía no se ha confirmado
   const { data } = await supabase.auth.getUser();
@@ -50,7 +52,7 @@ export default async function PerfilPage() {
           <div className="flex flex-col gap-4">
             <Dato etiqueta="Documento" ayuda="Para corregirlo, pídeselo a un administrador">
               {yo.tipo_documento && yo.numero_documento ? (
-                <span className="tabular-nums">{documento(yo.tipo_documento, yo.numero_documento)}</span>
+                <span className="cifra">{documento(yo.tipo_documento, yo.numero_documento)}</span>
               ) : (
                 <span className="text-stone-500 dark:text-stone-400">Sin registrar</span>
               )}
@@ -65,6 +67,7 @@ export default async function PerfilPage() {
         <Seccion titulo="Correo" explicacion="Con él ingresas y ahí te llegan las notificaciones">
           <div className="flex flex-col gap-4">
             <Dato etiqueta="Correo actual">{data.user?.email ?? yo.email}</Dato>
+            {error === "enlace" && <Aviso>El enlace para cambiar el correo venció o ya se usó. Si el cambio no se hizo, pídelo de nuevo.</Aviso>}
             {correoPendiente && <Aviso tipo="info">Cambio pendiente a {correoPendiente}: abre el enlace que te enviamos a cada correo para terminarlo.</Aviso>}
             <FormAccion accion={cambiarCorreo} className="flex flex-col gap-3">
               <Etiqueta texto="Correo nuevo">

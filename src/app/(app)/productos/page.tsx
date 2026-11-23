@@ -1,19 +1,21 @@
 import type { Metadata } from "next";
 import { createClient } from "@/server/supabase";
 import { requerirEmpleadoActivo } from "@/server/sesion";
-import { Boton, Entrada, Etiqueta, Insignia, Monto, Pestanas, Tarjeta, Titulo, Vacio, cx } from "@/components/ui";
+import { Entrada, Etiqueta, Insignia, Monto, Pestanas, Tarjeta, Titulo, Vacio, cx } from "@/components/ui";
 import { IconoFlecha, IconoMas } from "@/components/iconos";
+import { BotonConfirmar } from "@/components/boton-confirmar";
 import { BotonEnvio } from "@/components/boton-envio";
 import { FormAccion } from "@/components/form-accion";
 import { CampoFoto } from "@/components/campo-foto";
 import { FotoProducto } from "@/components/foto-producto";
+import { stockBajo, textoStock } from "@/lib/formato";
 import { urlFoto } from "@/lib/fotos";
 import { actualizarProducto, crearCategoria, crearProducto, salirCategoria, unirseCategoria } from "./actions";
 
 export const metadata: Metadata = { title: "Productos y socios" };
 
-// <summary> sin el triángulo del navegador
-const resumen = "inline-flex cursor-pointer list-none items-center gap-2 font-medium transition-colors [&::-webkit-details-marker]:hidden";
+// <summary> sin el triángulo del navegador (con pantalla táctil, de 44 px de alto)
+const resumen = "inline-flex cursor-pointer list-none items-center gap-2 font-medium transition-colors pointer-coarse:min-h-11 [&::-webkit-details-marker]:hidden";
 
 // "1 producto", "3 productos"
 const cuenta = (n: number, uno: string, varios: string) => `${n} ${n === 1 ? uno : varios}`;
@@ -25,11 +27,12 @@ export default async function ProductosPage({ searchParams }: PageProps<"/produc
   const [{ data: categorias }, { data: socios }, { data: stock }] = await Promise.all([
     supabase
       .from("categorias")
-      .select("id, nombre, creado_por, productos(id, nombre, precio, activo, creado_por, foto)")
+      .select("id, nombre, creado_por, productos(id, nombre, precio, activo, maneja_inventario, creado_por, foto)")
       .order("nombre")
-      .order("nombre", { referencedTable: "productos" }),
-    supabase.from("socios").select("categoria_id, empleado_id, empleados(nombre)").eq("activo", true),
-    supabase.from("stock_producto").select("producto_id, stock"),
+      .order("nombre", { referencedTable: "productos" })
+      .throwOnError(),
+    supabase.from("socios").select("categoria_id, empleado_id, empleados(nombre)").eq("activo", true).throwOnError(),
+    supabase.from("stock_producto").select("producto_id, stock").throwOnError(),
   ]);
   const stockPor = new Map(stock?.map((s) => [s.producto_id, Number(s.stock ?? 0)]));
   const mias = new Set(socios?.filter((s) => s.empleado_id === empleado.id).map((s) => s.categoria_id));
@@ -61,7 +64,9 @@ export default async function ProductosPage({ searchParams }: PageProps<"/produc
           const soySocio = mias.has(cat.id);
           const puedeEditar = empleado.es_admin || soySocio;
           const activos = cat.productos.filter((p) => p.activo).length;
-          const unidades = cat.productos.reduce((t, p) => t + (stockPor.get(p.id) ?? 0), 0);
+          // Las unidades en stock son solo de los productos que llevan inventario
+          const conInventario = cat.productos.filter((p) => p.maneja_inventario);
+          const unidades = conInventario.reduce((t, p) => t + (stockPor.get(p.id) ?? 0), 0);
           return (
             <Tarjeta key={cat.id}>
               <div className="flex flex-wrap items-start justify-between gap-3">
@@ -72,7 +77,8 @@ export default async function ProductosPage({ searchParams }: PageProps<"/produc
                   </h2>
                   <p className="mt-0.5 text-sm text-stone-500 tabular-nums dark:text-stone-400">
                     {cat.productos.length
-                      ? `${cuenta(cat.productos.length, "producto", "productos")} · ${cuenta(activos, "activo", "activos")} · ${cuenta(unidades, "unidad", "unidades")} en stock`
+                      ? `${cuenta(cat.productos.length, "producto", "productos")} · ${cuenta(activos, "activo", "activos")}` +
+                        (conInventario.length ? ` · ${cuenta(unidades, "unidad", "unidades")} en stock` : "")
                       : "Sin productos"}
                   </p>
                   <p className="mt-2 flex flex-wrap items-center gap-1.5 text-sm text-stone-500 dark:text-stone-400">
@@ -88,18 +94,23 @@ export default async function ProductosPage({ searchParams }: PageProps<"/produc
                 </div>
                 {/* En celular el botón siempre baja a su propia línea. El fantasma no tiene borde, así que
                     se corre lo que mide su relleno para que el texto quede alineado con el contenido
-                    (a la izquierda en celular, con los precios en escritorio). */}
-                <form action={soySocio ? salirCategoria : unirseCategoria} className="max-sm:w-full">
+                    (a la izquierda en celular, con los precios en escritorio). Dejar la sociedad pide
+                    confirmación: un toque por error quitaría el acceso a inventario y retiros. */}
+                <FormAccion accion={soySocio ? salirCategoria : unirseCategoria} className="max-sm:w-full" claseAviso="mt-2">
                   <input type="hidden" name="categoria_id" value={cat.id} />
-                  <Boton variante={soySocio ? "fantasma" : "secundario"} className={soySocio ? "max-sm:-ml-4 sm:-mr-4" : undefined}>
-                    {soySocio ? "Dejar de ser socio" : "Ser socio"}
-                  </Boton>
-                </form>
+                  {soySocio ? (
+                    <BotonConfirmar variante="fantasma" confirmar="Sí, dejar de ser socio" className="max-sm:-ml-4 sm:-mr-4">
+                      Dejar de ser socio
+                    </BotonConfirmar>
+                  ) : (
+                    <BotonEnvio variante="secundario" pendiente="Uniéndote…">Ser socio</BotonEnvio>
+                  )}
+                </FormAccion>
               </div>
 
               <ul className="mt-4 divide-y divide-stone-100 border-t border-stone-100 dark:divide-stone-700 dark:border-stone-700">
                 {cat.productos.map((p) => {
-                  const disponibles = stockPor.get(p.id) ?? 0;
+                  const disponibles = p.maneja_inventario ? (stockPor.get(p.id) ?? 0) : null;
                   // La misma fila para los productos que se editan y los que no: foto, nombre con su stock y precio
                   const fila = (
                     <>
@@ -110,8 +121,8 @@ export default async function ProductosPage({ searchParams }: PageProps<"/produc
                           {!p.activo && <Insignia className="ml-2">Inactivo</Insignia>}
                         </span>
                         {/* Stock bajo en ámbar, como en Inicio, Inventario y Vender (no en los inactivos) */}
-                        <span className={cx("block text-xs tabular-nums", p.activo && disponibles <= 3 ? "text-amber-700 dark:text-amber-400" : "text-stone-500 dark:text-stone-400")}>
-                          {disponibles} en stock
+                        <span className={cx("cifra block text-xs", p.activo && stockBajo(disponibles) ?"text-amber-700 dark:text-amber-400" : "text-stone-500 dark:text-stone-400")}>
+                          {textoStock(disponibles)}
                         </span>
                       </span>
                       <Monto valor={p.precio} className="shrink-0 text-stone-900 dark:text-stone-50" />
@@ -139,6 +150,9 @@ export default async function ProductosPage({ searchParams }: PageProps<"/produc
                             <CampoFoto texto="Cambiar foto" actual={urlFoto(p.foto)} className="min-w-64 flex-1" />
                             <label className="flex min-h-10 items-center gap-2 text-sm text-stone-700 dark:text-stone-300">
                               <input type="checkbox" name="activo" defaultChecked={p.activo} className="size-4" /> Activo
+                            </label>
+                            <label className="flex min-h-10 items-center gap-2 text-sm text-stone-700 dark:text-stone-300">
+                              <input type="checkbox" name="maneja_inventario" defaultChecked={p.maneja_inventario} className="size-4" /> Lleva inventario
                             </label>
                             <BotonEnvio variante="secundario">Guardar</BotonEnvio>
                           </FormAccion>
@@ -169,6 +183,9 @@ export default async function ProductosPage({ searchParams }: PageProps<"/produc
                       <Entrada name="precio" type="number" min="50" step="50" required />
                     </Etiqueta>
                     <CampoFoto requerida className="min-w-64 flex-1" />
+                    <label className="flex min-h-10 items-center gap-2 text-sm text-stone-700 dark:text-stone-300">
+                      <input type="checkbox" name="maneja_inventario" defaultChecked className="size-4" /> Lleva inventario
+                    </label>
                     <BotonEnvio>Agregar</BotonEnvio>
                   </FormAccion>
                 </details>

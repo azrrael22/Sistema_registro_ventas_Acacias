@@ -9,13 +9,11 @@ const items = [
 ];
 const total = items.reduce((t, i) => t + i.cantidad * i.precio, 0);
 
-// El borde de abajo se corta en zigzag, como un tiquete arrancado del rollo.
-const cortado = "conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) 50% / 12px 100%";
-
 export function TicketVenta() {
   return (
     <figure className="-rotate-2 drop-shadow-[0_12px_20px_rgb(28_25_23/0.10)] motion-safe:animate-aparecer" aria-label="Ejemplo de una venta registrada">
-      <div className="w-88 rounded-t-md bg-white px-7 pt-7 pb-11 font-mono text-sm text-stone-700" style={{ mask: cortado }}>
+      {/* El zigzag es el mismo de Tiquete (corte-tiquete); aquí con sombra porque es una ilustración */}
+      <div className="corte-tiquete w-88 rounded-t-md bg-white px-7 pt-7 pb-11 font-mono text-sm text-stone-700">
         <div className="flex items-center justify-between">
           <span className="flex items-center gap-2 text-stone-900">
             <Marca className="size-5" /> Las Acacias

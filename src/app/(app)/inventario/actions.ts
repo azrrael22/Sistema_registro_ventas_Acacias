@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/server/supabase";
 import { requerirEmpleadoActivo } from "@/server/sesion";
-import { mensajeError } from "@/lib/formato";
+import { mensajeError } from "@/lib/errores";
 import type { Resultado } from "@/lib/acciones";
 
 export async function registrarMovimiento(_: Resultado, form: FormData): Promise<Resultado> {
@@ -21,7 +21,7 @@ export async function registrarMovimiento(_: Resultado, form: FormData): Promise
       p_contadas: cantidad,
       p_nota: nota ?? undefined,
     });
-    if (error) return { error: mensajeError(error)! };
+    if (error) return { error: mensajeError(error) };
     revalidatePath("/", "layout");
     if (diferencia === 0) return { ok: "El conteo cuadra con el sistema" };
     if (diferencia === -1) return { ok: "Falta 1 unidad: queda registrada como perdida" };
@@ -33,7 +33,7 @@ export async function registrarMovimiento(_: Resultado, form: FormData): Promise
   if (!Number.isInteger(cantidad) || cantidad === 0) return { error: "La cantidad debe ser un número entero distinto de 0" };
   if (tipo === "entrada" && cantidad < 0) return { error: "Una entrada debe ser positiva. Usa un ajuste para restar." };
   const { error } = await supabase.from("inventario_movimientos").insert({ producto_id, tipo, cantidad, nota });
-  if (error) return { error: mensajeError(error)! };
+  if (error) return { error: mensajeError(error) };
   revalidatePath("/", "layout");
   return { ok: "Movimiento registrado" };
 }

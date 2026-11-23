@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/server/supabase";
 import { requerirEmpleadoActivo } from "@/server/sesion";
-import { mensajeError } from "@/lib/formato";
+import { mensajeError } from "@/lib/errores";
 import type { Resultado } from "@/lib/acciones";
 
 // precio_unitario solo se envía si hay descuento; la BD impide que supere el precio del producto
@@ -19,7 +19,7 @@ export async function registrarVenta(items: ItemVenta[], nota: string): Promise<
   }
   const supabase = await createClient();
   const { error } = await supabase.rpc("registrar_venta", { p_items: validos, p_nota: nota });
-  if (error) return { error: mensajeError(error)! };
+  if (error) return { error: mensajeError(error) };
   revalidatePath("/", "layout");
   return { ok: "Venta registrada" };
 }
@@ -42,7 +42,7 @@ export async function registrarDevolucion(_: Resultado, form: FormData): Promise
     p_venta_origen: ventaId,
     p_nota: String(form.get("nota") ?? ""),
   });
-  if (error) return { error: mensajeError(error)! };
+  if (error) return { error: mensajeError(error) };
   revalidatePath("/", "layout");
   redirect("/ventas");
 }

@@ -160,6 +160,35 @@ export function IconoEtiqueta(props: Props) {
   );
 }
 
+export function IconoPuntos(props: Props) {
+  return (
+    <Icono {...props}>
+      <circle cx="12" cy="12" r="1" />
+      <circle cx="19" cy="12" r="1" />
+      <circle cx="5" cy="12" r="1" />
+    </Icono>
+  );
+}
+
+export function IconoSalir(props: Props) {
+  return (
+    <Icono {...props}>
+      <path d="m16 17 5-5-5-5M21 12H9" />
+      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+    </Icono>
+  );
+}
+
+// wifi-off de lucide: el dispositivo no tiene conexión
+export function IconoSinConexion(props: Props) {
+  return (
+    <Icono {...props}>
+      <path d="M12 20h.01M8.5 16.429a5 5 0 0 1 7 0M5 12.859a10 10 0 0 1 5.17-2.69M19 12.859a10 10 0 0 0-2.007-1.523" />
+      <path d="M2 8.82a15 15 0 0 1 4.177-2.643M22 8.82a15 15 0 0 0-11.288-3.764M2 2l20 20" />
+    </Icono>
+  );
+}
+
 export function IconoImagen(props: Props) {
   return (
     <Icono {...props}>

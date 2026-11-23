@@ -111,15 +111,17 @@ export async function obtenerReporte(f: Filtros) {
   const productos = (inv.data ?? [])
     .map((p) => {
       const { unidades, ventas } = sumar(actuales.filter((r) => r.producto_id === p.producto_id));
+      // Sin inventario: base, perdidas y quedan no existen (null); sus ventas sí cuentan
+      const inventario = p.maneja_inventario;
       return {
         id: p.producto_id,
         nombre: p.producto,
         categoria: p.categoria,
-        base: Number(p.unidades_base),
-        perdidas: Number(p.unidades_perdidas),
+        base: inventario ? Number(p.unidades_base) : null,
+        perdidas: inventario ? Number(p.unidades_perdidas) : null,
         // Estimado al precio actual: el precio del día de la pérdida no se guarda
-        valorPerdido: Number(p.unidades_perdidas) * Number(p.precio),
-        quedan: Number(p.unidades_quedan),
+        valorPerdido: inventario ? Number(p.unidades_perdidas) * Number(p.precio) : null,
+        quedan: inventario ? Number(p.unidades_quedan) : null,
         unidades,
         ventas,
       };
@@ -144,10 +146,11 @@ export async function obtenerReporte(f: Filtros) {
     categorias,
     total: {
       ...sumar(actuales),
-      base: productos.reduce((t, p) => t + p.base, 0),
-      perdidas: productos.reduce((t, p) => t + p.perdidas, 0),
-      valorPerdido: productos.reduce((t, p) => t + p.valorPerdido, 0),
-      quedan: productos.reduce((t, p) => t + p.quedan, 0),
+      // Los productos sin inventario (null) suman 0
+      base: productos.reduce((t, p) => t + (p.base ?? 0), 0),
+      perdidas: productos.reduce((t, p) => t + (p.perdidas ?? 0), 0),
+      valorPerdido: productos.reduce((t, p) => t + (p.valorPerdido ?? 0), 0),
+      quedan: productos.reduce((t, p) => t + (p.quedan ?? 0), 0),
     },
     anterior: sumar(filas.filter((r) => r.dia <= f.antHasta)),
     paso,

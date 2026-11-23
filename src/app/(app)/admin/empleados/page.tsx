@@ -4,8 +4,9 @@ import { requerirAdmin } from "@/server/sesion";
 import { fecha } from "@/lib/formato";
 import { documento } from "@/lib/documentos";
 import { faltanApellidos } from "@/lib/nombres";
-import { Insignia, Tarjeta, Titulo } from "@/components/ui";
+import { Insignia, Tarjeta, Titulo, type Variante } from "@/components/ui";
 import { IconoFlecha } from "@/components/iconos";
+import { BotonConfirmar } from "@/components/boton-confirmar";
 import { BotonEnvio } from "@/components/boton-envio";
 import { FormAccion } from "@/components/form-accion";
 import { CamposDocumento } from "@/components/campos-documento";
@@ -13,8 +14,8 @@ import { actualizarDocumento, actualizarEmpleado } from "./actions";
 
 export const metadata: Metadata = { title: "Empleados" };
 
-// <summary> sin el triángulo del navegador
-const resumen = "inline-flex cursor-pointer list-none items-center gap-2 text-sm font-medium text-stone-500 transition-colors hover:text-stone-900 dark:text-stone-400 dark:hover:text-stone-50 [&::-webkit-details-marker]:hidden";
+// <summary> sin el triángulo del navegador (con pantalla táctil, de 44 px de alto)
+const resumen = "inline-flex cursor-pointer list-none items-center gap-2 text-sm font-medium text-stone-500 transition-colors hover:text-stone-900 pointer-coarse:min-h-11 dark:text-stone-400 dark:hover:text-stone-50 [&::-webkit-details-marker]:hidden";
 
 export default async function EmpleadosPage() {
   const yo = await requerirAdmin();
@@ -23,14 +24,20 @@ export default async function EmpleadosPage() {
     .from("empleados")
     .select("id, nombre_completo, primer_apellido, segundo_apellido, email, tipo_documento, numero_documento, activo, es_admin, creado_en")
     .order("activo")
-    .order("nombre");
+    .order("nombre")
+    .throwOnError();
 
-  const Accion = ({ id, activo, esAdmin, texto, variante }: { id: string; activo: boolean; esAdmin: boolean; texto: string; variante?: "primario" | "secundario" | "peligro" }) => (
+  // `confirmar`: la acción pide un segundo toque (BotonConfirmar) antes de enviarse
+  const Accion = ({ id, activo, esAdmin, texto, variante, confirmar }: { id: string; activo: boolean; esAdmin: boolean; texto: string; variante?: Variante; confirmar?: string }) => (
     <FormAccion accion={actualizarEmpleado}>
       <input type="hidden" name="id" value={id} />
       <input type="hidden" name="activo" value={String(activo)} />
       <input type="hidden" name="es_admin" value={String(esAdmin)} />
-      <BotonEnvio variante={variante ?? "secundario"} pendiente="…">{texto}</BotonEnvio>
+      {confirmar ? (
+        <BotonConfirmar variante={variante} confirmar={confirmar}>{texto}</BotonConfirmar>
+      ) : (
+        <BotonEnvio variante={variante ?? "secundario"} pendiente="…">{texto}</BotonEnvio>
+      )}
     </FormAccion>
   );
 
@@ -50,7 +57,7 @@ export default async function EmpleadosPage() {
                   {faltanApellidos(e) && <Insignia>Faltan apellidos</Insignia>}
                 </p>
                 <p className="text-sm text-stone-500 dark:text-stone-400">
-                  {e.tipo_documento && e.numero_documento && <span className="tabular-nums">{documento(e.tipo_documento, e.numero_documento)} · </span>}
+                  {e.tipo_documento && e.numero_documento && <span className="cifra">{documento(e.tipo_documento, e.numero_documento)} · </span>}
                   {e.email} · desde {fecha(e.creado_en)}
                 </p>
               </div>
@@ -61,7 +68,7 @@ export default async function EmpleadosPage() {
                   {e.activo ? (
                     <>
                       <Accion id={e.id} activo esAdmin={!e.es_admin} texto={e.es_admin ? "Quitar admin" : "Hacer admin"} />
-                      <Accion id={e.id} activo={false} esAdmin={false} texto="Desactivar" variante="peligro" />
+                      <Accion id={e.id} activo={false} esAdmin={false} texto="Desactivar" variante="peligro" confirmar="Sí, desactivar" />
                     </>
                   ) : (
                     <Accion id={e.id} activo esAdmin={false} texto="Aprobar" variante="primario" />

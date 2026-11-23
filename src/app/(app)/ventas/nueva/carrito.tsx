@@ -1,34 +1,43 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
-import { Aviso, Boton, Entrada, Monto, Vacio, cx } from "@/components/ui";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { unstable_rethrow } from "next/navigation";
+import { Aviso, Boton, Entrada, Etiqueta, Monto, Vacio, claseSegmento, claseSegmentos, cx } from "@/components/ui";
 import { IconoMas, IconoMenos } from "@/components/iconos";
 import { FotoProducto } from "@/components/foto-producto";
-import { dinero } from "@/lib/formato";
+import { useEnLinea } from "@/components/sin-conexion";
+import { dinero, stockBajo, textoStock } from "@/lib/formato";
+import { mensajeFalloVenta } from "@/lib/errores";
 import { registrarVenta } from "../actions";
+import { VENTA_VACIA, useVentaGuardada } from "./venta-guardada";
 
-type Producto = { id: number; nombre: string; precio: number; foto: string | null; categoria: string; stock: number };
+// stock null: el producto no lleva inventario y se vende sin tope
+type Producto = { id: number; nombre: string; precio: number; foto: string | null; categoria: string; stock: number | null };
+
+// Cuántas unidades se pueden vender como máximo
+const tope = (p: Producto) => p.stock ?? Infinity;
+
+// Copia sin la entrada de un producto
+function sin<T>(registro: Record<number, T>, id: number) {
+  const copia = { ...registro };
+  delete copia[id];
+  return copia;
+}
 
 // Botones − y + del control de cantidad (el contenedor recorta el fondo a su esquina)
 const paso =
-  "grid h-full w-10 shrink-0 cursor-pointer place-items-center text-stone-700 transition-colors enabled:hover:bg-stone-100 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-emerald-700 disabled:cursor-not-allowed disabled:text-stone-300 dark:text-stone-300 dark:enabled:hover:bg-stone-700 dark:focus-visible:outline-emerald-500 dark:disabled:text-stone-600";
+  "grid h-full w-10 shrink-0 cursor-pointer place-items-center text-stone-700 transition-colors enabled:hover:bg-stone-100 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-emerald-700 disabled:cursor-not-allowed disabled:text-stone-300 pointer-coarse:w-11 dark:text-stone-300 dark:enabled:hover:bg-stone-700 dark:focus-visible:outline-emerald-500 dark:disabled:text-stone-600";
+
+const unidadesTexto = (n: number) => `${n} ${n === 1 ? "unidad" : "unidades"}`;
 
 // Filtro por categoría: mismo aspecto que Pestanas, pero con botones porque es estado del cliente
 function Chips({ opciones, activa, onCambiar }: { opciones: string[]; activa: string | null; onCambiar: (c: string | null) => void }) {
   return (
-    <div role="group" aria-label="Filtrar por categoría" className="mt-3 overflow-x-auto">
-      <ul className="inline-flex gap-1 rounded-lg bg-stone-100 p-1 text-sm whitespace-nowrap dark:bg-stone-800">
+    <div role="group" aria-label="Filtrar por categoría" className="mt-3">
+      <ul className={claseSegmentos}>
         {[null, ...opciones].map((c) => (
           <li key={c ?? ""}>
-            <button
-              type="button"
-              aria-pressed={activa === c}
-              onClick={() => onCambiar(c)}
-              className={cx(
-                "block cursor-pointer rounded-md px-3 py-1.5 font-medium transition-colors focus-visible:outline-2 focus-visible:outline-emerald-700 dark:focus-visible:outline-emerald-500",
-                activa === c ? "bg-white text-stone-900 shadow-sm dark:bg-stone-700 dark:text-stone-50 dark:shadow-none" : "text-stone-600 hover:text-stone-900 dark:text-stone-400 dark:hover:text-stone-50",
-              )}
-            >
+            <button type="button" aria-pressed={activa === c} onClick={() => onCambiar(c)} className={cx("cursor-pointer", claseSegmento(activa === c))}>
               {c ?? "Todos"}
             </button>
           </li>
@@ -38,25 +47,47 @@ function Chips({ opciones, activa, onCambiar }: { opciones: string[]; activa: st
   );
 }
 
-export function Carrito({ productos }: { productos: Producto[] }) {
-  const [cantidades, setCantidades] = useState<Record<number, number>>({});
-  // Precio escrito por quien vende (descuento), como texto para poder borrarlo mientras escribe
-  const [precios, setPrecios] = useState<Record<number, string>>({});
+export function Carrito({ productos, empleadoId }: { productos: Producto[]; empleadoId: string }) {
+  // Cantidades, precios con descuento (como texto, para poder borrarlo mientras se escribe) y nota:
+  // quedan guardados en el celular hasta registrar la venta o vaciarla (ver venta-guardada.ts)
+  const [venta, cambiarVenta] = useVentaGuardada(`acacias:venta:${empleadoId}`);
+  const { cantidades, precios, nota } = venta;
   const [busqueda, setBusqueda] = useState("");
   const [categoria, setCategoria] = useState<string | null>(null);
   const [detalle, setDetalle] = useState(false);
-  const [nota, setNota] = useState("");
   const [mensaje, setMensaje] = useState<{ error?: string; ok?: string }>();
   const [enviando, startTransition] = useTransition();
+  const enLinea = useEnLinea();
+
+  // El alto del tiquete, como variable CSS para su `top` en escritorio (ver el aside). Sin estado de
+  // React: cambia con cada producto y no hace falta volver a pintar nada
+  const tiquete = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const aside = tiquete.current;
+    if (!aside) return;
+    const observador = new ResizeObserver(() => aside.style.setProperty("--alto-tiquete", `${aside.offsetHeight}px`));
+    observador.observe(aside);
+    return () => observador.disconnect();
+  }, []);
+
+  // Una venta guardada pudo quedar con más unidades de las que hay ahora: cuenta hasta el stock
+  const cantidadDe = (p: Producto) => Math.min(cantidades[p.id] ?? 0, Math.max(0, tope(p)));
 
   const fijar = (p: Producto, n: number) => {
     setMensaje(undefined);
-    const cant = Math.max(0, Math.min(p.stock, n || 0));
-    setCantidades((c) => ({ ...c, [p.id]: cant }));
+    const cant = Math.max(0, Math.min(tope(p), n || 0));
     // Si sale del carrito, vuelve a su precio de lista
-    if (!cant) setPrecios((pr) => { const resto = { ...pr }; delete resto[p.id]; return resto; });
+    cambiarVenta((v) =>
+      cant ? { ...v, cantidades: { ...v.cantidades, [p.id]: cant } } : { ...v, cantidades: sin(v.cantidades, p.id), precios: sin(v.precios, p.id) },
+    );
   };
-  const cambiar = (p: Producto, delta: number) => fijar(p, (cantidades[p.id] ?? 0) + delta);
+  const cambiar = (p: Producto, delta: number) => fijar(p, cantidadDe(p) + delta);
+
+  const vaciar = () => {
+    setMensaje(undefined);
+    setDetalle(false);
+    cambiarVenta(() => VENTA_VACIA);
+  };
 
   // Precio que se cobra: el de lista o uno menor. null si lo escrito no es válido.
   const precioDe = (p: Producto) => {
@@ -87,34 +118,48 @@ export function Carrito({ productos }: { productos: Producto[] }) {
     return [...porCategoria];
   }, [filtrados]);
 
-  const items = productos.filter((p) => cantidades[p.id] > 0);
+  // Los productos que ya no existen o se desactivaron no aparecen aunque sigan en la venta guardada
+  const items = productos.filter((p) => cantidadDe(p) > 0);
   const preciosValidos = items.every((p) => precioDe(p) !== null);
-  const total = items.reduce((t, p) => t + (precioDe(p) ?? p.precio) * cantidades[p.id], 0);
-  const descuento = items.reduce((t, p) => t + (p.precio - (precioDe(p) ?? p.precio)) * cantidades[p.id], 0);
-  const unidades = items.reduce((t, p) => t + cantidades[p.id], 0);
+  const total = items.reduce((t, p) => t + (precioDe(p) ?? p.precio) * cantidadDe(p), 0);
+  const descuento = items.reduce((t, p) => t + (p.precio - (precioDe(p) ?? p.precio)) * cantidadDe(p), 0);
+  const unidades = items.reduce((t, p) => t + cantidadDe(p), 0);
   // Un precio inválido abre el detalle para que se vea dónde corregirlo
   const verDetalle = detalle || !preciosValidos;
 
-  const confirmar = () =>
+  const confirmar = () => {
+    // Lo que se vendió, para confirmarlo después de vaciar el carrito
+    const resumen = `${unidadesTexto(unidades)} · ${dinero(total)}`;
     startTransition(async () => {
-      const r = await registrarVenta(
-        items.map((p) => {
-          const precio = precioDe(p) ?? p.precio;
-          return { producto_id: p.id, cantidad: cantidades[p.id], precio_unitario: precio < p.precio ? precio : undefined };
-        }),
-        nota,
-      );
-      setMensaje(r);
+      let r;
+      try {
+        r = await registrarVenta(
+          items.map((p) => {
+            const precio = precioDe(p) ?? p.precio;
+            return { producto_id: p.id, cantidad: cantidadDe(p), precio_unitario: precio < p.precio ? precio : undefined };
+          }),
+          nota,
+        );
+      } catch (e) {
+        // Las redirecciones (cuenta desactivada, sesión vencida) siguen su curso
+        unstable_rethrow(e);
+        // Sin internet, se cortó la conexión o el servidor falló: el carrito se queda como está y
+        // se dice si la venta pudo quedar registrada (para no registrarla dos veces)
+        setMensaje({ error: mensajeFalloVenta(e) });
+        return;
+      }
+      setMensaje(r?.ok ? { ok: `${r.ok} · ${resumen}` } : r);
       if (r?.ok) {
-        setCantidades({});
-        setPrecios({});
-        setNota("");
+        // Registrada: se borra también del celular
+        cambiarVenta(() => VENTA_VACIA);
         setDetalle(false);
       }
     });
+  };
 
   return (
-    <div className="pb-60 lg:grid lg:grid-cols-[1fr_20rem] lg:items-start lg:gap-6 lg:pb-0">
+    // pb-32: en celular y tablet, el final de la lista queda por encima de la barra de la venta
+    <div className="pb-32 lg:grid lg:grid-cols-[1fr_20rem] lg:items-start lg:gap-6 lg:pb-0">
       <div className="min-w-0">
         <Entrada
           type="search"
@@ -124,18 +169,17 @@ export function Carrito({ productos }: { productos: Producto[] }) {
           aria-label="Buscar producto"
         />
         {categorias.length > 1 && <Chips opciones={categorias} activa={categoria} onCambiar={setCategoria} />}
-        {mensaje?.ok && <div className="mt-4"><Aviso tipo="ok">{mensaje.ok}</Aviso></div>}
 
         {filtrados.length ? (
           <div className="mt-4 flex flex-col gap-6">
             {grupos.map(([cat, lista]) => (
               <div key={cat}>
                 {/* Con una categoría elegida en el filtro, el encabezado sobra */}
-                {cat && !categoria && <h2 className="mb-2 text-sm font-medium text-stone-500 dark:text-stone-400">{cat}</h2>}
+                {cat && !categoria && <h2 className="mb-2 text-sm font-medium text-stone-600 dark:text-stone-400">{cat}</h2>}
                 <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                   {lista.map((p) => {
-                    const cant = cantidades[p.id] ?? 0;
-                    const agotado = p.stock <= 0;
+                    const cant = cantidadDe(p);
+                    const agotado = tope(p) <= 0;
                     const precio = precioDe(p);
                     return (
                       // rounded-2xl: 8 de la foto y del control de cantidad + 8 de relleno
@@ -147,17 +191,18 @@ export function Carrito({ productos }: { productos: Producto[] }) {
                           agotado && "opacity-50",
                         )}
                       >
-                        {/* Tocar el producto suma una unidad */}
+                        {/* Tocar el producto suma una unidad. El precio y el stock se leen como descripción */}
                         <button
                           type="button"
                           onClick={() => cambiar(p, 1)}
-                          disabled={cant >= p.stock}
-                          aria-label={`Agregar un ${p.nombre}`}
+                          disabled={cant >= tope(p)}
+                          aria-label={`Agregar 1 ${p.nombre}`}
+                          aria-describedby={`info-${p.id}`}
                           className="flex flex-1 cursor-pointer flex-col rounded-t-2xl p-2 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-700 disabled:cursor-not-allowed dark:focus-visible:outline-emerald-500"
                         >
                           <FotoProducto src={p.foto} className="aspect-square h-auto w-full" />
                           <span className="mt-2 block px-1 font-medium leading-snug text-stone-900 line-clamp-2 dark:text-stone-50">{p.nombre}</span>
-                          <span className="mt-auto block px-1 pt-1 text-sm">
+                          <span id={`info-${p.id}`} className="mt-auto block px-1 pt-1 text-sm">
                             {precio !== null && precio < p.precio && (
                               <>
                                 <s className="text-stone-500 dark:text-stone-400">
@@ -167,20 +212,23 @@ export function Carrito({ productos }: { productos: Producto[] }) {
                               </>
                             )}
                             <Monto valor={precio ?? p.precio} className="text-stone-900 dark:text-stone-50" />
-                            <span className={cx("block text-xs", p.stock <= 3 ? "text-amber-700 dark:text-amber-400" : "text-stone-500 dark:text-stone-400")}>
-                              {agotado ? "Agotado" : `${p.stock} en stock`}
-                            </span>
+                            {/* Sin inventario no hay stock que mostrar: al vendedor no le dice nada */}
+                            {p.stock !== null && (
+                              <span className={cx("cifra block text-xs", stockBajo(p.stock) ? "text-amber-700 dark:text-amber-400" : "text-stone-500 dark:text-stone-400")}>
+                                {textoStock(p.stock)}
+                              </span>
+                            )}
                           </span>
                         </button>
 
                         {/* Cantidad en un solo control: − n +. También se puede escribir; se ajusta al stock */}
                         <div className="px-2 pb-2">
-                          <div className="flex h-10 items-center overflow-hidden rounded-lg border border-stone-300 bg-white transition-colors focus-within:border-emerald-600 focus-within:ring-2 focus-within:ring-emerald-600/20 dark:border-stone-600 dark:bg-stone-800 dark:focus-within:border-emerald-500 dark:focus-within:ring-emerald-500/20">
+                          <div className="flex h-10 items-center overflow-hidden rounded-lg border border-stone-300 bg-white transition-colors focus-within:border-emerald-600 focus-within:ring-2 focus-within:ring-emerald-600/20 pointer-coarse:h-11 dark:border-stone-600 dark:bg-stone-800 dark:focus-within:border-emerald-500 dark:focus-within:ring-emerald-500/20">
                             <button
                               type="button"
                               onClick={() => cambiar(p, -1)}
                               disabled={cant === 0}
-                              aria-label={`Quitar un ${p.nombre}`}
+                              aria-label={`Quitar 1 ${p.nombre}`}
                               className={paso}
                             >
                               <IconoMenos />
@@ -189,20 +237,20 @@ export function Carrito({ productos }: { productos: Producto[] }) {
                               type="number"
                               inputMode="numeric"
                               min={0}
-                              max={p.stock}
+                              max={p.stock ?? undefined}
                               step={1}
                               value={cant}
                               onChange={(e) => fijar(p, Math.trunc(Number(e.target.value)))}
                               onFocus={(e) => e.target.select()}
                               disabled={agotado}
                               aria-label={`Cantidad de ${p.nombre}`}
-                              className="h-full min-w-0 flex-1 bg-transparent text-center text-sm font-medium text-stone-900 tabular-nums focus:outline-none dark:text-stone-50"
+                              className="h-full min-w-0 flex-1 bg-transparent text-center text-sm font-medium text-stone-900 cifra focus:outline-none pointer-coarse:text-base dark:text-stone-50"
                             />
                             <button
                               type="button"
                               onClick={() => cambiar(p, 1)}
-                              disabled={cant >= p.stock}
-                              aria-label={`Agregar un ${p.nombre}`}
+                              disabled={cant >= tope(p)}
+                              aria-label={`Agregar 1 ${p.nombre}`}
                               className={paso}
                             >
                               <IconoMas />
@@ -217,40 +265,55 @@ export function Carrito({ productos }: { productos: Producto[] }) {
             ))}
           </div>
         ) : (
-          <div className="mt-4"><Vacio>Sin resultados</Vacio></div>
+          <div className="mt-4">
+            <Vacio>
+              Ningún producto coincide con la búsqueda
+              <span className="mt-3 block">
+                <Boton
+                  variante="secundario"
+                  onClick={() => {
+                    setBusqueda("");
+                    setCategoria(null);
+                  }}
+                >
+                  Limpiar búsqueda
+                </Boton>
+              </span>
+            </Vacio>
+          </div>
         )}
       </div>
 
-      {/* En celular es la barra fija de abajo; en escritorio, un panel al lado que queda
-          bajo el encabezado fijo (~101px) y nunca es más alto que la ventana */}
+      {/* En celular es una barra compacta sobre la navegación de abajo (en tablet, al fondo de la
+          pantalla); en escritorio, un panel al lado con forma de tiquete (el contorno va en el aside y
+          el zigzag en el div de adentro) que crece con cada producto, sin scroll propio. Mientras cabe
+          en la ventana queda bajo el encabezado fijo (~101px); si no cabe, baja con la página y se pega
+          cuando su borde de abajo llega al fondo, para que el total y «Registrar venta» sigan a la vista
+          (el `top` sale del alto que mide el ResizeObserver; antes de medir vale 8rem) */}
       <aside
+        ref={tiquete}
+        id="venta-actual"
         aria-label="Venta actual"
-        className="fixed inset-x-0 bottom-0 z-10 border-t border-stone-200 bg-white px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-[0_-4px_12px_rgba(0,0,0,0.05)] dark:border-stone-700 dark:bg-stone-900 dark:shadow-[0_-4px_12px_rgba(0,0,0,0.3)] lg:sticky lg:inset-auto lg:top-32 lg:z-auto lg:rounded-xl lg:border lg:bg-white lg:p-4 lg:shadow-sm lg:dark:bg-stone-800 lg:dark:shadow-none"
+        className="fixed inset-x-0 bottom-[calc(4rem+env(safe-area-inset-bottom))] z-10 border-t border-stone-200 bg-white px-4 py-3 md:bottom-0 md:pb-[max(0.75rem,env(safe-area-inset-bottom))] dark:border-stone-700 dark:bg-stone-900 lg:contorno-tiquete lg:sticky lg:inset-auto lg:top-[min(8rem,calc(100dvh_-_var(--alto-tiquete,0px)_-_1rem))] lg:z-auto lg:border-0 lg:bg-transparent lg:p-0 lg:dark:bg-transparent"
       >
-        <div className="mx-auto flex max-w-5xl flex-col gap-2 sm:px-6 lg:max-h-[calc(100dvh-12rem)] lg:px-0">
-          <div className="flex items-center justify-between gap-3">
-            <h2 className="font-medium text-stone-900 dark:text-stone-50">Venta actual</h2>
-            {items.length > 0 && preciosValidos && (
-              <Boton variante="fantasma" className="min-h-8 px-2 lg:hidden" onClick={() => setDetalle((d) => !d)} aria-expanded={verDetalle} aria-controls="detalle-venta">
-                {verDetalle ? "Ocultar" : "Ver detalle"}
-              </Boton>
-            )}
-          </div>
+        <div className="mx-auto flex max-w-5xl flex-col gap-2 sm:px-6 lg:corte-tiquete lg:rounded-t-xl lg:bg-white lg:px-4 lg:pt-4 lg:pb-8 lg:dark:bg-stone-800">
+          <h2 className="font-medium text-stone-900 max-lg:sr-only dark:text-stone-50">Venta actual</h2>
 
-          {/* En escritorio solo la lista cede espacio cuando el panel llega al alto de la ventana */}
-          <div id="detalle-venta" className={cx(!verDetalle && "hidden", "lg:flex lg:min-h-0 lg:flex-col")}>
+          {/* El detalle (líneas, precios y nota) se abre en celular con «Ver detalle» y la lista se
+              desplaza dentro de la barra; en escritorio siempre está a la vista y entero */}
+          <div id="detalle-venta" className={cx("flex-col gap-3 lg:flex", verDetalle ? "flex" : "hidden")}>
             {items.length ? (
               // Se lee como el tiquete: «2 × Cold brew» y su monto, en la misma columna que el total.
               // -mx-3 px-3: el -mr-2 de «Quitar» y los contornos de foco caben sin scroll horizontal
-              <ul className="-mx-3 flex max-h-[45vh] flex-col gap-3 overflow-y-auto px-3 py-1 lg:max-h-none">
+              <ul className="-mx-3 flex max-h-[40vh] flex-col gap-3 overflow-y-auto px-3 py-1 lg:max-h-none lg:overflow-visible">
                 {items.map((p) => {
-                  const cant = cantidades[p.id];
+                  const cant = cantidadDe(p);
                   const precio = precioDe(p);
                   return (
                     <li key={p.id}>
                       <div className="flex items-baseline justify-between gap-3 text-sm">
                         <p className="min-w-0 truncate text-stone-900 dark:text-stone-50">
-                          <span className="tabular-nums">{cant}</span> × {p.nombre}
+                          <span className="cifra">{cant}</span> × {p.nombre}
                         </p>
                         {precio === null ? (
                           <span className="shrink-0 text-stone-500 dark:text-stone-400" aria-hidden>—</span>
@@ -271,18 +334,24 @@ export function Carrito({ productos }: { productos: Producto[] }) {
                             step={50}
                             value={precios[p.id] ?? p.precio}
                             onChange={(e) => {
+                              const texto = e.target.value;
                               setMensaje(undefined);
-                              setPrecios((pr) => ({ ...pr, [p.id]: e.target.value }));
+                              cambiarVenta((v) => ({ ...v, precios: { ...v.precios, [p.id]: texto } }));
                             }}
                             aria-invalid={precio === null}
                             aria-describedby={precio === null ? `precio-${p.id}-error` : undefined}
                             className={cx(
-                              "h-8 min-h-8 w-24 px-2 text-right font-mono tabular-nums",
+                              "h-8 min-h-8 w-24 px-2 text-right cifra pointer-coarse:h-10 pointer-coarse:min-h-10",
                               precio === null && "border-red-500 focus:border-red-500 focus:ring-red-500/20 dark:border-red-500 dark:focus:border-red-500",
                             )}
                           />
                         </label>
-                        <Boton variante="fantasma" className="-mr-2 min-h-8 shrink-0 px-2 text-xs text-stone-500" onClick={() => cambiar(p, -cant)} aria-label={`Quitar ${p.nombre} de la venta`}>
+                        <Boton
+                          variante="fantasma"
+                          className="-mr-2 min-h-8 shrink-0 px-2 text-xs text-stone-500 pointer-coarse:min-h-10"
+                          onClick={() => cambiar(p, -cant)}
+                          aria-label={`Quitar ${p.nombre} de la venta`}
+                        >
                           Quitar
                         </Boton>
                       </div>
@@ -298,25 +367,79 @@ export function Carrito({ productos }: { productos: Producto[] }) {
             ) : (
               <p className="py-2 text-sm text-stone-500 dark:text-stone-400">Toca un producto para agregarlo</p>
             )}
+            {/* La venta queda guardada al salir de la pantalla: aquí se descarta entera */}
+            {items.length > 0 && (
+              <div className="-mt-1 flex justify-end">
+                <Boton variante="fantasma" className="-mr-2 min-h-8 px-2 text-xs text-stone-500 pointer-coarse:min-h-10" onClick={vaciar}>
+                  Vaciar venta
+                </Boton>
+              </div>
+            )}
+            <Etiqueta texto="Nota (opcional)">
+              <Entrada
+                value={nota}
+                onChange={(e) => {
+                  const texto = e.target.value;
+                  cambiarVenta((v) => ({ ...v, nota: texto }));
+                }}
+              />
+            </Etiqueta>
           </div>
 
+          {/* La confirmación queda junto al botón, donde se está mirando al registrar */}
           {mensaje?.error && <Aviso>{mensaje.error}</Aviso>}
-          <Entrada placeholder="Nota (opcional)" value={nota} onChange={(e) => setNota(e.target.value)} aria-label="Nota" />
-          {/* El total cierra la venta como en el tiquete: después de la línea punteada */}
-          <div className="border-t border-dashed border-stone-300 pt-2 dark:border-stone-600">
+          {mensaje?.ok && <Aviso tipo="ok">{mensaje.ok}</Aviso>}
+          {/* Sin conexión no se puede registrar; la venta no se pierde */}
+          {!enLinea && unidades > 0 && !mensaje?.error && (
+            <Aviso tipo="info">El carrito queda guardado en este celular: registra la venta cuando vuelva la conexión.</Aviso>
+          )}
+
+          {/* El total cierra la venta como en el tiquete: después de la línea punteada (en celular,
+              solo con el detalle abierto; cerrado, la barra es una sola fila sobre el botón) */}
+          <div
+            className={cx(
+              "lg:border-t lg:border-dashed lg:border-stone-300 lg:pt-2 lg:dark:border-stone-600",
+              verDetalle && "border-t border-dashed border-stone-300 pt-2 dark:border-stone-600",
+            )}
+          >
             {descuento > 0 && (
               <p className="flex items-baseline justify-between text-sm text-stone-600 dark:text-stone-400">
                 <span>Descuento</span>
                 <Monto valor={-descuento} />
               </p>
             )}
-            <div className="flex items-baseline justify-between">
-              <span className="text-sm text-stone-600 dark:text-stone-400">{unidades ? `${unidades} ${unidades === 1 ? "unidad" : "unidades"}` : "Sin productos"}</span>
-              <Monto valor={total} className="text-xl font-medium text-stone-900 dark:text-stone-50" />
+            <div className="flex items-baseline justify-between gap-3">
+              <p className="min-w-0 text-sm text-stone-600 dark:text-stone-400">
+                {unidades ? unidadesTexto(unidades) : "Sin productos"}
+                {items.length > 0 && preciosValidos && (
+                  <span className="lg:hidden">
+                    <span aria-hidden> · </span>
+                    {/* -my-3 py-3: el área táctil mide 44 px sin agrandar la barra */}
+                    <button
+                      type="button"
+                      onClick={() => setDetalle((d) => !d)}
+                      aria-expanded={verDetalle}
+                      aria-controls="detalle-venta"
+                      className="-mx-1 -my-3 cursor-pointer rounded-md px-1 py-3 font-medium text-emerald-700 hover:underline focus-visible:outline-2 focus-visible:outline-emerald-700 dark:text-emerald-400 dark:focus-visible:outline-emerald-500"
+                    >
+                      {verDetalle ? "Ocultar detalle" : "Ver detalle"}
+                    </button>
+                  </span>
+                )}
+              </p>
+              <Monto valor={total} className="shrink-0 text-xl font-medium text-stone-900 dark:text-stone-50" />
             </div>
           </div>
-          <Boton onClick={confirmar} disabled={!unidades || !preciosValidos || enviando} className="h-12 w-full shrink-0 text-base">
-            {enviando ? "Registrando…" : !unidades ? "Selecciona productos" : preciosValidos ? "Registrar venta" : "Revisa los precios"}
+          <Boton onClick={confirmar} disabled={!unidades || !preciosValidos || enviando || !enLinea} className="h-12 w-full text-base">
+            {enviando
+              ? "Registrando…"
+              : !unidades
+                ? "Selecciona productos"
+                : !preciosValidos
+                  ? "Revisa los precios"
+                  : enLinea
+                    ? "Registrar venta"
+                    : "Sin conexión"}
           </Boton>
         </div>
       </aside>

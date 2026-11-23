@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/server/supabase";
 import { requerirAdmin } from "@/server/sesion";
-import { mensajeError } from "@/lib/formato";
+import { mensajeError } from "@/lib/errores";
 import { leerDocumento } from "@/lib/documentos";
 import type { Resultado } from "@/lib/acciones";
 
@@ -15,7 +15,7 @@ export async function actualizarEmpleado(_: Resultado, form: FormData): Promise<
     p_activo: form.get("activo") === "true",
     p_es_admin: form.get("es_admin") === "true",
   });
-  if (error) return { error: mensajeError(error)! };
+  if (error) return { error: mensajeError(error) };
   revalidatePath("/admin/empleados");
   return undefined;
 }
@@ -30,7 +30,7 @@ export async function actualizarDocumento(_: Resultado, form: FormData): Promise
     p_tipo: doc.tipo,
     p_numero: doc.numero,
   });
-  if (error) return { error: error.code === "23505" ? "Ese documento ya está registrado" : mensajeError(error)! };
+  if (error) return { error: error.code === "23505" ? "Ese documento ya está registrado" : mensajeError(error) };
   revalidatePath("/admin/empleados");
   return { ok: "Documento guardado" };
 }

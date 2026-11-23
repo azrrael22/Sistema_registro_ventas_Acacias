@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { createClient } from "@/server/supabase";
 import { requerirEmpleadoActivo } from "@/server/sesion";
 import { misProductos } from "@/server/consultas";
-import { horaDe, porDia, tituloDia } from "@/lib/formato";
+import { horaDe, porDia, stockBajo, tituloDia } from "@/lib/formato";
 import { Entrada, Etiqueta, Selector, Tarjeta, Titulo, Vacio, cx } from "@/components/ui";
 import { BotonEnvio } from "@/components/boton-envio";
 import { FormAccion } from "@/components/form-accion";
@@ -12,25 +12,30 @@ export const metadata: Metadata = { title: "Inventario" };
 
 export default async function InventarioPage() {
   const empleado = await requerirEmpleadoActivo();
-  const productos = await misProductos(empleado.id);
+  const mios = await misProductos(empleado.id);
+  // Los productos que no llevan inventario no tienen stock ni movimientos
+  const productos = mios.filter((p) => p.maneja_inventario);
   const ids = productos.map((p) => p.id);
   const supabase = await createClient();
   const [{ data: stock }, { data: movimientos }] = await Promise.all([
-    supabase.from("stock_producto").select("producto_id, stock").in("producto_id", ids),
+    supabase.from("stock_producto").select("producto_id, stock").in("producto_id", ids).throwOnError(),
     supabase
       .from("inventario_movimientos")
       .select("id, tipo, cantidad, fecha, nota, productos(nombre), empleados(nombre)")
       .in("producto_id", ids)
       .order("fecha", { ascending: false })
-      .limit(30),
+      .limit(30)
+      .throwOnError(),
   ]);
   const stockPor = new Map(stock?.map((s) => [s.producto_id, Number(s.stock ?? 0)]));
 
   return (
     <>
       <Titulo>Inventario</Titulo>
-      {!productos.length ? (
+      {!mios.length ? (
         <Vacio>Solo los socios manejan inventario. Hazte socio de una categoría en “Productos y socios”.</Vacio>
+      ) : !productos.length ? (
+        <Vacio>Tus productos no llevan inventario. Se activa al editar cada producto en “Productos y socios”.</Vacio>
       ) : (
         // items-start: cada tarjeta con su altura, sin franja vacía al fondo de la más corta
         <div className="grid gap-4 md:grid-cols-2 md:items-start">
@@ -76,7 +81,7 @@ export default async function InventarioPage() {
                 return (
                   <li key={p.id} className="flex justify-between gap-4 py-2.5">
                     <span className="text-stone-900 dark:text-stone-50">{p.nombre} <span className="text-stone-500 dark:text-stone-400">· {p.categorias?.nombre}</span></span>
-                    <span className={cx("font-medium tabular-nums", disponibles <= 3 ? "text-amber-700 dark:text-amber-400" : "text-stone-900 dark:text-stone-50")}>{disponibles}</span>
+                    <span className={cx("cifra font-medium", stockBajo(disponibles) ?"text-amber-700 dark:text-amber-400" : "text-stone-900 dark:text-stone-50")}>{disponibles}</span>
                   </li>
                 );
               })}
@@ -100,7 +105,7 @@ export default async function InventarioPage() {
                         return (
                           <li key={m.id} className="flex items-baseline gap-3 py-2.5">
                             {/* Las cantidades con signo en una columna alineada a la derecha */}
-                            <span className={cx("w-10 shrink-0 text-right font-medium tabular-nums", perdida ? "text-amber-700 dark:text-amber-400" : "text-stone-900 dark:text-stone-50")}>
+                            <span className={cx("cifra w-10 shrink-0 text-right font-medium", perdida ? "text-amber-700 dark:text-amber-400" : "text-stone-900 dark:text-stone-50")}>
                               {m.cantidad > 0 ? "+" : "−"}
                               {Math.abs(m.cantidad)}
                             </span>
@@ -111,7 +116,7 @@ export default async function InventarioPage() {
                                 {m.nota && <> · “{m.nota}”</>}
                               </span>
                             </span>
-                            <span className="shrink-0 text-xs text-stone-500 tabular-nums dark:text-stone-400">{horaDe(m.fecha)}</span>
+                            <span className="cifra shrink-0 text-xs text-stone-500 dark:text-stone-400">{horaDe(m.fecha)}</span>
                           </li>
                         );
                       })}

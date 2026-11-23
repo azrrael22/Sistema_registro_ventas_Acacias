@@ -7,6 +7,17 @@ export const dinero = (n: number | string | null | undefined) => pesos.format(Nu
 const pesosCorto = new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", notation: "compact", maximumFractionDigits: 1 });
 export const dineroCorto = (n: number) => pesosCorto.format(n);
 
+// Stock bajo (3 o menos): «Quedan 2» se lee distinto de «12 en stock», no solo por el color ámbar.
+// null: el producto no lleva inventario (no tiene stock ni se agota).
+export const STOCK_BAJO = 3;
+export const stockBajo = (n: number | null) => n !== null && n <= STOCK_BAJO;
+export function textoStock(n: number | null) {
+  if (n === null) return "Sin inventario";
+  if (n <= 0) return "Agotado";
+  if (n > STOCK_BAJO) return `${n} en stock`;
+  return n === 1 ? "Queda 1" : `Quedan ${n}`;
+}
+
 const pct = new Intl.NumberFormat("es-CO", { style: "percent", maximumFractionDigits: 0 });
 const pctSigno = new Intl.NumberFormat("es-CO", { style: "percent", maximumFractionDigits: 0, signDisplay: "exceptZero" });
 export const porcentaje = (n: number, conSigno = false) => (conSigno ? pctSigno : pct).format(n);
@@ -59,12 +70,4 @@ export function tituloDia(dia: string) {
   if (dia === hoy()) return `Hoy · ${fechaCorta(dia)}`;
   if (dia === ayer()) return `Ayer · ${fechaCorta(dia)}`;
   return fechaCorta(dia);
-}
-
-// Mensaje legible a partir de un error de Supabase/Postgres
-export function mensajeError(error: { message: string; code?: string } | null) {
-  if (!error) return null;
-  if (error.code === "42501") return "No tienes permiso para hacer esto";
-  if (error.code === "23505") return "Ya existe un registro con ese nombre";
-  return error.message;
 }

@@ -6,6 +6,10 @@
 }
 
 @theme {
+  /* Fondo de la app en modo claro: papel de caja. Sobre él, el texto secundario va en stone-600
+     (stone-500 no llega a 4,5:1). En oscuro el fondo sigue siendo stone-900. */
+  --color-papel: #f6f4ee;
+
   --animate-aparecer: aparecer 480ms cubic-bezier(0.22, 1, 0.36, 1) both;
 
   @keyframes aparecer {
@@ -14,6 +18,32 @@
       translate: 0 8px;
     }
   }
+}
+
+/* Toda cifra (dinero, cantidades, stock, porcentajes, números de venta) va en mono, como en el tiquete */
+@utility cifra {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* El borde de abajo se corta en zigzag, como un tiquete arrancado del rollo.
+   Necesita unos 2rem de relleno abajo para que los dientes no corten el contenido. */
+@utility corte-tiquete {
+  mask: conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) 50% / 12px 100%;
+}
+
+/* Contorno de 1 px que sigue el zigzag (un borde normal lo cortaría la máscara). Va en el
+   contenedor del elemento con corte-tiquete: los cuatro drop-shadow lo rodean sin sombra difusa. */
+@utility contorno-tiquete {
+  filter: drop-shadow(0 1px 0 var(--contorno-tiquete)) drop-shadow(0 -1px 0 var(--contorno-tiquete)) drop-shadow(1px 0 0 var(--contorno-tiquete)) drop-shadow(-1px 0 0 var(--contorno-tiquete));
+}
+
+:root {
+  --contorno-tiquete: var(--color-stone-300);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root { --contorno-tiquete: var(--color-stone-700); }
 }
 
 body {
@@ -38,19 +68,60 @@ input[type="number"]::-webkit-outer-spin-button {
   margin: 0;
 }
 
+/* El foco y los saltos a un ancla no quedan debajo de las barras fijas (WCAG 2.4.11).
+   Arriba, el encabezado (con las pestañas desde md, y la franja «Sin conexión» cuando
+   aparece); abajo, en celular, la navegación y, en Vender, la barra de la venta. */
+html {
+  scroll-padding-top: 7rem;
+}
+
+html:has(#aviso-sin-conexion) {
+  scroll-padding-top: 9.5rem;
+}
+
+@media (width < 48rem) {
+  html {
+    scroll-padding-top: 4.5rem;
+    scroll-padding-bottom: calc(5rem + env(safe-area-inset-bottom));
+  }
+
+  /* En celular la franja ocupa dos líneas */
+  html:has(#aviso-sin-conexion) {
+    scroll-padding-top: 8rem;
+  }
+
+  html:has(#venta-actual) {
+    scroll-padding-bottom: calc(12.5rem + env(safe-area-inset-bottom));
+  }
+}
+
+@media (48rem <= width < 64rem) {
+  html:has(#venta-actual) {
+    scroll-padding-bottom: calc(8rem + env(safe-area-inset-bottom));
+  }
+}
+
+/* Con una hoja o un diálogo abierto (showModal), la página de atrás no se desplaza */
+html:has(dialog:modal) {
+  overflow: hidden;
+}
+
 /* Base de los componentes de ui.tsx. Va en la capa components para que las clases
-   que llegan por className (p-0, w-24, text-base…) siempre la reemplacen. */
+   que llegan por className (p-0, w-24, text-base…) siempre la reemplacen.
+   Sin sombras: las tarjetas se separan del papel por el borde y por ser blancas.
+   Con pantalla táctil (pointer-coarse) los controles miden 44 px y los campos usan 16 px:
+   con menos, Safari en iPhone agranda la página cada vez que se toca un campo. */
 @layer components {
   .tarjeta {
-    @apply rounded-xl border border-stone-200 bg-white p-4 shadow-sm sm:p-5 dark:border-stone-700 dark:bg-stone-800 dark:shadow-none print:shadow-none;
+    @apply rounded-xl border border-stone-200 bg-white p-4 sm:p-5 dark:border-stone-700 dark:bg-stone-800;
   }
 
   .boton {
-    @apply inline-flex min-h-10 cursor-pointer select-none items-center justify-center gap-2 rounded-lg px-4 text-sm font-medium transition-[color,background-color,border-color,box-shadow,scale] duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-700 dark:focus-visible:outline-emerald-500 disabled:cursor-not-allowed;
+    @apply inline-flex min-h-10 cursor-pointer select-none items-center justify-center gap-2 rounded-lg px-4 text-sm font-medium transition-[color,background-color,border-color,box-shadow,scale] duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-700 pointer-coarse:min-h-11 dark:focus-visible:outline-emerald-500 disabled:cursor-not-allowed;
   }
 
   .campo {
-    @apply min-h-10 w-full rounded-lg border border-stone-300 bg-white px-3 text-sm text-stone-900 placeholder:text-stone-400 transition-colors duration-150 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-600/20 focus:outline-none disabled:bg-stone-50 disabled:text-stone-400 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-100 dark:placeholder:text-stone-500 dark:focus:border-emerald-500 dark:focus:ring-emerald-500/20 dark:disabled:bg-stone-700 dark:disabled:text-stone-500;
+    @apply min-h-10 w-full rounded-lg border border-stone-300 bg-white px-3 text-sm text-stone-900 placeholder:text-stone-400 transition-colors duration-150 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-600/20 focus:outline-none pointer-coarse:min-h-11 pointer-coarse:text-base disabled:bg-stone-50 disabled:text-stone-400 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-100 dark:placeholder:text-stone-500 dark:focus:border-emerald-500 dark:focus:ring-emerald-500/20 dark:disabled:bg-stone-700 dark:disabled:text-stone-500;
   }
 }
 

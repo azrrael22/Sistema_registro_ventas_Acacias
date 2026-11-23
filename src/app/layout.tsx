@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { RegistrarServiceWorker } from "@/components/registrar-service-worker";
 import "./globals.css";
 
 const geist = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
@@ -9,14 +10,21 @@ const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"]
 export const metadata: Metadata = {
   title: { default: "Ventas Las Acacias", template: "%s · Ventas Las Acacias" },
   description: "Registro de ventas de los empleados de Las Acacias",
+  // Nombre bajo el ícono al agregarla a la pantalla de inicio del iPhone (el resto sale de manifest.ts)
+  appleWebApp: { title: "Acacias" },
 };
 
-export const viewport: Viewport = { themeColor: "#047857" };
+// color-scheme: fechas, selectores y barras de desplazamiento nativos siguen el modo oscuro
+export const viewport: Viewport = { themeColor: "#047857", colorScheme: "light dark" };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="es" className={`${geist.variable} ${geistMono.variable} h-full antialiased`}>
-      <body className="min-h-full bg-stone-50 text-stone-900 dark:bg-stone-900 dark:text-stone-50">{children}</body>
+      <body className="min-h-full bg-papel text-stone-900 dark:bg-stone-900 dark:text-stone-50 print:bg-white">
+        {children}
+        {/* Página propia cuando la app se abre sin conexión (public/sw.js) */}
+        <RegistrarServiceWorker />
+      </body>
     </html>
   );
 }
