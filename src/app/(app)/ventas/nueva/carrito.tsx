@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { unstable_rethrow } from "next/navigation";
 import { Aviso, Boton, Entrada, Etiqueta, Monto, Vacio, claseSegmento, claseSegmentos, cx } from "@/components/ui";
 import { IconoMas, IconoMenos } from "@/components/iconos";
@@ -58,6 +58,17 @@ export function Carrito({ productos, empleadoId }: { productos: Producto[]; empl
   const [mensaje, setMensaje] = useState<{ error?: string; ok?: string }>();
   const [enviando, startTransition] = useTransition();
   const enLinea = useEnLinea();
+
+  // El alto del tiquete, como variable CSS para su `top` en escritorio (ver el aside). Sin estado de
+  // React: cambia con cada producto y no hace falta volver a pintar nada
+  const tiquete = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const aside = tiquete.current;
+    if (!aside) return;
+    const observador = new ResizeObserver(() => aside.style.setProperty("--alto-tiquete", `${aside.offsetHeight}px`));
+    observador.observe(aside);
+    return () => observador.disconnect();
+  }, []);
 
   // Una venta guardada pudo quedar con más unidades de las que hay ahora: cuenta hasta el stock
   const cantidadDe = (p: Producto) => Math.min(cantidades[p.id] ?? 0, Math.max(0, tope(p)));
@@ -275,23 +286,26 @@ export function Carrito({ productos, empleadoId }: { productos: Producto[]; empl
 
       {/* En celular es una barra compacta sobre la navegación de abajo (en tablet, al fondo de la
           pantalla); en escritorio, un panel al lado con forma de tiquete (el contorno va en el aside y
-          el zigzag en el div de adentro) que queda bajo el encabezado fijo (~101px) y nunca es más alto
-          que la ventana */}
+          el zigzag en el div de adentro) que crece con cada producto, sin scroll propio. Mientras cabe
+          en la ventana queda bajo el encabezado fijo (~101px); si no cabe, baja con la página y se pega
+          cuando su borde de abajo llega al fondo, para que el total y «Registrar venta» sigan a la vista
+          (el `top` sale del alto que mide el ResizeObserver; antes de medir vale 8rem) */}
       <aside
+        ref={tiquete}
         id="venta-actual"
         aria-label="Venta actual"
-        className="fixed inset-x-0 bottom-[calc(4rem+env(safe-area-inset-bottom))] z-10 border-t border-stone-200 bg-white px-4 py-3 md:bottom-0 md:pb-[max(0.75rem,env(safe-area-inset-bottom))] dark:border-stone-700 dark:bg-stone-900 lg:contorno-tiquete lg:sticky lg:inset-auto lg:top-32 lg:z-auto lg:border-0 lg:bg-transparent lg:p-0 lg:dark:bg-transparent"
+        className="fixed inset-x-0 bottom-[calc(4rem+env(safe-area-inset-bottom))] z-10 border-t border-stone-200 bg-white px-4 py-3 md:bottom-0 md:pb-[max(0.75rem,env(safe-area-inset-bottom))] dark:border-stone-700 dark:bg-stone-900 lg:contorno-tiquete lg:sticky lg:inset-auto lg:top-[min(8rem,calc(100dvh_-_var(--alto-tiquete,0px)_-_1rem))] lg:z-auto lg:border-0 lg:bg-transparent lg:p-0 lg:dark:bg-transparent"
       >
-        <div className="mx-auto flex max-w-5xl flex-col gap-2 sm:px-6 lg:corte-tiquete lg:max-h-[calc(100dvh-12rem)] lg:rounded-t-xl lg:bg-white lg:px-4 lg:pt-4 lg:pb-8 lg:dark:bg-stone-800">
+        <div className="mx-auto flex max-w-5xl flex-col gap-2 sm:px-6 lg:corte-tiquete lg:rounded-t-xl lg:bg-white lg:px-4 lg:pt-4 lg:pb-8 lg:dark:bg-stone-800">
           <h2 className="font-medium text-stone-900 max-lg:sr-only dark:text-stone-50">Venta actual</h2>
 
-          {/* El detalle (líneas, precios y nota) se abre en celular con «Ver detalle»; en escritorio
-              siempre está a la vista y solo la lista cede espacio si el panel llega al alto de la ventana */}
-          <div id="detalle-venta" className={cx("flex-col gap-3 lg:flex lg:min-h-0", verDetalle ? "flex" : "hidden")}>
+          {/* El detalle (líneas, precios y nota) se abre en celular con «Ver detalle» y la lista se
+              desplaza dentro de la barra; en escritorio siempre está a la vista y entero */}
+          <div id="detalle-venta" className={cx("flex-col gap-3 lg:flex", verDetalle ? "flex" : "hidden")}>
             {items.length ? (
               // Se lee como el tiquete: «2 × Cold brew» y su monto, en la misma columna que el total.
               // -mx-3 px-3: el -mr-2 de «Quitar» y los contornos de foco caben sin scroll horizontal
-              <ul className="-mx-3 flex max-h-[40vh] flex-col gap-3 overflow-y-auto px-3 py-1 lg:max-h-none lg:min-h-0">
+              <ul className="-mx-3 flex max-h-[40vh] flex-col gap-3 overflow-y-auto px-3 py-1 lg:max-h-none lg:overflow-visible">
                 {items.map((p) => {
                   const cant = cantidadDe(p);
                   const precio = precioDe(p);
@@ -355,13 +369,13 @@ export function Carrito({ productos, empleadoId }: { productos: Producto[]; empl
             )}
             {/* La venta queda guardada al salir de la pantalla: aquí se descarta entera */}
             {items.length > 0 && (
-              <div className="-mt-1 flex shrink-0 justify-end">
+              <div className="-mt-1 flex justify-end">
                 <Boton variante="fantasma" className="-mr-2 min-h-8 px-2 text-xs text-stone-500 pointer-coarse:min-h-10" onClick={vaciar}>
                   Vaciar venta
                 </Boton>
               </div>
             )}
-            <Etiqueta texto="Nota (opcional)" className="shrink-0">
+            <Etiqueta texto="Nota (opcional)">
               <Entrada
                 value={nota}
                 onChange={(e) => {
@@ -384,7 +398,7 @@ export function Carrito({ productos, empleadoId }: { productos: Producto[]; empl
               solo con el detalle abierto; cerrado, la barra es una sola fila sobre el botón) */}
           <div
             className={cx(
-              "shrink-0 lg:border-t lg:border-dashed lg:border-stone-300 lg:pt-2 lg:dark:border-stone-600",
+              "lg:border-t lg:border-dashed lg:border-stone-300 lg:pt-2 lg:dark:border-stone-600",
               verDetalle && "border-t border-dashed border-stone-300 pt-2 dark:border-stone-600",
             )}
           >
@@ -416,7 +430,7 @@ export function Carrito({ productos, empleadoId }: { productos: Producto[]; empl
               <Monto valor={total} className="shrink-0 text-xl font-medium text-stone-900 dark:text-stone-50" />
             </div>
           </div>
-          <Boton onClick={confirmar} disabled={!unidades || !preciosValidos || enviando || !enLinea} className="h-12 w-full shrink-0 text-base">
+          <Boton onClick={confirmar} disabled={!unidades || !preciosValidos || enviando || !enLinea} className="h-12 w-full text-base">
             {enviando
               ? "Registrando…"
               : !unidades
