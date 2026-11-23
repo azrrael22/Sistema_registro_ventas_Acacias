@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Form from "next/form";
 import { Suspense } from "react";
-import { STOCK_BAJO, dinero, dineroCorto, fecha, fechaCorta, hoy, mensajeError, porcentaje, rangoFechas } from "@/lib/formato";
+import { STOCK_BAJO, dinero, dineroCorto, fecha, fechaCorta, hoy, porcentaje, rangoFechas } from "@/lib/formato";
 import { PERIODOS, leerFiltros, obtenerReporte, type Filtros, type Periodo } from "@/server/reportes";
 import { Aviso, Boton, Entrada, Esqueleto, Etiqueta, Monto, Pestanas, Tarjeta, Titulo, Vacio, claseBoton, cx } from "@/components/ui";
 import { BotonImprimir } from "@/components/boton-imprimir";
@@ -50,7 +50,12 @@ export default async function ReportesPage({ searchParams }: PageProps<"/reporte
 
 async function ContenidoReporte({ filtros }: { filtros: Filtros }) {
   const r = await obtenerReporte(filtros);
-  if (r.error) return <Aviso>{mensajeError(r.error)}</Aviso>;
+  // Las RPCs de reportes no tienen reglas que fallen: un error es del sistema. El aviso va bajo los
+  // filtros, que siguen a mano para reintentar.
+  if (r.error) {
+    console.error("No se pudo generar el reporte:", r.error);
+    return <Aviso>No se pudo generar el reporte porque el sistema tuvo un problema al leer los datos. Recarga la página para intentarlo de nuevo; si sigue pasando, avísale a un administrador.</Aviso>;
+  }
   if (!r.esSocio) {
     return (
       <Vacio>

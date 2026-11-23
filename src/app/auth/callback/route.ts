@@ -28,7 +28,12 @@ export async function GET(request: NextRequest) {
       ? await supabase.auth.verifyOtp({ token_hash: tokenHash, type })
       : { data: null, error: new Error("Enlace inválido") };
 
-  if (error) return NextResponse.redirect(new URL(recuperacion ? "/recuperar?error=enlace" : "/login", origin));
+  // Enlace vencido o ya usado: cada pantalla explica qué pasó (?error=enlace). El de cambio de
+  // correo vuelve a Mi perfil; el de confirmar la cuenta, al login.
+  if (error) {
+    const fallo = recuperacion ? "/recuperar" : destino === "/perfil" ? "/perfil" : "/login";
+    return NextResponse.redirect(new URL(`${fallo}?error=enlace`, origin));
+  }
   if (recuperacion && data?.user) {
     await marcarRecuperacion(data.user.id);
     return NextResponse.redirect(new URL("/restablecer", origin));

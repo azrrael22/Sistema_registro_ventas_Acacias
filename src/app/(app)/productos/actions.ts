@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/server/supabase";
 import { requerirEmpleadoActivo } from "@/server/sesion";
 import { aWebp, guardarFoto } from "@/server/fotos";
-import { mensajeError } from "@/lib/formato";
+import { mensajeError } from "@/lib/errores";
 import { MAX_FOTO } from "@/lib/fotos";
 import type { Resultado } from "@/lib/acciones";
 
@@ -23,9 +23,14 @@ export async function crearCategoria(_: Resultado, form: FormData): Promise<Resu
   if (!nombre) return { error: "Escribe el nombre de la categoría" };
   const supabase = await createClient();
   const { data, error } = await supabase.from("categorias").insert({ nombre }).select("id").single();
-  if (error) return { error: mensajeError(error)! };
+  if (error) return { error: mensajeError(error) };
   if (form.get("ser_socio")) {
-    await supabase.from("socios").insert({ empleado_id: empleado.id, categoria_id: data.id });
+    const { error: errorSocio } = await supabase.from("socios").insert({ empleado_id: empleado.id, categoria_id: data.id });
+    if (errorSocio) {
+      revalidatePath("/productos");
+      console.error("No se pudo hacer socio al creador de la categoría:", errorSocio);
+      return { error: `Categoría "${nombre}" creada, pero no se pudo hacerte socio. Únete desde la lista.` };
+    }
   }
   revalidatePath("/productos");
   return { ok: `Categoría "${nombre}" creada` };
@@ -46,7 +51,7 @@ export async function crearProducto(_: Resultado, form: FormData): Promise<Resul
     .insert({ nombre, precio, categoria_id: Number(form.get("categoria_id")) })
     .select("id")
     .single();
-  if (error) return { error: mensajeError(error)! };
+  if (error) return { error: mensajeError(error) };
   const conFoto = await guardarFoto(supabase, data.id, foto.webp, null);
   revalidatePath("/productos");
   if (!conFoto) return { error: `Producto "${nombre}" creado, pero la foto no se pudo subir. Agrégala desde Editar` };
@@ -69,7 +74,7 @@ export async function actualizarProducto(_: Resultado, form: FormData): Promise<
     .update({ nombre, precio, activo })
     .eq("id", Number(form.get("id")))
     .select("id, foto");
-  if (error) return { error: mensajeError(error)! };
+  if (error) return { error: mensajeError(error) };
   if (!data.length) return { error: "Solo los socios de la categoría, quien creó el producto o un admin pueden editarlo" };
   const conFoto = !foto.webp || (await guardarFoto(supabase, data[0].id, foto.webp, data[0].foto));
   revalidatePath("/productos");
@@ -77,21 +82,24 @@ export async function actualizarProducto(_: Resultado, form: FormData): Promise<
   return { ok: "Producto actualizado" };
 }
 
-export async function unirseCategoria(form: FormData) {
+// Sin mensaje de éxito: el botón cambia y la categoría pasa a «Mis categorías»
+export async function unirseCategoria(_: Resultado, form: FormData): Promise<Resultado> {
   const empleado = await requerirEmpleadoActivo();
   const supabase = await createClient();
-  await supabase.from("socios").insert({ empleado_id: empleado.id, categoria_id: Number(form.get("categoria_id")) });
+  const { error } = await supabase.from("socios").insert({ empleado_id: empleado.id, categoria_id: Number(form.get("categoria_id")) });
+  if (error) return { error: error.code === "23505" ? "Ya eres socio de esta categoría" : mensajeError(error) };
   revalidatePath("/", "layout");
 }
 
-export async function salirCategoria(form: FormData) {
+export async function salirCategoria(_: Resultado, form: FormData): Promise<Resultado> {
   const empleado = await requerirEmpleadoActivo();
   const supabase = await createClient();
-  await supabase
+  const { error } = await supabase
     .from("socios")
     .update({ activo: false, salio_en: new Date().toISOString() })
     .eq("empleado_id", empleado.id)
     .eq("categoria_id", Number(form.get("categoria_id")))
     .eq("activo", true);
+  if (error) return { error: mensajeError(error) };
   revalidatePath("/", "layout");
 }

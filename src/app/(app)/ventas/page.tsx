@@ -26,7 +26,7 @@ export default async function VentasPage({ searchParams }: PageProps<"/ventas">)
   const ids = vista === "categorias" ? (await misProductos(empleado.id)).map((p) => p.id) : [];
   if (!vista) consulta = consulta.eq("empleado_id", empleado.id);
   if (vista === "categorias") consulta = consulta.in("venta_items.producto_id", ids);
-  const { data: ventas } = vista === "categorias" && !ids.length ? { data: [] } : await consulta;
+  const { data: ventas } = vista === "categorias" && !ids.length ? { data: [] } : await consulta.throwOnError();
 
   // Agrupadas por día, de la más reciente a la más antigua. Sin total diario: con el
   // límite de 100 ventas, el día más antiguo de la lista puede llegar incompleto.

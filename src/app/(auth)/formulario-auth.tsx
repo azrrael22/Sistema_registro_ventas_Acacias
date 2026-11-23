@@ -8,10 +8,11 @@ import { EntradaContrasena } from "@/components/entrada-contrasena";
 import { CamposDocumento } from "@/components/campos-documento";
 import { CamposNombre } from "@/components/campos-nombre";
 import type { TipoDocumento } from "@/lib/documentos";
+import { atraparFallos } from "@/lib/acciones";
 import { iniciarSesion, registrarse } from "./actions";
 
 export function FormularioAuth({ modo }: { modo: "login" | "registro" }) {
-  const [estado, accion] = useActionState(modo === "login" ? iniciarSesion : registrarse, undefined);
+  const [estado, accion] = useActionState(atraparFallos(modo === "login" ? iniciarSesion : registrarse), undefined);
 
   if (estado?.ok) return <Aviso tipo="ok">{estado.ok}</Aviso>;
 

@@ -35,8 +35,10 @@ function Dato({ etiqueta, children, ayuda }: { etiqueta: string; children: React
   );
 }
 
-export default async function PerfilPage() {
+export default async function PerfilPage({ searchParams }: PageProps<"/perfil">) {
   const yo = await requerirEmpleadoActivo();
+  // auth/callback manda aquí cuando el enlace para cambiar el correo venció o ya se usó
+  const { error } = await searchParams;
   const supabase = await createClient();
   // new_email: cambio de correo que todavía no se ha confirmado
   const { data } = await supabase.auth.getUser();
@@ -65,6 +67,7 @@ export default async function PerfilPage() {
         <Seccion titulo="Correo" explicacion="Con él ingresas y ahí te llegan las notificaciones">
           <div className="flex flex-col gap-4">
             <Dato etiqueta="Correo actual">{data.user?.email ?? yo.email}</Dato>
+            {error === "enlace" && <Aviso>El enlace para cambiar el correo venció o ya se usó. Si el cambio no se hizo, pídelo de nuevo.</Aviso>}
             {correoPendiente && <Aviso tipo="info">Cambio pendiente a {correoPendiente}: abre el enlace que te enviamos a cada correo para terminarlo.</Aviso>}
             <FormAccion accion={cambiarCorreo} className="flex flex-col gap-3">
               <Etiqueta texto="Correo nuevo">

@@ -2,7 +2,9 @@ import type { Metadata } from "next";
 import { createClient } from "@/server/supabase";
 import { fecha } from "@/lib/formato";
 import { destinoNotificacion } from "@/lib/notificaciones";
-import { Boton, Tarjeta, Titulo, Vacio, cx } from "@/components/ui";
+import { Tarjeta, Titulo, Vacio, cx } from "@/components/ui";
+import { BotonEnvio } from "@/components/boton-envio";
+import { FormAccion } from "@/components/form-accion";
 import { IconoAprobado, IconoBilletes, IconoCampana, IconoFlecha, IconoPersonaNueva, IconoSocios } from "@/components/iconos";
 import { abrirNotificacion, marcarTodasLeidas } from "./actions";
 import { BotonFila } from "./boton-fila";
@@ -22,7 +24,8 @@ export default async function NotificacionesPage() {
     .from("notificaciones")
     .select("id, tipo, titulo, mensaje, datos, leida, creada_en")
     .order("creada_en", { ascending: false })
-    .limit(100);
+    .limit(100)
+    .throwOnError();
   const hayNoLeidas = notificaciones?.some((n) => !n.leida);
 
   return (
@@ -31,9 +34,11 @@ export default async function NotificacionesPage() {
         descripcion={notificaciones?.length ? "Toca una notificación para ir a su pantalla; queda marcada como leída." : undefined}
         accion={
           hayNoLeidas && (
-            <form action={marcarTodasLeidas}>
-              <Boton variante="secundario">Marcar todas como leídas</Boton>
-            </form>
+            <FormAccion accion={marcarTodasLeidas} claseAviso="mt-2">
+              <BotonEnvio variante="secundario" pendiente="Marcando…">
+                Marcar todas como leídas
+              </BotonEnvio>
+            </FormAccion>
           )
         }
       >
@@ -71,13 +76,13 @@ export default async function NotificacionesPage() {
               return (
                 <li key={n.id}>
                   {destino ? (
-                    <form action={abrirNotificacion}>
+                    <FormAccion accion={abrirNotificacion} claseAviso="px-4 pb-4 sm:px-5">
                       <input type="hidden" name="id" value={n.id} />
                       <BotonFila>
                         {contenido}
                         <IconoFlecha className="self-center text-stone-400 dark:text-stone-500" />
                       </BotonFila>
-                    </form>
+                    </FormAccion>
                   ) : (
                     <div className="flex gap-3 px-4 py-4 sm:px-5">{contenido}</div>
                   )}

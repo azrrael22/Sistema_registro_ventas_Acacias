@@ -4,7 +4,8 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "@/server/supabase";
 import { enRecuperacion, terminarRecuperacion } from "@/server/recuperacion";
-import { leerContrasenaNueva, mensajeErrorContrasena } from "@/lib/contrasenas";
+import { leerContrasenaNueva } from "@/lib/contrasenas";
+import { mensajeErrorAuth } from "@/lib/errores";
 import { leerDocumento } from "@/lib/documentos";
 import { leerNombres } from "@/lib/nombres";
 import type { Resultado } from "@/lib/acciones";
@@ -22,11 +23,9 @@ export async function iniciarSesion(_: EstadoAuth, form: FormData): Promise<Esta
   const email = String(form.get("email")).trim();
   const supabase = await createClient();
   const { error } = await supabase.auth.signInWithPassword({ email, password: String(form.get("password")) });
-  if (error) {
-    const valores = { email };
-    if (error.code === "email_not_confirmed") return { error: "Primero confirma tu correo con el enlace que te enviamos", valores };
-    return { error: "Correo o contraseña incorrectos", valores };
-  }
+  // mensajeErrorAuth distingue la contraseña equivocada (invalid_credentials) de Auth caído o
+  // de demasiados intentos, para no decir «incorrectos» cuando el problema es otro
+  if (error) return { error: mensajeErrorAuth(error), valores: { email } };
   redirect("/");
 }
 
@@ -58,7 +57,7 @@ export async function registrarse(_: EstadoAuth, form: FormData): Promise<Estado
     if (error.code === "23505" || error.message === "Database error saving new user") {
       return fallo("Ese documento ya está registrado");
     }
-    return fallo(error.message);
+    return fallo(mensajeErrorAuth(error));
   }
 
   // Si el proyecto no exige confirmar el correo, la sesión ya existe.
@@ -74,8 +73,9 @@ export async function solicitarRecuperacion(_: Resultado, form: FormData): Promi
   const origen = (await headers()).get("origin");
   const supabase = await createClient();
   const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: `${origen}/auth/callback?next=/restablecer` });
-  if (error?.code === "over_email_send_rate_limit") return { error: "Espera un momento antes de volver a intentarlo" };
-  // La misma respuesta exista o no la cuenta: así no se puede averiguar quién está registrado
+  // Auth responde igual exista o no la cuenta, y la app también: así no se puede averiguar quién
+  // está registrado. Un error es del envío (Auth caído, demasiados correos) y se explica.
+  if (error) return { error: mensajeErrorAuth(error) };
   return { ok: "Si el correo está registrado, te enviamos un enlace para crear una contraseña nueva. Revisa también el correo no deseado." };
 }
 
@@ -88,7 +88,7 @@ export async function restablecerContrasena(_: Resultado, form: FormData): Promi
   const clave = leerContrasenaNueva(form);
   if ("error" in clave) return clave;
   const { error } = await supabase.auth.updateUser({ password: clave.password });
-  if (error) return { error: mensajeErrorContrasena(error) };
+  if (error) return { error: mensajeErrorAuth(error) };
   await terminarRecuperacion();
   // Ya con la sesión del enlace: entra a la app (o a /pendiente si la cuenta no está aprobada)
   redirect("/");
@@ -96,6 +96,8 @@ export async function restablecerContrasena(_: Resultado, form: FormData): Promi
 
 export async function cerrarSesion() {
   const supabase = await createClient();
-  await supabase.auth.signOut();
+  const { error } = await supabase.auth.signOut();
+  // Si Auth no responde, al menos se borra la sesión de este dispositivo: «Salir» siempre saca
+  if (error) await supabase.auth.signOut({ scope: "local" });
   redirect("/login");
 }

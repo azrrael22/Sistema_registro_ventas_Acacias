@@ -4,8 +4,8 @@ import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/server/supabase";
 import { requerirEmpleadoActivo } from "@/server/sesion";
-import { mensajeError } from "@/lib/formato";
-import { leerContrasenaNueva, mensajeErrorContrasena } from "@/lib/contrasenas";
+import { mensajeError, mensajeErrorAuth } from "@/lib/errores";
+import { leerContrasenaNueva } from "@/lib/contrasenas";
 import { leerNombres } from "@/lib/nombres";
 import type { Resultado } from "@/lib/acciones";
 
@@ -15,7 +15,7 @@ export async function actualizarNombre(_: Resultado, form: FormData): Promise<Re
   if ("error" in nombres) return nombres;
   const supabase = await createClient();
   const { error } = await supabase.from("empleados").update(nombres).eq("id", yo.id);
-  if (error) return { error: mensajeError(error)! };
+  if (error) return { error: mensajeError(error) };
   // El nombre también se ve en el encabezado
   revalidatePath("/", "layout");
   return { ok: "Nombre guardado" };
@@ -30,12 +30,7 @@ export async function cambiarCorreo(_: Resultado, form: FormData): Promise<Resul
 
   const origen = (await headers()).get("origin");
   const { error } = await supabase.auth.updateUser({ email }, { emailRedirectTo: `${origen}/auth/callback?next=/perfil` });
-  if (error) {
-    if (error.code === "email_exists") return { error: "Ese correo ya está registrado" };
-    if (error.code === "email_address_invalid") return { error: "Ese correo no es válido" };
-    if (error.code === "over_email_send_rate_limit") return { error: "Espera un momento antes de volver a intentarlo" };
-    return { error: error.message };
-  }
+  if (error) return { error: mensajeErrorAuth(error) };
   revalidatePath("/perfil");
   return { ok: "Te enviamos un enlace de confirmación a tu correo actual y otro al nuevo. Ábrelos para terminar el cambio." };
 }
@@ -52,9 +47,11 @@ export async function cambiarContrasena(_: Resultado, form: FormData): Promise<R
     email: String(data?.claims?.email),
     password: String(form.get("actual")),
   });
-  if (incorrecta) return { error: "La contraseña actual no es correcta" };
+  // Solo invalid_credentials es una contraseña equivocada; lo demás (Auth caído, demasiados
+  // intentos) se explica tal cual
+  if (incorrecta) return { error: incorrecta.code === "invalid_credentials" ? "La contraseña actual no es correcta" : mensajeErrorAuth(incorrecta) };
 
   const { error } = await supabase.auth.updateUser({ password: clave.password });
-  if (error) return { error: mensajeErrorContrasena(error) };
+  if (error) return { error: mensajeErrorAuth(error) };
   return { ok: "Contraseña actualizada" };
 }

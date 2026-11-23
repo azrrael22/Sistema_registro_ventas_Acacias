@@ -29,9 +29,10 @@ export default async function ProductosPage({ searchParams }: PageProps<"/produc
       .from("categorias")
       .select("id, nombre, creado_por, productos(id, nombre, precio, activo, creado_por, foto)")
       .order("nombre")
-      .order("nombre", { referencedTable: "productos" }),
-    supabase.from("socios").select("categoria_id, empleado_id, empleados(nombre)").eq("activo", true),
-    supabase.from("stock_producto").select("producto_id, stock"),
+      .order("nombre", { referencedTable: "productos" })
+      .throwOnError(),
+    supabase.from("socios").select("categoria_id, empleado_id, empleados(nombre)").eq("activo", true).throwOnError(),
+    supabase.from("stock_producto").select("producto_id, stock").throwOnError(),
   ]);
   const stockPor = new Map(stock?.map((s) => [s.producto_id, Number(s.stock ?? 0)]));
   const mias = new Set(socios?.filter((s) => s.empleado_id === empleado.id).map((s) => s.categoria_id));
@@ -92,7 +93,7 @@ export default async function ProductosPage({ searchParams }: PageProps<"/produc
                     se corre lo que mide su relleno para que el texto quede alineado con el contenido
                     (a la izquierda en celular, con los precios en escritorio). Dejar la sociedad pide
                     confirmación: un toque por error quitaría el acceso a inventario y retiros. */}
-                <form action={soySocio ? salirCategoria : unirseCategoria} className="max-sm:w-full">
+                <FormAccion accion={soySocio ? salirCategoria : unirseCategoria} className="max-sm:w-full" claseAviso="mt-2">
                   <input type="hidden" name="categoria_id" value={cat.id} />
                   {soySocio ? (
                     <BotonConfirmar variante="fantasma" confirmar="Sí, dejar de ser socio" className="max-sm:-ml-4 sm:-mr-4">
@@ -101,7 +102,7 @@ export default async function ProductosPage({ searchParams }: PageProps<"/produc
                   ) : (
                     <BotonEnvio variante="secundario" pendiente="Uniéndote…">Ser socio</BotonEnvio>
                   )}
-                </form>
+                </FormAccion>
               </div>
 
               <ul className="mt-4 divide-y divide-stone-100 border-t border-stone-100 dark:divide-stone-700 dark:border-stone-700">

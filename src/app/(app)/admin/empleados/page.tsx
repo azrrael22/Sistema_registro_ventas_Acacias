@@ -24,7 +24,8 @@ export default async function EmpleadosPage() {
     .from("empleados")
     .select("id, nombre_completo, primer_apellido, segundo_apellido, email, tipo_documento, numero_documento, activo, es_admin, creado_en")
     .order("activo")
-    .order("nombre");
+    .order("nombre")
+    .throwOnError();
 
   // `confirmar`: la acción pide un segundo toque (BotonConfirmar) antes de enviarse
   const Accion = ({ id, activo, esAdmin, texto, variante, confirmar }: { id: string; activo: boolean; esAdmin: boolean; texto: string; variante?: Variante; confirmar?: string }) => (

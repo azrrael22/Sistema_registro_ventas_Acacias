@@ -9,7 +9,9 @@ export const getEmpleado = cache(async () => {
   const { data } = await supabase.auth.getClaims();
   const id = data?.claims?.sub;
   if (!id) return null;
-  const { data: empleado } = await supabase.from("empleados").select("*").eq("id", id).single();
+  // null solo si no hay perfil (manda a /login); si la consulta falla se lanza la excepción, para
+  // que error.tsx diga que el sistema falló en vez de parecer que la sesión venció
+  const { data: empleado } = await supabase.from("empleados").select("*").eq("id", id).maybeSingle().throwOnError();
   return empleado;
 });
 

@@ -13,8 +13,9 @@ export default async function NuevaVentaPage() {
       .from("productos")
       .select("id, nombre, precio, foto, categorias(nombre)")
       .eq("activo", true)
-      .order("nombre"),
-    supabase.from("stock_producto").select("producto_id, stock"),
+      .order("nombre")
+      .throwOnError(),
+    supabase.from("stock_producto").select("producto_id, stock").throwOnError(),
   ]);
   const stockPor = new Map(stock?.map((s) => [s.producto_id, Number(s.stock ?? 0)]));
   const lista = (productos ?? [])

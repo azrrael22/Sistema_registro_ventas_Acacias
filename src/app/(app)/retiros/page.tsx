@@ -15,13 +15,14 @@ export default async function RetirosPage() {
   const ids = await misCategorias(empleado.id);
   const supabase = await createClient();
   const [{ data: saldos }, { data: retiros }] = await Promise.all([
-    supabase.from("saldo_categoria").select("categoria_id, nombre, saldo").in("categoria_id", ids).order("nombre"),
+    supabase.from("saldo_categoria").select("categoria_id, nombre, saldo").in("categoria_id", ids).order("nombre").throwOnError(),
     supabase
       .from("retiros")
       .select("id, monto, fecha, nota, empleado_id, categorias(nombre), empleados(nombre)")
       .in("categoria_id", ids)
       .order("fecha", { ascending: false })
-      .limit(30),
+      .limit(30)
+      .throwOnError(),
   ]);
   const categorias = saldos?.map((s) => ({ id: s.categoria_id!, nombre: s.nombre, saldo: Number(s.saldo ?? 0) })) ?? [];
   const total = categorias.reduce((t, c) => t + c.saldo, 0);

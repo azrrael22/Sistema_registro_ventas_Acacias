@@ -1,10 +1,12 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
+import { unstable_rethrow } from "next/navigation";
 import { Aviso, Boton, Entrada, Etiqueta, Monto, Vacio, claseSegmento, claseSegmentos, cx } from "@/components/ui";
 import { IconoMas, IconoMenos } from "@/components/iconos";
 import { FotoProducto } from "@/components/foto-producto";
 import { STOCK_BAJO, dinero, textoStock } from "@/lib/formato";
+import { mensajeFalloVenta } from "@/lib/errores";
 import { registrarVenta } from "../actions";
 
 type Producto = { id: number; nombre: string; precio: number; foto: string | null; categoria: string; stock: number };
@@ -93,13 +95,23 @@ export function Carrito({ productos }: { productos: Producto[] }) {
     // Lo que se vendió, para confirmarlo después de vaciar el carrito
     const resumen = `${unidadesTexto(unidades)} · ${dinero(total)}`;
     startTransition(async () => {
-      const r = await registrarVenta(
-        items.map((p) => {
-          const precio = precioDe(p) ?? p.precio;
-          return { producto_id: p.id, cantidad: cantidades[p.id], precio_unitario: precio < p.precio ? precio : undefined };
-        }),
-        nota,
-      );
+      let r;
+      try {
+        r = await registrarVenta(
+          items.map((p) => {
+            const precio = precioDe(p) ?? p.precio;
+            return { producto_id: p.id, cantidad: cantidades[p.id], precio_unitario: precio < p.precio ? precio : undefined };
+          }),
+          nota,
+        );
+      } catch (e) {
+        // Las redirecciones (cuenta desactivada, sesión vencida) siguen su curso
+        unstable_rethrow(e);
+        // Sin internet, se cortó la conexión o el servidor falló: el carrito se queda como está y
+        // se dice si la venta pudo quedar registrada (para no registrarla dos veces)
+        setMensaje({ error: mensajeFalloVenta(e) });
+        return;
+      }
       setMensaje(r?.ok ? { ok: `${r.ok} · ${resumen}` } : r);
       if (r?.ok) {
         setCantidades({});

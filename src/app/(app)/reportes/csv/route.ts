@@ -6,7 +6,15 @@ const celda = (v: string | number) => (typeof v === "number" ? String(v) : `"${v
 export async function GET(request: NextRequest) {
   const filtros = leerFiltros(Object.fromEntries(request.nextUrl.searchParams));
   const { categorias, productos, total, error } = await obtenerReporte(filtros);
-  if (error) return new Response(error.message, { status: 400 });
+  // Se abre como página: el mensaje queda a la vista en vez de descargarse un archivo roto
+  if (error) {
+    console.error("No se pudo generar el CSV del reporte:", error);
+    const texto = "No se pudo generar el reporte porque el sistema tuvo un problema al leer los datos.\n\nVuelve atrás e inténtalo de nuevo; si sigue pasando, avísale a un administrador.";
+    return new Response(texto, {
+      status: 500,
+      headers: { "Content-Type": "text/plain; charset=utf-8" },
+    });
+  }
 
   // Dos secciones: los retiros son por categoría y el inventario por producto
   const lineas = [

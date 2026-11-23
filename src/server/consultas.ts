@@ -8,7 +8,8 @@ export async function misCategorias(empleadoId: string) {
     .from("socios")
     .select("categoria_id")
     .eq("empleado_id", empleadoId)
-    .eq("activo", true);
+    .eq("activo", true)
+    .throwOnError();
   return socios?.map((s) => s.categoria_id) ?? [];
 }
 
@@ -21,6 +22,7 @@ export async function misProductos(empleadoId: string) {
     .from("productos")
     .select("id, nombre, precio, activo, categoria_id, categorias(nombre)")
     .in("categoria_id", categorias)
-    .order("nombre");
+    .order("nombre")
+    .throwOnError();
   return data ?? [];
 }

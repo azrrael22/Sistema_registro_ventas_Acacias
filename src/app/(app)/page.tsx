@@ -13,10 +13,10 @@ export default async function InicioPage() {
   const categorias = [...new Set(productos.map((p) => p.categoria_id))];
   const supabase = await createClient();
   const [{ data: saldos }, { data: stock }, { count: pendientes }] = await Promise.all([
-    supabase.from("saldo_categoria").select("categoria_id, saldo").in("categoria_id", categorias),
-    supabase.from("stock_producto").select("producto_id, stock").in("producto_id", ids),
+    supabase.from("saldo_categoria").select("categoria_id, saldo").in("categoria_id", categorias).throwOnError(),
+    supabase.from("stock_producto").select("producto_id, stock").in("producto_id", ids).throwOnError(),
     empleado.es_admin
-      ? supabase.from("empleados").select("id", { count: "exact", head: true }).eq("activo", false)
+      ? supabase.from("empleados").select("id", { count: "exact", head: true }).eq("activo", false).throwOnError()
       : Promise.resolve({ count: 0 }),
   ]);
   const saldoPor = new Map(saldos?.map((s) => [s.categoria_id, Number(s.saldo ?? 0)]));

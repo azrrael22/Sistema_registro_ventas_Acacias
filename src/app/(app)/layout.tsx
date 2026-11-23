@@ -15,7 +15,8 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
   const { count } = await supabase
     .from("notificaciones")
     .select("id", { count: "exact", head: true })
-    .eq("leida", false);
+    .eq("leida", false)
+    .throwOnError();
 
   return (
     <div className="flex min-h-dvh flex-col">

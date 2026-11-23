@@ -68,11 +68,3 @@ export function tituloDia(dia: string) {
   if (dia === ayer()) return `Ayer · ${fechaCorta(dia)}`;
   return fechaCorta(dia);
 }
-
-// Mensaje legible a partir de un error de Supabase/Postgres
-export function mensajeError(error: { message: string; code?: string } | null) {
-  if (!error) return null;
-  if (error.code === "42501") return "No tienes permiso para hacer esto";
-  if (error.code === "23505") return "Ya existe un registro con ese nombre";
-  return error.message;
-}

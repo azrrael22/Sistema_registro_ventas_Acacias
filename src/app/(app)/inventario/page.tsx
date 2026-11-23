@@ -16,13 +16,14 @@ export default async function InventarioPage() {
   const ids = productos.map((p) => p.id);
   const supabase = await createClient();
   const [{ data: stock }, { data: movimientos }] = await Promise.all([
-    supabase.from("stock_producto").select("producto_id, stock").in("producto_id", ids),
+    supabase.from("stock_producto").select("producto_id, stock").in("producto_id", ids).throwOnError(),
     supabase
       .from("inventario_movimientos")
       .select("id, tipo, cantidad, fecha, nota, productos(nombre), empleados(nombre)")
       .in("producto_id", ids)
       .order("fecha", { ascending: false })
-      .limit(30),
+      .limit(30)
+      .throwOnError(),
   ]);
   const stockPor = new Map(stock?.map((s) => [s.producto_id, Number(s.stock ?? 0)]));
 
