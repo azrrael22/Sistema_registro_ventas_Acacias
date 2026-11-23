@@ -218,6 +218,7 @@ export type Database = {
           creado_por: string | null
           foto: string | null
           id: number
+          maneja_inventario: boolean
           nombre: string
           precio: number
         }
@@ -227,6 +228,7 @@ export type Database = {
           creado_por?: string | null
           foto?: string | null
           id?: never
+          maneja_inventario?: boolean
           nombre: string
           precio: number
         }
@@ -236,6 +238,7 @@ export type Database = {
           creado_por?: string | null
           foto?: string | null
           id?: never
+          maneja_inventario?: boolean
           nombre?: string
           precio?: number
         }
@@ -580,6 +583,7 @@ export type Database = {
         Args: { p_desde: string; p_hasta: string }
         Returns: {
           categoria: string
+          maneja_inventario: boolean
           precio: number
           producto: string
           producto_id: number

@@ -15,7 +15,7 @@ export default async function NuevaVentaPage() {
   const [{ data: productos }, { data: stock }] = await Promise.all([
     supabase
       .from("productos")
-      .select("id, nombre, precio, foto, categorias(nombre)")
+      .select("id, nombre, precio, foto, maneja_inventario, categorias(nombre)")
       .eq("activo", true)
       .order("nombre")
       .throwOnError(),
@@ -29,7 +29,8 @@ export default async function NuevaVentaPage() {
       precio: Number(p.precio),
       foto: urlFoto(p.foto),
       categoria: p.categorias?.nombre ?? "",
-      stock: stockPor.get(p.id) ?? 0,
+      // null: no lleva inventario y se vende sin tope
+      stock: p.maneja_inventario ? (stockPor.get(p.id) ?? 0) : null,
     }))
     .sort((a, b) => a.categoria.localeCompare(b.categoria) || a.nombre.localeCompare(b.nombre));
 

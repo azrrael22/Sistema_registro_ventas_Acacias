@@ -1,7 +1,8 @@
 import type { NextRequest } from "next/server";
 import { PERIODOS, leerFiltros, obtenerReporte } from "@/server/reportes";
 
-const celda = (v: string | number) => (typeof v === "number" ? String(v) : `"${v.replaceAll('"', '""')}"`);
+// null (inventario de un producto que no lo lleva): celda vacía
+const celda = (v: string | number | null) => (v === null ? "" : typeof v === "number" ? String(v) : `"${v.replaceAll('"', '""')}"`);
 
 export async function GET(request: NextRequest) {
   const filtros = leerFiltros(Object.fromEntries(request.nextUrl.searchParams));

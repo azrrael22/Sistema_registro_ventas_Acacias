@@ -360,6 +360,32 @@ do $$ begin
   exception when insufficient_privilege then null; end;
 end $$;
 
+-- ===== Productos sin inventario: sin stock, se venden sin tope y no admiten movimientos =====
+-- A es socio de Camisetas; un producto nuevo para no alterar los conteos de arriba
+set local request.jwt.claims = '{"sub":"00000000-0000-0000-0000-000000000001"}';
+insert into productos (categoria_id, nombre, precio, maneja_inventario)
+select id, 'Camiseta estampada', 8000, false from categorias where nombre='Camisetas';
+do $$ declare v_id bigint := (select id from productos where nombre='Camiseta estampada'); begin
+  assert (select stock from stock_producto where producto_id = v_id) is null, 'sin inventario no hay stock';
+  -- Sin ninguna entrada se venden 50
+  perform registrar_venta(jsonb_build_array(jsonb_build_object('producto_id', v_id, 'cantidad', 50)));
+  assert (select sum(unidades) from reporte_socio('anio', '2020-01-01', '2100-01-01') where producto='Camiseta estampada') = 50,
+         'las ventas sin inventario cuentan en el reporte';
+  assert (select maneja_inventario from inventario_socio('2020-01-01', '2100-01-01') where producto='Camiseta estampada') = false,
+         'el reporte dice que no lleva inventario';
+  assert (select unidades_base is null and unidades_perdidas is null and unidades_quedan is null
+          from inventario_socio('2020-01-01', '2100-01-01') where producto='Camiseta estampada'),
+         'sin inventario: base, perdidas y quedan van en null';
+  begin
+    insert into inventario_movimientos (producto_id, tipo, cantidad) values (v_id, 'entrada', 5);
+    assert false, 'sin inventario no hay entradas';
+  exception when raise_exception then null; end;
+  begin
+    perform registrar_conteo(v_id, 0);
+    assert false, 'sin inventario no hay conteos';
+  exception when raise_exception then null; end;
+end $$;
+
 -- ===== anon no ve nada =====
 reset role;
 set local role anon;

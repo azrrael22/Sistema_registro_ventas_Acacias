@@ -7,9 +7,12 @@ export const dinero = (n: number | string | null | undefined) => pesos.format(Nu
 const pesosCorto = new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", notation: "compact", maximumFractionDigits: 1 });
 export const dineroCorto = (n: number) => pesosCorto.format(n);
 
-// Stock bajo (3 o menos): «Quedan 2» se lee distinto de «12 en stock», no solo por el color ámbar
+// Stock bajo (3 o menos): «Quedan 2» se lee distinto de «12 en stock», no solo por el color ámbar.
+// null: el producto no lleva inventario (no tiene stock ni se agota).
 export const STOCK_BAJO = 3;
-export function textoStock(n: number) {
+export const stockBajo = (n: number | null) => n !== null && n <= STOCK_BAJO;
+export function textoStock(n: number | null) {
+  if (n === null) return "Sin inventario";
   if (n <= 0) return "Agotado";
   if (n > STOCK_BAJO) return `${n} en stock`;
   return n === 1 ? "Queda 1" : `Quedan ${n}`;

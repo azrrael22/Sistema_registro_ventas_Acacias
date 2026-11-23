@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { createClient } from "@/server/supabase";
 import { requerirEmpleadoActivo } from "@/server/sesion";
 import { misProductos } from "@/server/consultas";
-import { STOCK_BAJO, horaDe, porDia, tituloDia } from "@/lib/formato";
+import { horaDe, porDia, stockBajo, tituloDia } from "@/lib/formato";
 import { Entrada, Etiqueta, Selector, Tarjeta, Titulo, Vacio, cx } from "@/components/ui";
 import { BotonEnvio } from "@/components/boton-envio";
 import { FormAccion } from "@/components/form-accion";
@@ -12,7 +12,9 @@ export const metadata: Metadata = { title: "Inventario" };
 
 export default async function InventarioPage() {
   const empleado = await requerirEmpleadoActivo();
-  const productos = await misProductos(empleado.id);
+  const mios = await misProductos(empleado.id);
+  // Los productos que no llevan inventario no tienen stock ni movimientos
+  const productos = mios.filter((p) => p.maneja_inventario);
   const ids = productos.map((p) => p.id);
   const supabase = await createClient();
   const [{ data: stock }, { data: movimientos }] = await Promise.all([
@@ -30,8 +32,10 @@ export default async function InventarioPage() {
   return (
     <>
       <Titulo>Inventario</Titulo>
-      {!productos.length ? (
+      {!mios.length ? (
         <Vacio>Solo los socios manejan inventario. Hazte socio de una categoría en “Productos y socios”.</Vacio>
+      ) : !productos.length ? (
+        <Vacio>Tus productos no llevan inventario. Se activa al editar cada producto en “Productos y socios”.</Vacio>
       ) : (
         // items-start: cada tarjeta con su altura, sin franja vacía al fondo de la más corta
         <div className="grid gap-4 md:grid-cols-2 md:items-start">
@@ -77,7 +81,7 @@ export default async function InventarioPage() {
                 return (
                   <li key={p.id} className="flex justify-between gap-4 py-2.5">
                     <span className="text-stone-900 dark:text-stone-50">{p.nombre} <span className="text-stone-500 dark:text-stone-400">· {p.categorias?.nombre}</span></span>
-                    <span className={cx("cifra font-medium", disponibles <= STOCK_BAJO ? "text-amber-700 dark:text-amber-400" : "text-stone-900 dark:text-stone-50")}>{disponibles}</span>
+                    <span className={cx("cifra font-medium", stockBajo(disponibles) ?"text-amber-700 dark:text-amber-400" : "text-stone-900 dark:text-stone-50")}>{disponibles}</span>
                   </li>
                 );
               })}

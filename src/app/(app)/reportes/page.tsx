@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Form from "next/form";
 import { Suspense } from "react";
-import { STOCK_BAJO, dinero, dineroCorto, fecha, fechaCorta, hoy, porcentaje, rangoFechas } from "@/lib/formato";
+import { stockBajo, dinero,dineroCorto, fecha, fechaCorta, hoy, porcentaje, rangoFechas } from "@/lib/formato";
 import { PERIODOS, leerFiltros, obtenerReporte, type Filtros, type Periodo } from "@/server/reportes";
 import { Aviso, Boton, Entrada, Esqueleto, Etiqueta, Monto, Pestanas, Tarjeta, Titulo, Vacio, claseBoton, cx } from "@/components/ui";
 import { BotonImprimir } from "@/components/boton-imprimir";
@@ -321,6 +321,11 @@ function TablaProductos({ productos, total }: { productos: Reporte["productos"];
           <strong className="font-medium text-stone-600 dark:text-stone-300">Base:</strong> stock al inicio del periodo + entradas ·{" "}
           <strong className="font-medium text-stone-600 dark:text-stone-300">Perdidas:</strong> faltantes de ajustes y conteos (valor a precio actual) ·{" "}
           <strong className="font-medium text-stone-600 dark:text-stone-300">Quedan:</strong> stock al cierre del periodo
+          {productos.some((p) => p.quedan === null) && (
+            <>
+              {" "}· <strong className="font-medium text-stone-600 dark:text-stone-300">—:</strong> el producto no lleva inventario
+            </>
+          )}
         </p>
       </div>
       <div className="overflow-x-auto">
@@ -344,12 +349,14 @@ function TablaProductos({ productos, total }: { productos: Reporte["productos"];
                     <p className="font-medium text-stone-900 dark:text-stone-50">{p.nombre}</p>
                     <p className="text-xs text-stone-500 dark:text-stone-400">{p.categoria}</p>
                   </td>
-                  <td className={td}>{num(p.base)}</td>
+                  <td className={td}>{p.base === null ? <SinInventario /> : num(p.base)}</td>
                   <td className={td}>{num(p.unidades)}</td>
                   <td className={td}>
-                    <Perdidas unidades={p.perdidas} valor={p.valorPerdido} />
+                    {p.perdidas === null ? <SinInventario /> : <Perdidas unidades={p.perdidas} valor={p.valorPerdido ?? 0} />}
                   </td>
-                  <td className={cx(td, p.quedan <= STOCK_BAJO ? "font-medium text-amber-700 dark:text-amber-400" : "text-stone-900 dark:text-stone-50")}>{num(p.quedan)}</td>
+                  <td className={cx(td, stockBajo(p.quedan) ? "font-medium text-amber-700 dark:text-amber-400" : "text-stone-900 dark:text-stone-50")}>
+                    {p.quedan === null ? <SinInventario /> : num(p.quedan)}
+                  </td>
                   <td className={cx("px-3 py-2.5", borde)}>
                     <div className="flex items-center gap-3">
                       <div className="h-2 w-24 shrink-0 rounded-full bg-stone-100 dark:bg-stone-700" aria-hidden>
@@ -381,6 +388,16 @@ function TablaProductos({ productos, total }: { productos: Reporte["productos"];
         </table>
       </div>
     </Tarjeta>
+  );
+}
+
+// Base, Perdidas y Quedan de un producto que no lleva inventario
+function SinInventario() {
+  return (
+    <>
+      <span aria-hidden className="text-stone-500 dark:text-stone-400">—</span>
+      <span className="sr-only">Sin inventario</span>
+    </>
   );
 }
 

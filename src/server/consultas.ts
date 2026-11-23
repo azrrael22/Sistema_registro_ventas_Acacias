@@ -20,7 +20,7 @@ export async function misProductos(empleadoId: string) {
   const supabase = await createClient();
   const { data } = await supabase
     .from("productos")
-    .select("id, nombre, precio, activo, categoria_id, categorias(nombre)")
+    .select("id, nombre, precio, activo, maneja_inventario, categoria_id, categorias(nombre)")
     .in("categoria_id", categorias)
     .order("nombre")
     .throwOnError();

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/server/supabase";
 import { requerirEmpleadoActivo } from "@/server/sesion";
 import { misProductos } from "@/server/consultas";
-import { STOCK_BAJO, textoStock } from "@/lib/formato";
+import { stockBajo, textoStock } from "@/lib/formato";
 import { Monto, Tarjeta, claseBoton, cx } from "@/components/ui";
 import { IconoFlecha, IconoMas } from "@/components/iconos";
 
@@ -68,12 +68,12 @@ export default async function InicioPage() {
                 {/* Como un renglón del libro de cuentas: producto, puntos y stock */}
                 <ul className="mt-5 flex flex-col border-t border-dashed border-stone-300 pt-2 text-sm dark:border-stone-600">
                   {prods.map((p) => {
-                    const disponibles = stockPor.get(p.id) ?? 0;
+                    const disponibles = p.maneja_inventario ? (stockPor.get(p.id) ?? 0) : null;
                     return (
                       <li key={p.id} className="flex items-baseline gap-2 py-1.5">
                         <span className="min-w-0 text-stone-700 dark:text-stone-200">{p.nombre}</span>
                         <span aria-hidden className="min-w-4 flex-1 border-b border-dotted border-stone-300 dark:border-stone-600" />
-                        <span className={cx("cifra shrink-0", disponibles <= STOCK_BAJO ? "text-amber-700 dark:text-amber-400" : "text-stone-500 dark:text-stone-400")}>
+                        <span className={cx("cifra shrink-0", stockBajo(disponibles) ?"text-amber-700 dark:text-amber-400" : "text-stone-500 dark:text-stone-400")}>
                           {textoStock(disponibles)}
                         </span>
                       </li>

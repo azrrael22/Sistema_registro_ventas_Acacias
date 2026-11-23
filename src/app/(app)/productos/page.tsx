@@ -8,7 +8,7 @@ import { BotonEnvio } from "@/components/boton-envio";
 import { FormAccion } from "@/components/form-accion";
 import { CampoFoto } from "@/components/campo-foto";
 import { FotoProducto } from "@/components/foto-producto";
-import { STOCK_BAJO, textoStock } from "@/lib/formato";
+import { stockBajo, textoStock } from "@/lib/formato";
 import { urlFoto } from "@/lib/fotos";
 import { actualizarProducto, crearCategoria, crearProducto, salirCategoria, unirseCategoria } from "./actions";
 
@@ -27,7 +27,7 @@ export default async function ProductosPage({ searchParams }: PageProps<"/produc
   const [{ data: categorias }, { data: socios }, { data: stock }] = await Promise.all([
     supabase
       .from("categorias")
-      .select("id, nombre, creado_por, productos(id, nombre, precio, activo, creado_por, foto)")
+      .select("id, nombre, creado_por, productos(id, nombre, precio, activo, maneja_inventario, creado_por, foto)")
       .order("nombre")
       .order("nombre", { referencedTable: "productos" })
       .throwOnError(),
@@ -64,7 +64,9 @@ export default async function ProductosPage({ searchParams }: PageProps<"/produc
           const soySocio = mias.has(cat.id);
           const puedeEditar = empleado.es_admin || soySocio;
           const activos = cat.productos.filter((p) => p.activo).length;
-          const unidades = cat.productos.reduce((t, p) => t + (stockPor.get(p.id) ?? 0), 0);
+          // Las unidades en stock son solo de los productos que llevan inventario
+          const conInventario = cat.productos.filter((p) => p.maneja_inventario);
+          const unidades = conInventario.reduce((t, p) => t + (stockPor.get(p.id) ?? 0), 0);
           return (
             <Tarjeta key={cat.id}>
               <div className="flex flex-wrap items-start justify-between gap-3">
@@ -75,7 +77,8 @@ export default async function ProductosPage({ searchParams }: PageProps<"/produc
                   </h2>
                   <p className="mt-0.5 text-sm text-stone-500 tabular-nums dark:text-stone-400">
                     {cat.productos.length
-                      ? `${cuenta(cat.productos.length, "producto", "productos")} · ${cuenta(activos, "activo", "activos")} · ${cuenta(unidades, "unidad", "unidades")} en stock`
+                      ? `${cuenta(cat.productos.length, "producto", "productos")} · ${cuenta(activos, "activo", "activos")}` +
+                        (conInventario.length ? ` · ${cuenta(unidades, "unidad", "unidades")} en stock` : "")
                       : "Sin productos"}
                   </p>
                   <p className="mt-2 flex flex-wrap items-center gap-1.5 text-sm text-stone-500 dark:text-stone-400">
@@ -107,7 +110,7 @@ export default async function ProductosPage({ searchParams }: PageProps<"/produc
 
               <ul className="mt-4 divide-y divide-stone-100 border-t border-stone-100 dark:divide-stone-700 dark:border-stone-700">
                 {cat.productos.map((p) => {
-                  const disponibles = stockPor.get(p.id) ?? 0;
+                  const disponibles = p.maneja_inventario ? (stockPor.get(p.id) ?? 0) : null;
                   // La misma fila para los productos que se editan y los que no: foto, nombre con su stock y precio
                   const fila = (
                     <>
@@ -118,7 +121,7 @@ export default async function ProductosPage({ searchParams }: PageProps<"/produc
                           {!p.activo && <Insignia className="ml-2">Inactivo</Insignia>}
                         </span>
                         {/* Stock bajo en ámbar, como en Inicio, Inventario y Vender (no en los inactivos) */}
-                        <span className={cx("cifra block text-xs", p.activo && disponibles <= STOCK_BAJO ? "text-amber-700 dark:text-amber-400" : "text-stone-500 dark:text-stone-400")}>
+                        <span className={cx("cifra block text-xs", p.activo && stockBajo(disponibles) ?"text-amber-700 dark:text-amber-400" : "text-stone-500 dark:text-stone-400")}>
                           {textoStock(disponibles)}
                         </span>
                       </span>
@@ -147,6 +150,9 @@ export default async function ProductosPage({ searchParams }: PageProps<"/produc
                             <CampoFoto texto="Cambiar foto" actual={urlFoto(p.foto)} className="min-w-64 flex-1" />
                             <label className="flex min-h-10 items-center gap-2 text-sm text-stone-700 dark:text-stone-300">
                               <input type="checkbox" name="activo" defaultChecked={p.activo} className="size-4" /> Activo
+                            </label>
+                            <label className="flex min-h-10 items-center gap-2 text-sm text-stone-700 dark:text-stone-300">
+                              <input type="checkbox" name="maneja_inventario" defaultChecked={p.maneja_inventario} className="size-4" /> Lleva inventario
                             </label>
                             <BotonEnvio variante="secundario">Guardar</BotonEnvio>
                           </FormAccion>
@@ -177,6 +183,9 @@ export default async function ProductosPage({ searchParams }: PageProps<"/produc
                       <Entrada name="precio" type="number" min="50" step="50" required />
                     </Etiqueta>
                     <CampoFoto requerida className="min-w-64 flex-1" />
+                    <label className="flex min-h-10 items-center gap-2 text-sm text-stone-700 dark:text-stone-300">
+                      <input type="checkbox" name="maneja_inventario" defaultChecked className="size-4" /> Lleva inventario
+                    </label>
                     <BotonEnvio>Agregar</BotonEnvio>
                   </FormAccion>
                 </details>

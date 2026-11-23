@@ -6,12 +6,16 @@ import { Aviso, Boton, Entrada, Etiqueta, Monto, Vacio, claseSegmento, claseSegm
 import { IconoMas, IconoMenos } from "@/components/iconos";
 import { FotoProducto } from "@/components/foto-producto";
 import { useEnLinea } from "@/components/sin-conexion";
-import { STOCK_BAJO, dinero, textoStock } from "@/lib/formato";
+import { dinero, stockBajo, textoStock } from "@/lib/formato";
 import { mensajeFalloVenta } from "@/lib/errores";
 import { registrarVenta } from "../actions";
 import { VENTA_VACIA, useVentaGuardada } from "./venta-guardada";
 
-type Producto = { id: number; nombre: string; precio: number; foto: string | null; categoria: string; stock: number };
+// stock null: el producto no lleva inventario y se vende sin tope
+type Producto = { id: number; nombre: string; precio: number; foto: string | null; categoria: string; stock: number | null };
+
+// Cuántas unidades se pueden vender como máximo
+const tope = (p: Producto) => p.stock ?? Infinity;
 
 // Copia sin la entrada de un producto
 function sin<T>(registro: Record<number, T>, id: number) {
@@ -56,11 +60,11 @@ export function Carrito({ productos, empleadoId }: { productos: Producto[]; empl
   const enLinea = useEnLinea();
 
   // Una venta guardada pudo quedar con más unidades de las que hay ahora: cuenta hasta el stock
-  const cantidadDe = (p: Producto) => Math.min(cantidades[p.id] ?? 0, Math.max(0, p.stock));
+  const cantidadDe = (p: Producto) => Math.min(cantidades[p.id] ?? 0, Math.max(0, tope(p)));
 
   const fijar = (p: Producto, n: number) => {
     setMensaje(undefined);
-    const cant = Math.max(0, Math.min(p.stock, n || 0));
+    const cant = Math.max(0, Math.min(tope(p), n || 0));
     // Si sale del carrito, vuelve a su precio de lista
     cambiarVenta((v) =>
       cant ? { ...v, cantidades: { ...v.cantidades, [p.id]: cant } } : { ...v, cantidades: sin(v.cantidades, p.id), precios: sin(v.precios, p.id) },
@@ -164,7 +168,7 @@ export function Carrito({ productos, empleadoId }: { productos: Producto[]; empl
                 <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                   {lista.map((p) => {
                     const cant = cantidadDe(p);
-                    const agotado = p.stock <= 0;
+                    const agotado = tope(p) <= 0;
                     const precio = precioDe(p);
                     return (
                       // rounded-2xl: 8 de la foto y del control de cantidad + 8 de relleno
@@ -180,7 +184,7 @@ export function Carrito({ productos, empleadoId }: { productos: Producto[]; empl
                         <button
                           type="button"
                           onClick={() => cambiar(p, 1)}
-                          disabled={cant >= p.stock}
+                          disabled={cant >= tope(p)}
                           aria-label={`Agregar 1 ${p.nombre}`}
                           aria-describedby={`info-${p.id}`}
                           className="flex flex-1 cursor-pointer flex-col rounded-t-2xl p-2 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-700 disabled:cursor-not-allowed dark:focus-visible:outline-emerald-500"
@@ -197,9 +201,12 @@ export function Carrito({ productos, empleadoId }: { productos: Producto[]; empl
                               </>
                             )}
                             <Monto valor={precio ?? p.precio} className="text-stone-900 dark:text-stone-50" />
-                            <span className={cx("cifra block text-xs", p.stock <= STOCK_BAJO ? "text-amber-700 dark:text-amber-400" : "text-stone-500 dark:text-stone-400")}>
-                              {textoStock(p.stock)}
-                            </span>
+                            {/* Sin inventario no hay stock que mostrar: al vendedor no le dice nada */}
+                            {p.stock !== null && (
+                              <span className={cx("cifra block text-xs", stockBajo(p.stock) ? "text-amber-700 dark:text-amber-400" : "text-stone-500 dark:text-stone-400")}>
+                                {textoStock(p.stock)}
+                              </span>
+                            )}
                           </span>
                         </button>
 
@@ -219,7 +226,7 @@ export function Carrito({ productos, empleadoId }: { productos: Producto[]; empl
                               type="number"
                               inputMode="numeric"
                               min={0}
-                              max={p.stock}
+                              max={p.stock ?? undefined}
                               step={1}
                               value={cant}
                               onChange={(e) => fijar(p, Math.trunc(Number(e.target.value)))}
@@ -231,7 +238,7 @@ export function Carrito({ productos, empleadoId }: { productos: Producto[]; empl
                             <button
                               type="button"
                               onClick={() => cambiar(p, 1)}
-                              disabled={cant >= p.stock}
+                              disabled={cant >= tope(p)}
                               aria-label={`Agregar 1 ${p.nombre}`}
                               className={paso}
                             >

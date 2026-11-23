@@ -40,6 +40,7 @@ export async function crearProducto(_: Resultado, form: FormData): Promise<Resul
   await requerirEmpleadoActivo();
   const nombre = String(form.get("nombre")).trim();
   const precio = Number(form.get("precio"));
+  const maneja_inventario = form.get("maneja_inventario") === "on";
   if (!nombre) return { error: "Escribe el nombre del producto" };
   if (!Number.isFinite(precio) || precio <= 0) return { error: "El precio debe ser mayor que 0" };
   const foto = await leerFoto(form);
@@ -48,7 +49,7 @@ export async function crearProducto(_: Resultado, form: FormData): Promise<Resul
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("productos")
-    .insert({ nombre, precio, categoria_id: Number(form.get("categoria_id")) })
+    .insert({ nombre, precio, maneja_inventario, categoria_id: Number(form.get("categoria_id")) })
     .select("id")
     .single();
   if (error) return { error: mensajeError(error) };
@@ -63,6 +64,7 @@ export async function actualizarProducto(_: Resultado, form: FormData): Promise<
   const nombre = String(form.get("nombre")).trim();
   const precio = Number(form.get("precio"));
   const activo = form.get("activo") === "on";
+  const maneja_inventario = form.get("maneja_inventario") === "on";
   if (!nombre) return { error: "Escribe el nombre del producto" };
   if (!Number.isFinite(precio) || precio < 0) return { error: "Precio inválido" };
   if (activo && precio === 0) return { error: "Asigna un precio antes de activar el producto" };
@@ -71,13 +73,14 @@ export async function actualizarProducto(_: Resultado, form: FormData): Promise<
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("productos")
-    .update({ nombre, precio, activo })
+    .update({ nombre, precio, activo, maneja_inventario })
     .eq("id", Number(form.get("id")))
     .select("id, foto");
   if (error) return { error: mensajeError(error) };
   if (!data.length) return { error: "Solo los socios de la categoría, quien creó el producto o un admin pueden editarlo" };
   const conFoto = !foto.webp || (await guardarFoto(supabase, data[0].id, foto.webp, data[0].foto));
-  revalidatePath("/productos");
+  // Precio, activo e inventario cambian Vender, Inventario e Inicio, no solo esta pantalla
+  revalidatePath("/", "layout");
   if (!conFoto) return { error: "Los datos se guardaron, pero la foto no se pudo subir. Intenta de nuevo" };
   return { ok: "Producto actualizado" };
 }
