@@ -68,8 +68,8 @@ update empleados set es_admin = true, activo = true where email = 'TU_CORREO';
      tras 7 días sin actividad, y el latido lo evita. Se revisa en Vercel → Settings → Cron Jobs.
 3. **Deploy**. Cada push a `main` publica en producción; cada push a otra rama crea una vista previa.
 4. En Supabase → **Authentication → URL Configuration**:
-   - **Site URL**: la URL de Vercel (ej. `https://acacias-ventas.vercel.app`)
-   - **Redirect URLs**: `https://acacias-ventas.vercel.app/**`
+   - **Site URL**: la URL de Vercel (ej. `https://ventas-personal.vercel.app`)
+   - **Redirect URLs**: `https://ventas-personal.vercel.app/**`
 
 ### 3. Correos (Resend)
 
@@ -80,7 +80,7 @@ update empleados set es_admin = true, activo = true where email = 'TU_CORREO';
    ```bash
    supabase functions deploy enviar-notificacion
    supabase secrets set RESEND_API_KEY=re_xxx WEBHOOK_SECRET=<una-clave-larga-inventada> \
-     APP_URL=https://acacias-ventas.vercel.app CORREO_REMITENTE="Ventas Las Acacias <ventas@tudominio.com>"
+     APP_URL=https://ventas-personal.vercel.app CORREO_REMITENTE="Ventas Las Acacias <ventas@tudominio.com>"
    ```
 3. Supabase → **Database → Webhooks → Create a new hook**:
    - Tabla `notificaciones`, evento **Insert**
