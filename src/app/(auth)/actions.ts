@@ -3,8 +3,11 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "@/server/supabase";
+import { enRecuperacion, terminarRecuperacion } from "@/server/recuperacion";
+import { leerContrasenaNueva, mensajeErrorContrasena } from "@/lib/contrasenas";
 import { leerDocumento } from "@/lib/documentos";
 import { leerNombres } from "@/lib/nombres";
+import type { Resultado } from "@/lib/acciones";
 
 // `valores` devuelve lo que se envió para que el formulario no se vacíe cuando hay un error
 // (React reinicia el <form> al terminar la acción). Las contraseñas nunca se devuelven.
@@ -31,19 +34,18 @@ export async function registrarse(_: EstadoAuth, form: FormData): Promise<Estado
   const valores = Object.fromEntries(CAMPOS_REGISTRO.map((c) => [c, String(form.get(c) ?? "")]));
   const fallo = (error: string) => ({ error, valores });
 
-  const password = String(form.get("password"));
   const nombres = leerNombres(form);
   if ("error" in nombres) return fallo(nombres.error);
   const doc = leerDocumento(form);
   if ("error" in doc) return fallo(doc.error);
-  if (password.length < 8) return fallo("La contraseña debe tener al menos 8 caracteres");
-  if (password !== String(form.get("confirmar"))) return fallo("Las contraseñas no coinciden");
+  const clave = leerContrasenaNueva(form);
+  if ("error" in clave) return fallo(clave.error);
 
   const origen = (await headers()).get("origin");
   const supabase = await createClient();
   const { data, error } = await supabase.auth.signUp({
     email: String(form.get("email")).trim(),
-    password,
+    password: clave.password,
     options: {
       data: { ...nombres, tipo_documento: doc.tipo, numero_documento: doc.numero },
       emailRedirectTo: `${origen}/auth/callback`,
@@ -62,6 +64,34 @@ export async function registrarse(_: EstadoAuth, form: FormData): Promise<Estado
   // Si el proyecto no exige confirmar el correo, la sesión ya existe.
   if (data.session) redirect("/pendiente");
   return { ok: "Te enviamos un correo para confirmar tu cuenta. Después un administrador debe aprobarla." };
+}
+
+// Envía el correo para crear una contraseña nueva. Su enlace pasa por auth/callback, que deja la
+// cookie de recuperación y lleva a /restablecer.
+export async function solicitarRecuperacion(_: Resultado, form: FormData): Promise<Resultado> {
+  const email = String(form.get("email") ?? "").trim();
+  if (!email) return { error: "Escribe tu correo" };
+  const origen = (await headers()).get("origin");
+  const supabase = await createClient();
+  const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: `${origen}/auth/callback?next=/restablecer` });
+  if (error?.code === "over_email_send_rate_limit") return { error: "Espera un momento antes de volver a intentarlo" };
+  // La misma respuesta exista o no la cuenta: así no se puede averiguar quién está registrado
+  return { ok: "Si el correo está registrado, te enviamos un enlace para crear una contraseña nueva. Revisa también el correo no deseado." };
+}
+
+export async function restablecerContrasena(_: Resultado, form: FormData): Promise<Resultado> {
+  const supabase = await createClient();
+  const { data } = await supabase.auth.getClaims();
+  if (!(await enRecuperacion(data?.claims?.sub))) {
+    return { error: "El enlace ya no es válido. Pide uno nuevo desde «¿Olvidaste tu contraseña?»" };
+  }
+  const clave = leerContrasenaNueva(form);
+  if ("error" in clave) return clave;
+  const { error } = await supabase.auth.updateUser({ password: clave.password });
+  if (error) return { error: mensajeErrorContrasena(error) };
+  await terminarRecuperacion();
+  // Ya con la sesión del enlace: entra a la app (o a /pendiente si la cuenta no está aprobada)
+  redirect("/");
 }
 
 export async function cerrarSesion() {

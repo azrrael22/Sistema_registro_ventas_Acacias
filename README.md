@@ -29,7 +29,9 @@ npm run dev                    # http://localhost:3000
    docker exec supabase_db_Sistema_registro_ventas_Acacias psql -U postgres \
      -c "update empleados set es_admin = true, activo = true where email = 'TU_CORREO';"
    ```
-3. Los correos locales (confirmación de cuenta) se ven en http://127.0.0.1:54324.
+3. Los correos locales (confirmación de cuenta y recuperación de contraseña) se ven en http://127.0.0.1:54324.
+   La plantilla del correo de recuperación sale de [supabase/templates/](supabase/templates/); si cambias
+   `supabase/config.toml`, reinicia con `supabase stop && supabase start`.
 
 Otros comandos:
 
@@ -70,6 +72,14 @@ update empleados set es_admin = true, activo = true where email = 'TU_CORREO';
 4. En Supabase → **Authentication → URL Configuration**:
    - **Site URL**: la URL de Vercel (ej. `https://ventas-personal.vercel.app`)
    - **Redirect URLs**: `https://ventas-personal.vercel.app/**`
+5. En Supabase → **Authentication → Email Templates → Reset password**, pon como asunto
+   `Crea una contraseña nueva` y como contenido el de
+   [supabase/templates/recuperar.html](supabase/templates/recuperar.html). El workflow no sube
+   `config.toml`, así que este paso es manual. Con la plantilla de Supabase la recuperación también
+   funciona, pero solo si el enlace se abre en el mismo navegador donde se pidió (no desde la app de Gmail).
+   El correo integrado de Supabase envía pocos mensajes por hora; si los empleados no reciben los de
+   confirmación o recuperación, configura un SMTP propio en **Authentication → Emails → SMTP Settings**
+   (Resend ofrece uno).
 
 ### 3. Correos (Resend)
 
@@ -114,12 +124,14 @@ manuales, y los comandos de los pasos 1 y 3 sirven para desplegar a mano si hace
 ## Estructura
 
 ```
-src/app/(auth)/          login, registro
+src/app/(auth)/          login, registro, recuperar y restablecer la contraseña
 src/app/(app)/           pantallas internas (vender, ventas, productos, inventario, retiros, reportes, notificaciones, admin)
+src/app/manifest.ts      app instalable («Agregar a la pantalla de inicio»); íconos en public/iconos/
 src/server/              código solo de servidor: cliente Supabase, sesión, consultas, reportes, proxy
 src/lib/                 código compartido: formato, tipos, cliente Supabase del navegador
 src/proxy.ts             redirige a /login si no hay sesión
 supabase/migrations/     esquema, RLS, triggers, RPCs y catálogo inicial
 supabase/functions/      Edge Function de correos
+supabase/templates/      plantilla del correo de recuperación de contraseña
 supabase/tests/          prueba SQL de reglas de negocio
 ```

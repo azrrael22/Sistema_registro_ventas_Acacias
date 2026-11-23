@@ -1,19 +1,21 @@
 import type { Metadata } from "next";
 import { createClient } from "@/server/supabase";
 import { requerirEmpleadoActivo } from "@/server/sesion";
-import { Boton, Entrada, Etiqueta, Insignia, Monto, Pestanas, Tarjeta, Titulo, Vacio, cx } from "@/components/ui";
+import { Entrada, Etiqueta, Insignia, Monto, Pestanas, Tarjeta, Titulo, Vacio, cx } from "@/components/ui";
 import { IconoFlecha, IconoMas } from "@/components/iconos";
+import { BotonConfirmar } from "@/components/boton-confirmar";
 import { BotonEnvio } from "@/components/boton-envio";
 import { FormAccion } from "@/components/form-accion";
 import { CampoFoto } from "@/components/campo-foto";
 import { FotoProducto } from "@/components/foto-producto";
+import { STOCK_BAJO, textoStock } from "@/lib/formato";
 import { urlFoto } from "@/lib/fotos";
 import { actualizarProducto, crearCategoria, crearProducto, salirCategoria, unirseCategoria } from "./actions";
 
 export const metadata: Metadata = { title: "Productos y socios" };
 
-// <summary> sin el triángulo del navegador
-const resumen = "inline-flex cursor-pointer list-none items-center gap-2 font-medium transition-colors [&::-webkit-details-marker]:hidden";
+// <summary> sin el triángulo del navegador (con pantalla táctil, de 44 px de alto)
+const resumen = "inline-flex cursor-pointer list-none items-center gap-2 font-medium transition-colors pointer-coarse:min-h-11 [&::-webkit-details-marker]:hidden";
 
 // "1 producto", "3 productos"
 const cuenta = (n: number, uno: string, varios: string) => `${n} ${n === 1 ? uno : varios}`;
@@ -88,12 +90,17 @@ export default async function ProductosPage({ searchParams }: PageProps<"/produc
                 </div>
                 {/* En celular el botón siempre baja a su propia línea. El fantasma no tiene borde, así que
                     se corre lo que mide su relleno para que el texto quede alineado con el contenido
-                    (a la izquierda en celular, con los precios en escritorio). */}
+                    (a la izquierda en celular, con los precios en escritorio). Dejar la sociedad pide
+                    confirmación: un toque por error quitaría el acceso a inventario y retiros. */}
                 <form action={soySocio ? salirCategoria : unirseCategoria} className="max-sm:w-full">
                   <input type="hidden" name="categoria_id" value={cat.id} />
-                  <Boton variante={soySocio ? "fantasma" : "secundario"} className={soySocio ? "max-sm:-ml-4 sm:-mr-4" : undefined}>
-                    {soySocio ? "Dejar de ser socio" : "Ser socio"}
-                  </Boton>
+                  {soySocio ? (
+                    <BotonConfirmar variante="fantasma" confirmar="Sí, dejar de ser socio" className="max-sm:-ml-4 sm:-mr-4">
+                      Dejar de ser socio
+                    </BotonConfirmar>
+                  ) : (
+                    <BotonEnvio variante="secundario" pendiente="Uniéndote…">Ser socio</BotonEnvio>
+                  )}
                 </form>
               </div>
 
@@ -110,8 +117,8 @@ export default async function ProductosPage({ searchParams }: PageProps<"/produc
                           {!p.activo && <Insignia className="ml-2">Inactivo</Insignia>}
                         </span>
                         {/* Stock bajo en ámbar, como en Inicio, Inventario y Vender (no en los inactivos) */}
-                        <span className={cx("block text-xs tabular-nums", p.activo && disponibles <= 3 ? "text-amber-700 dark:text-amber-400" : "text-stone-500 dark:text-stone-400")}>
-                          {disponibles} en stock
+                        <span className={cx("block text-xs tabular-nums", p.activo && disponibles <= STOCK_BAJO ? "text-amber-700 dark:text-amber-400" : "text-stone-500 dark:text-stone-400")}>
+                          {textoStock(disponibles)}
                         </span>
                       </span>
                       <Monto valor={p.precio} className="shrink-0 text-stone-900 dark:text-stone-50" />

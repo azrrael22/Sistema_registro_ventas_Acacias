@@ -1,11 +1,11 @@
 import Link from "next/link";
 import { requerirEmpleadoActivo } from "@/server/sesion";
 import { createClient } from "@/server/supabase";
-import { Navegacion } from "@/components/navegacion";
+import { Navegacion, NavegacionInferior } from "@/components/navegacion";
 import { Campanita } from "@/components/campanita";
 import { Marca } from "@/components/marca";
 import { EnlacePerfil } from "@/components/enlace-perfil";
-import { Aviso } from "@/components/ui";
+import { Aviso, claseBoton } from "@/components/ui";
 import { faltanApellidos } from "@/lib/nombres";
 import { cerrarSesion } from "../(auth)/actions";
 
@@ -19,6 +19,10 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
 
   return (
     <div className="flex min-h-dvh flex-col">
+      {/* Para el teclado: lo primero que se enfoca salta el encabezado y la navegación */}
+      <a href="#contenido" className={claseBoton("secundario", "sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50")}>
+        Saltar al contenido
+      </a>
       <header className="sticky top-0 z-10 border-b border-stone-200 bg-white/95 backdrop-blur-sm dark:border-stone-700 dark:bg-stone-900/95 print:hidden">
         <div className="mx-auto flex h-14 max-w-5xl items-center justify-between gap-3 px-4 sm:px-6">
           <Link href="/" className="flex items-center gap-2 font-semibold text-stone-900 dark:text-stone-50">
@@ -27,14 +31,22 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
           <div className="flex items-center gap-1">
             <Campanita empleadoId={empleado.id} sinLeer={count ?? 0} />
             <EnlacePerfil nombre={empleado.nombre} />
-            <form action={cerrarSesion}>
-              <button className="h-9 rounded-lg px-3 text-sm text-stone-600 transition-colors hover:bg-stone-100 hover:text-stone-900 dark:text-stone-400 dark:hover:bg-stone-800 dark:hover:text-stone-50">Salir</button>
+            {/* En celular, Salir está en «Más», lejos de la campana y del perfil */}
+            <form action={cerrarSesion} className="max-md:hidden">
+              <button className="h-9 cursor-pointer rounded-lg px-3 text-sm text-stone-600 transition-colors hover:bg-stone-100 hover:text-stone-900 focus-visible:outline-2 focus-visible:outline-emerald-700 pointer-coarse:h-11 dark:text-stone-400 dark:hover:bg-stone-800 dark:hover:text-stone-50 dark:focus-visible:outline-emerald-500">
+                Salir
+              </button>
             </form>
           </div>
         </div>
         <Navegacion esAdmin={empleado.es_admin} />
       </header>
-      <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-6 sm:px-6 sm:py-8 print:max-w-none print:p-0">
+      {/* En celular, el relleno de abajo deja ver el final del contenido sobre la navegación fija */}
+      <main
+        id="contenido"
+        tabIndex={-1}
+        className="mx-auto w-full max-w-5xl flex-1 px-4 pt-6 pb-[calc(6rem+env(safe-area-inset-bottom))] outline-none sm:px-6 sm:pt-8 md:pb-8 print:max-w-none print:p-0"
+      >
         {faltanApellidos(empleado) && (
           <div className="mb-6 print:hidden">
             <Aviso tipo="info">
@@ -45,6 +57,7 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
         )}
         {children}
       </main>
+      <NavegacionInferior esAdmin={empleado.es_admin} />
     </div>
   );
 }

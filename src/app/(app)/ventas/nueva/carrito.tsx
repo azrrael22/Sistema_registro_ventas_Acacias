@@ -1,34 +1,28 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
-import { Aviso, Boton, Entrada, Monto, Vacio, cx } from "@/components/ui";
+import { Aviso, Boton, Entrada, Etiqueta, Monto, Vacio, claseSegmento, claseSegmentos, cx } from "@/components/ui";
 import { IconoMas, IconoMenos } from "@/components/iconos";
 import { FotoProducto } from "@/components/foto-producto";
-import { dinero } from "@/lib/formato";
+import { STOCK_BAJO, dinero, textoStock } from "@/lib/formato";
 import { registrarVenta } from "../actions";
 
 type Producto = { id: number; nombre: string; precio: number; foto: string | null; categoria: string; stock: number };
 
 // Botones − y + del control de cantidad (el contenedor recorta el fondo a su esquina)
 const paso =
-  "grid h-full w-10 shrink-0 cursor-pointer place-items-center text-stone-700 transition-colors enabled:hover:bg-stone-100 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-emerald-700 disabled:cursor-not-allowed disabled:text-stone-300 dark:text-stone-300 dark:enabled:hover:bg-stone-700 dark:focus-visible:outline-emerald-500 dark:disabled:text-stone-600";
+  "grid h-full w-10 shrink-0 cursor-pointer place-items-center text-stone-700 transition-colors enabled:hover:bg-stone-100 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-emerald-700 disabled:cursor-not-allowed disabled:text-stone-300 pointer-coarse:w-11 dark:text-stone-300 dark:enabled:hover:bg-stone-700 dark:focus-visible:outline-emerald-500 dark:disabled:text-stone-600";
+
+const unidadesTexto = (n: number) => `${n} ${n === 1 ? "unidad" : "unidades"}`;
 
 // Filtro por categoría: mismo aspecto que Pestanas, pero con botones porque es estado del cliente
 function Chips({ opciones, activa, onCambiar }: { opciones: string[]; activa: string | null; onCambiar: (c: string | null) => void }) {
   return (
-    <div role="group" aria-label="Filtrar por categoría" className="mt-3 overflow-x-auto">
-      <ul className="inline-flex gap-1 rounded-lg bg-stone-100 p-1 text-sm whitespace-nowrap dark:bg-stone-800">
+    <div role="group" aria-label="Filtrar por categoría" className="mt-3">
+      <ul className={claseSegmentos}>
         {[null, ...opciones].map((c) => (
           <li key={c ?? ""}>
-            <button
-              type="button"
-              aria-pressed={activa === c}
-              onClick={() => onCambiar(c)}
-              className={cx(
-                "block cursor-pointer rounded-md px-3 py-1.5 font-medium transition-colors focus-visible:outline-2 focus-visible:outline-emerald-700 dark:focus-visible:outline-emerald-500",
-                activa === c ? "bg-white text-stone-900 shadow-sm dark:bg-stone-700 dark:text-stone-50 dark:shadow-none" : "text-stone-600 hover:text-stone-900 dark:text-stone-400 dark:hover:text-stone-50",
-              )}
-            >
+            <button type="button" aria-pressed={activa === c} onClick={() => onCambiar(c)} className={cx("cursor-pointer", claseSegmento(activa === c))}>
               {c ?? "Todos"}
             </button>
           </li>
@@ -95,7 +89,9 @@ export function Carrito({ productos }: { productos: Producto[] }) {
   // Un precio inválido abre el detalle para que se vea dónde corregirlo
   const verDetalle = detalle || !preciosValidos;
 
-  const confirmar = () =>
+  const confirmar = () => {
+    // Lo que se vendió, para confirmarlo después de vaciar el carrito
+    const resumen = `${unidadesTexto(unidades)} · ${dinero(total)}`;
     startTransition(async () => {
       const r = await registrarVenta(
         items.map((p) => {
@@ -104,7 +100,7 @@ export function Carrito({ productos }: { productos: Producto[] }) {
         }),
         nota,
       );
-      setMensaje(r);
+      setMensaje(r?.ok ? { ok: `${r.ok} · ${resumen}` } : r);
       if (r?.ok) {
         setCantidades({});
         setPrecios({});
@@ -112,9 +108,11 @@ export function Carrito({ productos }: { productos: Producto[] }) {
         setDetalle(false);
       }
     });
+  };
 
   return (
-    <div className="pb-60 lg:grid lg:grid-cols-[1fr_20rem] lg:items-start lg:gap-6 lg:pb-0">
+    // pb-32: en celular y tablet, el final de la lista queda por encima de la barra de la venta
+    <div className="pb-32 lg:grid lg:grid-cols-[1fr_20rem] lg:items-start lg:gap-6 lg:pb-0">
       <div className="min-w-0">
         <Entrada
           type="search"
@@ -124,7 +122,6 @@ export function Carrito({ productos }: { productos: Producto[] }) {
           aria-label="Buscar producto"
         />
         {categorias.length > 1 && <Chips opciones={categorias} activa={categoria} onCambiar={setCategoria} />}
-        {mensaje?.ok && <div className="mt-4"><Aviso tipo="ok">{mensaje.ok}</Aviso></div>}
 
         {filtrados.length ? (
           <div className="mt-4 flex flex-col gap-6">
@@ -147,17 +144,18 @@ export function Carrito({ productos }: { productos: Producto[] }) {
                           agotado && "opacity-50",
                         )}
                       >
-                        {/* Tocar el producto suma una unidad */}
+                        {/* Tocar el producto suma una unidad. El precio y el stock se leen como descripción */}
                         <button
                           type="button"
                           onClick={() => cambiar(p, 1)}
                           disabled={cant >= p.stock}
-                          aria-label={`Agregar un ${p.nombre}`}
+                          aria-label={`Agregar 1 ${p.nombre}`}
+                          aria-describedby={`info-${p.id}`}
                           className="flex flex-1 cursor-pointer flex-col rounded-t-2xl p-2 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-700 disabled:cursor-not-allowed dark:focus-visible:outline-emerald-500"
                         >
                           <FotoProducto src={p.foto} className="aspect-square h-auto w-full" />
                           <span className="mt-2 block px-1 font-medium leading-snug text-stone-900 line-clamp-2 dark:text-stone-50">{p.nombre}</span>
-                          <span className="mt-auto block px-1 pt-1 text-sm">
+                          <span id={`info-${p.id}`} className="mt-auto block px-1 pt-1 text-sm">
                             {precio !== null && precio < p.precio && (
                               <>
                                 <s className="text-stone-500 dark:text-stone-400">
@@ -167,20 +165,20 @@ export function Carrito({ productos }: { productos: Producto[] }) {
                               </>
                             )}
                             <Monto valor={precio ?? p.precio} className="text-stone-900 dark:text-stone-50" />
-                            <span className={cx("block text-xs", p.stock <= 3 ? "text-amber-700 dark:text-amber-400" : "text-stone-500 dark:text-stone-400")}>
-                              {agotado ? "Agotado" : `${p.stock} en stock`}
+                            <span className={cx("block text-xs", p.stock <= STOCK_BAJO ? "text-amber-700 dark:text-amber-400" : "text-stone-500 dark:text-stone-400")}>
+                              {textoStock(p.stock)}
                             </span>
                           </span>
                         </button>
 
                         {/* Cantidad en un solo control: − n +. También se puede escribir; se ajusta al stock */}
                         <div className="px-2 pb-2">
-                          <div className="flex h-10 items-center overflow-hidden rounded-lg border border-stone-300 bg-white transition-colors focus-within:border-emerald-600 focus-within:ring-2 focus-within:ring-emerald-600/20 dark:border-stone-600 dark:bg-stone-800 dark:focus-within:border-emerald-500 dark:focus-within:ring-emerald-500/20">
+                          <div className="flex h-10 items-center overflow-hidden rounded-lg border border-stone-300 bg-white transition-colors focus-within:border-emerald-600 focus-within:ring-2 focus-within:ring-emerald-600/20 pointer-coarse:h-11 dark:border-stone-600 dark:bg-stone-800 dark:focus-within:border-emerald-500 dark:focus-within:ring-emerald-500/20">
                             <button
                               type="button"
                               onClick={() => cambiar(p, -1)}
                               disabled={cant === 0}
-                              aria-label={`Quitar un ${p.nombre}`}
+                              aria-label={`Quitar 1 ${p.nombre}`}
                               className={paso}
                             >
                               <IconoMenos />
@@ -196,13 +194,13 @@ export function Carrito({ productos }: { productos: Producto[] }) {
                               onFocus={(e) => e.target.select()}
                               disabled={agotado}
                               aria-label={`Cantidad de ${p.nombre}`}
-                              className="h-full min-w-0 flex-1 bg-transparent text-center text-sm font-medium text-stone-900 tabular-nums focus:outline-none dark:text-stone-50"
+                              className="h-full min-w-0 flex-1 bg-transparent text-center text-sm font-medium text-stone-900 tabular-nums focus:outline-none pointer-coarse:text-base dark:text-stone-50"
                             />
                             <button
                               type="button"
                               onClick={() => cambiar(p, 1)}
                               disabled={cant >= p.stock}
-                              aria-label={`Agregar un ${p.nombre}`}
+                              aria-label={`Agregar 1 ${p.nombre}`}
                               className={paso}
                             >
                               <IconoMas />
@@ -217,32 +215,43 @@ export function Carrito({ productos }: { productos: Producto[] }) {
             ))}
           </div>
         ) : (
-          <div className="mt-4"><Vacio>Sin resultados</Vacio></div>
+          <div className="mt-4">
+            <Vacio>
+              Ningún producto coincide con la búsqueda
+              <span className="mt-3 block">
+                <Boton
+                  variante="secundario"
+                  onClick={() => {
+                    setBusqueda("");
+                    setCategoria(null);
+                  }}
+                >
+                  Limpiar búsqueda
+                </Boton>
+              </span>
+            </Vacio>
+          </div>
         )}
       </div>
 
-      {/* En celular es la barra fija de abajo; en escritorio, un panel al lado que queda
-          bajo el encabezado fijo (~101px) y nunca es más alto que la ventana */}
+      {/* En celular es una barra compacta sobre la navegación de abajo (en tablet, al fondo de la
+          pantalla); en escritorio, un panel al lado que queda bajo el encabezado fijo (~101px) y nunca
+          es más alto que la ventana */}
       <aside
+        id="venta-actual"
         aria-label="Venta actual"
-        className="fixed inset-x-0 bottom-0 z-10 border-t border-stone-200 bg-white px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-[0_-4px_12px_rgba(0,0,0,0.05)] dark:border-stone-700 dark:bg-stone-900 dark:shadow-[0_-4px_12px_rgba(0,0,0,0.3)] lg:sticky lg:inset-auto lg:top-32 lg:z-auto lg:rounded-xl lg:border lg:bg-white lg:p-4 lg:shadow-sm lg:dark:bg-stone-800 lg:dark:shadow-none"
+        className="fixed inset-x-0 bottom-[calc(4rem+env(safe-area-inset-bottom))] z-10 border-t border-stone-200 bg-white px-4 py-3 shadow-[0_-4px_12px_rgba(0,0,0,0.05)] md:bottom-0 md:pb-[max(0.75rem,env(safe-area-inset-bottom))] dark:border-stone-700 dark:bg-stone-900 dark:shadow-[0_-4px_12px_rgba(0,0,0,0.3)] lg:sticky lg:inset-auto lg:top-32 lg:z-auto lg:rounded-xl lg:border lg:bg-white lg:p-4 lg:shadow-sm lg:dark:bg-stone-800 lg:dark:shadow-none"
       >
         <div className="mx-auto flex max-w-5xl flex-col gap-2 sm:px-6 lg:max-h-[calc(100dvh-12rem)] lg:px-0">
-          <div className="flex items-center justify-between gap-3">
-            <h2 className="font-medium text-stone-900 dark:text-stone-50">Venta actual</h2>
-            {items.length > 0 && preciosValidos && (
-              <Boton variante="fantasma" className="min-h-8 px-2 lg:hidden" onClick={() => setDetalle((d) => !d)} aria-expanded={verDetalle} aria-controls="detalle-venta">
-                {verDetalle ? "Ocultar" : "Ver detalle"}
-              </Boton>
-            )}
-          </div>
+          <h2 className="font-medium text-stone-900 max-lg:sr-only dark:text-stone-50">Venta actual</h2>
 
-          {/* En escritorio solo la lista cede espacio cuando el panel llega al alto de la ventana */}
-          <div id="detalle-venta" className={cx(!verDetalle && "hidden", "lg:flex lg:min-h-0 lg:flex-col")}>
+          {/* El detalle (líneas, precios y nota) se abre en celular con «Ver detalle»; en escritorio
+              siempre está a la vista y solo la lista cede espacio si el panel llega al alto de la ventana */}
+          <div id="detalle-venta" className={cx("flex-col gap-3 lg:flex lg:min-h-0", verDetalle ? "flex" : "hidden")}>
             {items.length ? (
               // Se lee como el tiquete: «2 × Cold brew» y su monto, en la misma columna que el total.
               // -mx-3 px-3: el -mr-2 de «Quitar» y los contornos de foco caben sin scroll horizontal
-              <ul className="-mx-3 flex max-h-[45vh] flex-col gap-3 overflow-y-auto px-3 py-1 lg:max-h-none">
+              <ul className="-mx-3 flex max-h-[40vh] flex-col gap-3 overflow-y-auto px-3 py-1 lg:max-h-none lg:min-h-0">
                 {items.map((p) => {
                   const cant = cantidades[p.id];
                   const precio = precioDe(p);
@@ -277,12 +286,17 @@ export function Carrito({ productos }: { productos: Producto[] }) {
                             aria-invalid={precio === null}
                             aria-describedby={precio === null ? `precio-${p.id}-error` : undefined}
                             className={cx(
-                              "h-8 min-h-8 w-24 px-2 text-right font-mono tabular-nums",
+                              "h-8 min-h-8 w-24 px-2 text-right font-mono tabular-nums pointer-coarse:h-10 pointer-coarse:min-h-10",
                               precio === null && "border-red-500 focus:border-red-500 focus:ring-red-500/20 dark:border-red-500 dark:focus:border-red-500",
                             )}
                           />
                         </label>
-                        <Boton variante="fantasma" className="-mr-2 min-h-8 shrink-0 px-2 text-xs text-stone-500" onClick={() => cambiar(p, -cant)} aria-label={`Quitar ${p.nombre} de la venta`}>
+                        <Boton
+                          variante="fantasma"
+                          className="-mr-2 min-h-8 shrink-0 px-2 text-xs text-stone-500 pointer-coarse:min-h-10"
+                          onClick={() => cambiar(p, -cant)}
+                          aria-label={`Quitar ${p.nombre} de la venta`}
+                        >
                           Quitar
                         </Boton>
                       </div>
@@ -298,21 +312,49 @@ export function Carrito({ productos }: { productos: Producto[] }) {
             ) : (
               <p className="py-2 text-sm text-stone-500 dark:text-stone-400">Toca un producto para agregarlo</p>
             )}
+            <Etiqueta texto="Nota (opcional)" className="shrink-0">
+              <Entrada value={nota} onChange={(e) => setNota(e.target.value)} />
+            </Etiqueta>
           </div>
 
+          {/* La confirmación queda junto al botón, donde se está mirando al registrar */}
           {mensaje?.error && <Aviso>{mensaje.error}</Aviso>}
-          <Entrada placeholder="Nota (opcional)" value={nota} onChange={(e) => setNota(e.target.value)} aria-label="Nota" />
-          {/* El total cierra la venta como en el tiquete: después de la línea punteada */}
-          <div className="border-t border-dashed border-stone-300 pt-2 dark:border-stone-600">
+          {mensaje?.ok && <Aviso tipo="ok">{mensaje.ok}</Aviso>}
+
+          {/* El total cierra la venta como en el tiquete: después de la línea punteada (en celular,
+              solo con el detalle abierto; cerrado, la barra es una sola fila sobre el botón) */}
+          <div
+            className={cx(
+              "shrink-0 lg:border-t lg:border-dashed lg:border-stone-300 lg:pt-2 lg:dark:border-stone-600",
+              verDetalle && "border-t border-dashed border-stone-300 pt-2 dark:border-stone-600",
+            )}
+          >
             {descuento > 0 && (
               <p className="flex items-baseline justify-between text-sm text-stone-600 dark:text-stone-400">
                 <span>Descuento</span>
                 <Monto valor={-descuento} />
               </p>
             )}
-            <div className="flex items-baseline justify-between">
-              <span className="text-sm text-stone-600 dark:text-stone-400">{unidades ? `${unidades} ${unidades === 1 ? "unidad" : "unidades"}` : "Sin productos"}</span>
-              <Monto valor={total} className="text-xl font-medium text-stone-900 dark:text-stone-50" />
+            <div className="flex items-baseline justify-between gap-3">
+              <p className="min-w-0 text-sm text-stone-600 dark:text-stone-400">
+                {unidades ? unidadesTexto(unidades) : "Sin productos"}
+                {items.length > 0 && preciosValidos && (
+                  <span className="lg:hidden">
+                    <span aria-hidden> · </span>
+                    {/* -my-3 py-3: el área táctil mide 44 px sin agrandar la barra */}
+                    <button
+                      type="button"
+                      onClick={() => setDetalle((d) => !d)}
+                      aria-expanded={verDetalle}
+                      aria-controls="detalle-venta"
+                      className="-mx-1 -my-3 cursor-pointer rounded-md px-1 py-3 font-medium text-emerald-700 hover:underline focus-visible:outline-2 focus-visible:outline-emerald-700 dark:text-emerald-400 dark:focus-visible:outline-emerald-500"
+                    >
+                      {verDetalle ? "Ocultar detalle" : "Ver detalle"}
+                    </button>
+                  </span>
+                )}
+              </p>
+              <Monto valor={total} className="shrink-0 text-xl font-medium text-stone-900 dark:text-stone-50" />
             </div>
           </div>
           <Boton onClick={confirmar} disabled={!unidades || !preciosValidos || enviando} className="h-12 w-full shrink-0 text-base">

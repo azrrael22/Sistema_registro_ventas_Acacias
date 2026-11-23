@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/server/supabase";
 import { requerirEmpleadoActivo } from "@/server/sesion";
 import { misProductos } from "@/server/consultas";
+import { STOCK_BAJO, textoStock } from "@/lib/formato";
 import { Monto, Tarjeta, claseBoton, cx } from "@/components/ui";
 import { IconoFlecha, IconoMas } from "@/components/iconos";
 
@@ -70,7 +71,9 @@ export default async function InicioPage() {
                     return (
                       <li key={p.id} className="flex justify-between gap-4 py-2">
                         <span className="text-stone-700 dark:text-stone-200">{p.nombre}</span>
-                        <span className={cx("tabular-nums", disponibles <= 3 ? "text-amber-700 dark:text-amber-400" : "text-stone-500 dark:text-stone-400")}>{disponibles} en stock</span>
+                        <span className={cx("shrink-0 tabular-nums", disponibles <= STOCK_BAJO ? "text-amber-700 dark:text-amber-400" : "text-stone-500 dark:text-stone-400")}>
+                          {textoStock(disponibles)}
+                        </span>
                       </li>
                     );
                   })}

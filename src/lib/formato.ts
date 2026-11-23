@@ -7,6 +7,14 @@ export const dinero = (n: number | string | null | undefined) => pesos.format(Nu
 const pesosCorto = new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", notation: "compact", maximumFractionDigits: 1 });
 export const dineroCorto = (n: number) => pesosCorto.format(n);
 
+// Stock bajo (3 o menos): «Quedan 2» se lee distinto de «12 en stock», no solo por el color ámbar
+export const STOCK_BAJO = 3;
+export function textoStock(n: number) {
+  if (n <= 0) return "Agotado";
+  if (n > STOCK_BAJO) return `${n} en stock`;
+  return n === 1 ? "Queda 1" : `Quedan ${n}`;
+}
+
 const pct = new Intl.NumberFormat("es-CO", { style: "percent", maximumFractionDigits: 0 });
 const pctSigno = new Intl.NumberFormat("es-CO", { style: "percent", maximumFractionDigits: 0, signDisplay: "exceptZero" });
 export const porcentaje = (n: number, conSigno = false) => (conSigno ? pctSigno : pct).format(n);

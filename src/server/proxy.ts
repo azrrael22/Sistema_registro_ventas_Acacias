@@ -1,7 +1,8 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-const RUTAS_PUBLICAS = ["/login", "/registro", "/auth"];
+// /restablecer no va aquí: necesita la sesión que abre el enlace del correo de recuperación
+const RUTAS_PUBLICAS = ["/login", "/registro", "/recuperar", "/auth"];
 
 // Refresca la sesión en cada request y manda a /login a quien no la tenga.
 export async function updateSession(request: NextRequest) {

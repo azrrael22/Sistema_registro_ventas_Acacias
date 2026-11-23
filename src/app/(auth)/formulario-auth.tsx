@@ -37,6 +37,14 @@ export function FormularioAuth({ modo }: { modo: "login" | "registro" }) {
           autoComplete={modo === "login" ? "current-password" : "new-password"}
         />
       </Etiqueta>
+      {modo === "login" && (
+        <Link
+          href="/recuperar"
+          className="-mt-2 self-end rounded-md py-1 text-sm font-medium text-emerald-700 hover:underline focus-visible:outline-2 focus-visible:outline-emerald-700 pointer-coarse:py-2.5 dark:text-emerald-400 dark:focus-visible:outline-emerald-500"
+        >
+          ¿Olvidaste tu contraseña?
+        </Link>
+      )}
       {modo === "registro" && (
         <Etiqueta texto="Confirmar contraseña">
           <EntradaContrasena name="confirmar" required autoComplete="new-password" />

@@ -5,7 +5,7 @@ import { dinero } from "@/lib/formato";
 const cx = (...c: (string | false | null | undefined)[]) => c.filter(Boolean).join(" ");
 
 // La base de .boton, .campo y .tarjeta está en globals.css; aquí solo van las variantes.
-type Variante = "primario" | "secundario" | "peligro" | "fantasma";
+export type Variante = "primario" | "secundario" | "peligro" | "fantasma";
 const variantes: Record<Variante, string> = {
   primario: "bg-emerald-700 text-white shadow-sm hover:bg-emerald-800 active:scale-[0.98] disabled:bg-stone-200 disabled:text-stone-500 disabled:shadow-none disabled:active:scale-100 dark:bg-emerald-600 dark:hover:bg-emerald-500 dark:disabled:bg-stone-700 dark:disabled:text-stone-500",
   secundario: "border border-stone-300 bg-white text-stone-800 hover:bg-stone-50 active:bg-stone-100 disabled:opacity-50 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700 dark:active:bg-stone-600",
@@ -53,21 +53,23 @@ export function Titulo({ children, descripcion, accion }: { children: React.Reac
   );
 }
 
+// Control segmentado (Pestanas y los filtros de Vender). Si las opciones no caben, bajan a otra
+// línea: con desplazamiento lateral quedaban escondidas sin que nada lo indicara.
+export const claseSegmentos = "inline-flex flex-wrap gap-1 rounded-lg bg-stone-100 p-1 text-sm dark:bg-stone-800";
+export const claseSegmento = (activa: boolean) =>
+  cx(
+    "block rounded-md px-3 py-1.5 font-medium whitespace-nowrap transition-colors focus-visible:outline-2 focus-visible:outline-emerald-700 pointer-coarse:py-2.5 dark:focus-visible:outline-emerald-500",
+    activa ? "bg-white text-stone-900 shadow-sm dark:bg-stone-700 dark:text-stone-50 dark:shadow-none" : "text-stone-600 hover:text-stone-900 dark:text-stone-400 dark:hover:text-stone-50",
+  );
+
 // Filtros de una página (vistas, periodos): enlaces con forma de control segmentado
 export function Pestanas({ etiqueta, opciones }: { etiqueta: string; opciones: { href: string; texto: string; activa: boolean }[] }) {
   return (
-    <nav aria-label={etiqueta} className="mb-4 overflow-x-auto print:hidden">
-      <ul className="inline-flex gap-1 rounded-lg bg-stone-100 p-1 text-sm whitespace-nowrap dark:bg-stone-800">
+    <nav aria-label={etiqueta} className="mb-4 print:hidden">
+      <ul className={claseSegmentos}>
         {opciones.map((o) => (
           <li key={o.href}>
-            <Link
-              href={o.href}
-              aria-current={o.activa ? "page" : undefined}
-              className={cx(
-                "block rounded-md px-3 py-1.5 font-medium transition-colors focus-visible:outline-2 focus-visible:outline-emerald-700 dark:focus-visible:outline-emerald-500",
-                o.activa ? "bg-white text-stone-900 shadow-sm dark:bg-stone-700 dark:text-stone-50 dark:shadow-none" : "text-stone-600 hover:text-stone-900 dark:text-stone-400 dark:hover:text-stone-50",
-              )}
-            >
+            <Link href={o.href} aria-current={o.activa ? "page" : undefined} className={claseSegmento(o.activa)}>
               {o.texto}
             </Link>
           </li>
@@ -100,6 +102,11 @@ export function Aviso({ tipo = "error", children }: { tipo?: "error" | "ok" | "i
       {children}
     </p>
   );
+}
+
+// Bloque gris que ocupa el lugar del contenido mientras carga (loading.tsx, Generando…)
+export function Esqueleto({ className }: { className?: string }) {
+  return <div aria-hidden className={cx("rounded-xl bg-stone-100 motion-safe:animate-pulse dark:bg-stone-800", className)} />;
 }
 
 export function Vacio({ children }: { children: React.ReactNode }) {

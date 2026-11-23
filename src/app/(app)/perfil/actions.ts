@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/server/supabase";
 import { requerirEmpleadoActivo } from "@/server/sesion";
 import { mensajeError } from "@/lib/formato";
+import { leerContrasenaNueva, mensajeErrorContrasena } from "@/lib/contrasenas";
 import { leerNombres } from "@/lib/nombres";
 import type { Resultado } from "@/lib/acciones";
 
@@ -41,9 +42,8 @@ export async function cambiarCorreo(_: Resultado, form: FormData): Promise<Resul
 
 export async function cambiarContrasena(_: Resultado, form: FormData): Promise<Resultado> {
   await requerirEmpleadoActivo();
-  const password = String(form.get("password"));
-  if (password.length < 8) return { error: "La contraseña debe tener al menos 8 caracteres" };
-  if (password !== String(form.get("confirmar"))) return { error: "Las contraseñas no coinciden" };
+  const clave = leerContrasenaNueva(form);
+  if ("error" in clave) return clave;
 
   const supabase = await createClient();
   const { data } = await supabase.auth.getClaims();
@@ -54,11 +54,7 @@ export async function cambiarContrasena(_: Resultado, form: FormData): Promise<R
   });
   if (incorrecta) return { error: "La contraseña actual no es correcta" };
 
-  const { error } = await supabase.auth.updateUser({ password });
-  if (error) {
-    if (error.code === "same_password") return { error: "La nueva contraseña debe ser distinta a la actual" };
-    if (error.code === "weak_password") return { error: "Esa contraseña es muy débil; prueba con una más larga" };
-    return { error: error.message };
-  }
+  const { error } = await supabase.auth.updateUser({ password: clave.password });
+  if (error) return { error: mensajeErrorContrasena(error) };
   return { ok: "Contraseña actualizada" };
 }

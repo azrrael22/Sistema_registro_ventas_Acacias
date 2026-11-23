@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Form from "next/form";
 import { Suspense } from "react";
-import { dinero, dineroCorto, fecha, fechaCorta, hoy, mensajeError, porcentaje, rangoFechas } from "@/lib/formato";
+import { STOCK_BAJO, dinero, dineroCorto, fecha, fechaCorta, hoy, mensajeError, porcentaje, rangoFechas } from "@/lib/formato";
 import { PERIODOS, leerFiltros, obtenerReporte, type Filtros, type Periodo } from "@/server/reportes";
-import { Aviso, Boton, Entrada, Etiqueta, Monto, Pestanas, Tarjeta, Titulo, Vacio, claseBoton, cx } from "@/components/ui";
+import { Aviso, Boton, Entrada, Esqueleto, Etiqueta, Monto, Pestanas, Tarjeta, Titulo, Vacio, claseBoton, cx } from "@/components/ui";
 import { BotonImprimir } from "@/components/boton-imprimir";
 import { Marca } from "@/components/marca";
 
@@ -344,7 +344,7 @@ function TablaProductos({ productos, total }: { productos: Reporte["productos"];
                   <td className={td}>
                     <Perdidas unidades={p.perdidas} valor={p.valorPerdido} />
                   </td>
-                  <td className={cx(td, p.quedan <= 3 ? "font-medium text-amber-700 dark:text-amber-400" : "text-stone-900 dark:text-stone-50")}>{num(p.quedan)}</td>
+                  <td className={cx(td, p.quedan <= STOCK_BAJO ? "font-medium text-amber-700 dark:text-amber-400" : "text-stone-900 dark:text-stone-50")}>{num(p.quedan)}</td>
                   <td className={cx("px-3 py-2.5", borde)}>
                     <div className="flex items-center gap-3">
                       <div className="h-2 w-24 shrink-0 rounded-full bg-stone-100 dark:bg-stone-700" aria-hidden>
@@ -397,13 +397,13 @@ function Generando() {
         <span className="size-4 animate-spin rounded-full border-2 border-emerald-600 border-t-transparent dark:border-emerald-500" aria-hidden />
         Generando reporte…
       </p>
-      <div className="h-24 animate-pulse rounded-xl bg-stone-100 dark:bg-stone-800" />
+      <Esqueleto className="h-24" />
       <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-5">
         {[0, 1, 2, 3, 4].map((i) => (
-          <div key={i} className={cx("h-24 animate-pulse rounded-xl bg-stone-100 dark:bg-stone-800", i === 4 && "col-span-2 lg:col-span-1")} />
+          <Esqueleto key={i} className={cx("h-24", i === 4 && "col-span-2 lg:col-span-1")} />
         ))}
       </div>
-      <div className="h-64 animate-pulse rounded-xl bg-stone-100 dark:bg-stone-800" />
+      <Esqueleto className="h-64" />
     </div>
   );
 }

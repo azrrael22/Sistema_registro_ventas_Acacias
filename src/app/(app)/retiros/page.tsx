@@ -2,11 +2,11 @@ import type { Metadata } from "next";
 import { createClient } from "@/server/supabase";
 import { requerirEmpleadoActivo } from "@/server/sesion";
 import { misCategorias } from "@/server/consultas";
-import { dinero, horaDe, porDia, tituloDia } from "@/lib/formato";
-import { Entrada, Etiqueta, Monto, Selector, Tarjeta, Titulo, Vacio } from "@/components/ui";
-import { BotonEnvio } from "@/components/boton-envio";
+import { horaDe, porDia, tituloDia } from "@/lib/formato";
+import { Monto, Tarjeta, Titulo, Vacio } from "@/components/ui";
 import { FormAccion } from "@/components/form-accion";
 import { registrarRetiro } from "./actions";
+import { CamposRetiro } from "./campos-retiro";
 
 export const metadata: Metadata = { title: "Retiros" };
 
@@ -37,22 +37,7 @@ export default async function RetirosPage() {
           <Tarjeta>
             <h2 className="mb-4 font-medium text-stone-900 dark:text-stone-50">Registrar retiro</h2>
             <FormAccion accion={registrarRetiro} className="flex flex-col gap-3">
-              <Etiqueta texto="Categoría">
-                <Selector name="categoria_id" required>
-                  {categorias.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.nombre} · disponible {dinero(c.saldo)}
-                    </option>
-                  ))}
-                </Selector>
-              </Etiqueta>
-              <Etiqueta texto="Monto">
-                <Entrada name="monto" type="number" min="1" step="any" required />
-              </Etiqueta>
-              <Etiqueta texto="Nota (opcional)">
-                <Entrada name="nota" />
-              </Etiqueta>
-              <BotonEnvio>Registrar retiro</BotonEnvio>
+              <CamposRetiro categorias={categorias} />
             </FormAccion>
           </Tarjeta>
 

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { createClient } from "@/server/supabase";
 import { requerirEmpleadoActivo } from "@/server/sesion";
 import { misProductos } from "@/server/consultas";
-import { horaDe, porDia, tituloDia } from "@/lib/formato";
+import { STOCK_BAJO, horaDe, porDia, tituloDia } from "@/lib/formato";
 import { Entrada, Etiqueta, Selector, Tarjeta, Titulo, Vacio, cx } from "@/components/ui";
 import { BotonEnvio } from "@/components/boton-envio";
 import { FormAccion } from "@/components/form-accion";
@@ -76,7 +76,7 @@ export default async function InventarioPage() {
                 return (
                   <li key={p.id} className="flex justify-between gap-4 py-2.5">
                     <span className="text-stone-900 dark:text-stone-50">{p.nombre} <span className="text-stone-500 dark:text-stone-400">· {p.categorias?.nombre}</span></span>
-                    <span className={cx("font-medium tabular-nums", disponibles <= 3 ? "text-amber-700 dark:text-amber-400" : "text-stone-900 dark:text-stone-50")}>{disponibles}</span>
+                    <span className={cx("font-medium tabular-nums", disponibles <= STOCK_BAJO ? "text-amber-700 dark:text-amber-400" : "text-stone-900 dark:text-stone-50")}>{disponibles}</span>
                   </li>
                 );
               })}

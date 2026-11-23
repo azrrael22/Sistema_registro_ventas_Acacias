@@ -82,7 +82,7 @@ export default async function VentasPage({ searchParams }: PageProps<"/ventas">)
                           {!esDevolucion && (
                             <Link
                               href={`/ventas/${v.id}/devolver`}
-                              className="-my-2 -mr-2 shrink-0 rounded-md p-2 text-sm text-stone-500 transition-colors hover:bg-stone-100 hover:text-stone-900 focus-visible:outline-2 focus-visible:outline-emerald-700 dark:text-stone-400 dark:hover:bg-stone-700 dark:hover:text-stone-50 dark:focus-visible:outline-emerald-500"
+                              className="-my-2 -mr-2 shrink-0 rounded-md p-2 text-sm text-stone-500 transition-colors hover:bg-stone-100 hover:text-stone-900 focus-visible:outline-2 focus-visible:outline-emerald-700 pointer-coarse:-my-3 pointer-coarse:py-3 dark:text-stone-400 dark:hover:bg-stone-700 dark:hover:text-stone-50 dark:focus-visible:outline-emerald-500"
                             >
                               Registrar devolución
                             </Link>

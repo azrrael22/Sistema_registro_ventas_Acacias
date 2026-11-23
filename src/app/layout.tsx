@@ -9,9 +9,12 @@ const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"]
 export const metadata: Metadata = {
   title: { default: "Ventas Las Acacias", template: "%s · Ventas Las Acacias" },
   description: "Registro de ventas de los empleados de Las Acacias",
+  // Nombre bajo el ícono al agregarla a la pantalla de inicio del iPhone (el resto sale de manifest.ts)
+  appleWebApp: { title: "Acacias" },
 };
 
-export const viewport: Viewport = { themeColor: "#047857" };
+// color-scheme: fechas, selectores y barras de desplazamiento nativos siguen el modo oscuro
+export const viewport: Viewport = { themeColor: "#047857", colorScheme: "light dark" };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (

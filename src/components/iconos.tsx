@@ -160,6 +160,25 @@ export function IconoEtiqueta(props: Props) {
   );
 }
 
+export function IconoPuntos(props: Props) {
+  return (
+    <Icono {...props}>
+      <circle cx="12" cy="12" r="1" />
+      <circle cx="19" cy="12" r="1" />
+      <circle cx="5" cy="12" r="1" />
+    </Icono>
+  );
+}
+
+export function IconoSalir(props: Props) {
+  return (
+    <Icono {...props}>
+      <path d="m16 17 5-5-5-5M21 12H9" />
+      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+    </Icono>
+  );
+}
+
 export function IconoImagen(props: Props) {
   return (
     <Icono {...props}>
