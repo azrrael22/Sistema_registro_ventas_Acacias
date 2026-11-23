@@ -8,11 +8,13 @@ import { leerContrasenaNueva } from "@/lib/contrasenas";
 import { mensajeErrorAuth } from "@/lib/errores";
 import { leerDocumento } from "@/lib/documentos";
 import { leerNombres } from "@/lib/nombres";
+import { rutaInterna } from "@/lib/rutas";
 import type { Resultado } from "@/lib/acciones";
 
 // `valores` devuelve lo que se envió para que el formulario no se vacíe cuando hay un error
 // (React reinicia el <form> al terminar la acción). Las contraseñas nunca se devuelven.
-export type EstadoAuth = { error?: string; ok?: string; valores?: Record<string, string> } | undefined;
+// `ir`: después de ingresar, la pantalla a la que el navegador va con una navegación completa.
+export type EstadoAuth = { error?: string; ok?: string; valores?: Record<string, string>; ir?: string } | undefined;
 
 const CAMPOS_REGISTRO = [
   "primer_nombre", "segundo_nombre", "primer_apellido", "segundo_apellido",
@@ -26,6 +28,12 @@ export async function iniciarSesion(_: EstadoAuth, form: FormData): Promise<Esta
   // mensajeErrorAuth distingue la contraseña equivocada (invalid_credentials) de Auth caído o
   // de demasiados intentos, para no decir «incorrectos» cuando el problema es otro
   if (error) return { error: mensajeErrorAuth(error), valores: { email } };
+  // Vuelve a la pantalla que se abrió sin sesión (p. ej. el enlace de un correo); solo rutas de la
+  // app, para que el formulario no sirva para mandar a otro sitio. Va con una navegación completa
+  // (FormularioAuth) y no con redirect(): el destino puede ser un Route Handler que redirige
+  // (/notificaciones/[id]), y Next sigue esa redirección en el servidor sin cambiar la URL.
+  const destino = rutaInterna(form.get("destino"));
+  if (destino) return { ir: destino };
   redirect("/");
 }
 

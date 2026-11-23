@@ -5,11 +5,20 @@ import { unstable_rethrow } from "next/navigation";
 import { Aviso, Boton, Entrada, Etiqueta, Monto, Vacio, claseSegmento, claseSegmentos, cx } from "@/components/ui";
 import { IconoMas, IconoMenos } from "@/components/iconos";
 import { FotoProducto } from "@/components/foto-producto";
+import { useEnLinea } from "@/components/sin-conexion";
 import { STOCK_BAJO, dinero, textoStock } from "@/lib/formato";
 import { mensajeFalloVenta } from "@/lib/errores";
 import { registrarVenta } from "../actions";
+import { VENTA_VACIA, useVentaGuardada } from "./venta-guardada";
 
 type Producto = { id: number; nombre: string; precio: number; foto: string | null; categoria: string; stock: number };
+
+// Copia sin la entrada de un producto
+function sin<T>(registro: Record<number, T>, id: number) {
+  const copia = { ...registro };
+  delete copia[id];
+  return copia;
+}
 
 // Botones − y + del control de cantidad (el contenedor recorta el fondo a su esquina)
 const paso =
@@ -34,25 +43,36 @@ function Chips({ opciones, activa, onCambiar }: { opciones: string[]; activa: st
   );
 }
 
-export function Carrito({ productos }: { productos: Producto[] }) {
-  const [cantidades, setCantidades] = useState<Record<number, number>>({});
-  // Precio escrito por quien vende (descuento), como texto para poder borrarlo mientras escribe
-  const [precios, setPrecios] = useState<Record<number, string>>({});
+export function Carrito({ productos, empleadoId }: { productos: Producto[]; empleadoId: string }) {
+  // Cantidades, precios con descuento (como texto, para poder borrarlo mientras se escribe) y nota:
+  // quedan guardados en el celular hasta registrar la venta o vaciarla (ver venta-guardada.ts)
+  const [venta, cambiarVenta] = useVentaGuardada(`acacias:venta:${empleadoId}`);
+  const { cantidades, precios, nota } = venta;
   const [busqueda, setBusqueda] = useState("");
   const [categoria, setCategoria] = useState<string | null>(null);
   const [detalle, setDetalle] = useState(false);
-  const [nota, setNota] = useState("");
   const [mensaje, setMensaje] = useState<{ error?: string; ok?: string }>();
   const [enviando, startTransition] = useTransition();
+  const enLinea = useEnLinea();
+
+  // Una venta guardada pudo quedar con más unidades de las que hay ahora: cuenta hasta el stock
+  const cantidadDe = (p: Producto) => Math.min(cantidades[p.id] ?? 0, Math.max(0, p.stock));
 
   const fijar = (p: Producto, n: number) => {
     setMensaje(undefined);
     const cant = Math.max(0, Math.min(p.stock, n || 0));
-    setCantidades((c) => ({ ...c, [p.id]: cant }));
     // Si sale del carrito, vuelve a su precio de lista
-    if (!cant) setPrecios((pr) => { const resto = { ...pr }; delete resto[p.id]; return resto; });
+    cambiarVenta((v) =>
+      cant ? { ...v, cantidades: { ...v.cantidades, [p.id]: cant } } : { ...v, cantidades: sin(v.cantidades, p.id), precios: sin(v.precios, p.id) },
+    );
   };
-  const cambiar = (p: Producto, delta: number) => fijar(p, (cantidades[p.id] ?? 0) + delta);
+  const cambiar = (p: Producto, delta: number) => fijar(p, cantidadDe(p) + delta);
+
+  const vaciar = () => {
+    setMensaje(undefined);
+    setDetalle(false);
+    cambiarVenta(() => VENTA_VACIA);
+  };
 
   // Precio que se cobra: el de lista o uno menor. null si lo escrito no es válido.
   const precioDe = (p: Producto) => {
@@ -83,11 +103,12 @@ export function Carrito({ productos }: { productos: Producto[] }) {
     return [...porCategoria];
   }, [filtrados]);
 
-  const items = productos.filter((p) => cantidades[p.id] > 0);
+  // Los productos que ya no existen o se desactivaron no aparecen aunque sigan en la venta guardada
+  const items = productos.filter((p) => cantidadDe(p) > 0);
   const preciosValidos = items.every((p) => precioDe(p) !== null);
-  const total = items.reduce((t, p) => t + (precioDe(p) ?? p.precio) * cantidades[p.id], 0);
-  const descuento = items.reduce((t, p) => t + (p.precio - (precioDe(p) ?? p.precio)) * cantidades[p.id], 0);
-  const unidades = items.reduce((t, p) => t + cantidades[p.id], 0);
+  const total = items.reduce((t, p) => t + (precioDe(p) ?? p.precio) * cantidadDe(p), 0);
+  const descuento = items.reduce((t, p) => t + (p.precio - (precioDe(p) ?? p.precio)) * cantidadDe(p), 0);
+  const unidades = items.reduce((t, p) => t + cantidadDe(p), 0);
   // Un precio inválido abre el detalle para que se vea dónde corregirlo
   const verDetalle = detalle || !preciosValidos;
 
@@ -100,7 +121,7 @@ export function Carrito({ productos }: { productos: Producto[] }) {
         r = await registrarVenta(
           items.map((p) => {
             const precio = precioDe(p) ?? p.precio;
-            return { producto_id: p.id, cantidad: cantidades[p.id], precio_unitario: precio < p.precio ? precio : undefined };
+            return { producto_id: p.id, cantidad: cantidadDe(p), precio_unitario: precio < p.precio ? precio : undefined };
           }),
           nota,
         );
@@ -114,9 +135,8 @@ export function Carrito({ productos }: { productos: Producto[] }) {
       }
       setMensaje(r?.ok ? { ok: `${r.ok} · ${resumen}` } : r);
       if (r?.ok) {
-        setCantidades({});
-        setPrecios({});
-        setNota("");
+        // Registrada: se borra también del celular
+        cambiarVenta(() => VENTA_VACIA);
         setDetalle(false);
       }
     });
@@ -143,7 +163,7 @@ export function Carrito({ productos }: { productos: Producto[] }) {
                 {cat && !categoria && <h2 className="mb-2 text-sm font-medium text-stone-500 dark:text-stone-400">{cat}</h2>}
                 <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                   {lista.map((p) => {
-                    const cant = cantidades[p.id] ?? 0;
+                    const cant = cantidadDe(p);
                     const agotado = p.stock <= 0;
                     const precio = precioDe(p);
                     return (
@@ -265,7 +285,7 @@ export function Carrito({ productos }: { productos: Producto[] }) {
               // -mx-3 px-3: el -mr-2 de «Quitar» y los contornos de foco caben sin scroll horizontal
               <ul className="-mx-3 flex max-h-[40vh] flex-col gap-3 overflow-y-auto px-3 py-1 lg:max-h-none lg:min-h-0">
                 {items.map((p) => {
-                  const cant = cantidades[p.id];
+                  const cant = cantidadDe(p);
                   const precio = precioDe(p);
                   return (
                     <li key={p.id}>
@@ -292,8 +312,9 @@ export function Carrito({ productos }: { productos: Producto[] }) {
                             step={50}
                             value={precios[p.id] ?? p.precio}
                             onChange={(e) => {
+                              const texto = e.target.value;
                               setMensaje(undefined);
-                              setPrecios((pr) => ({ ...pr, [p.id]: e.target.value }));
+                              cambiarVenta((v) => ({ ...v, precios: { ...v.precios, [p.id]: texto } }));
                             }}
                             aria-invalid={precio === null}
                             aria-describedby={precio === null ? `precio-${p.id}-error` : undefined}
@@ -324,14 +345,32 @@ export function Carrito({ productos }: { productos: Producto[] }) {
             ) : (
               <p className="py-2 text-sm text-stone-500 dark:text-stone-400">Toca un producto para agregarlo</p>
             )}
+            {/* La venta queda guardada al salir de la pantalla: aquí se descarta entera */}
+            {items.length > 0 && (
+              <div className="-mt-1 flex shrink-0 justify-end">
+                <Boton variante="fantasma" className="-mr-2 min-h-8 px-2 text-xs text-stone-500 pointer-coarse:min-h-10" onClick={vaciar}>
+                  Vaciar venta
+                </Boton>
+              </div>
+            )}
             <Etiqueta texto="Nota (opcional)" className="shrink-0">
-              <Entrada value={nota} onChange={(e) => setNota(e.target.value)} />
+              <Entrada
+                value={nota}
+                onChange={(e) => {
+                  const texto = e.target.value;
+                  cambiarVenta((v) => ({ ...v, nota: texto }));
+                }}
+              />
             </Etiqueta>
           </div>
 
           {/* La confirmación queda junto al botón, donde se está mirando al registrar */}
           {mensaje?.error && <Aviso>{mensaje.error}</Aviso>}
           {mensaje?.ok && <Aviso tipo="ok">{mensaje.ok}</Aviso>}
+          {/* Sin conexión no se puede registrar; la venta no se pierde */}
+          {!enLinea && unidades > 0 && !mensaje?.error && (
+            <Aviso tipo="info">El carrito queda guardado en este celular: registra la venta cuando vuelva la conexión.</Aviso>
+          )}
 
           {/* El total cierra la venta como en el tiquete: después de la línea punteada (en celular,
               solo con el detalle abierto; cerrado, la barra es una sola fila sobre el botón) */}
@@ -369,8 +408,16 @@ export function Carrito({ productos }: { productos: Producto[] }) {
               <Monto valor={total} className="shrink-0 text-xl font-medium text-stone-900 dark:text-stone-50" />
             </div>
           </div>
-          <Boton onClick={confirmar} disabled={!unidades || !preciosValidos || enviando} className="h-12 w-full shrink-0 text-base">
-            {enviando ? "Registrando…" : !unidades ? "Selecciona productos" : preciosValidos ? "Registrar venta" : "Revisa los precios"}
+          <Boton onClick={confirmar} disabled={!unidades || !preciosValidos || enviando || !enLinea} className="h-12 w-full shrink-0 text-base">
+            {enviando
+              ? "Registrando…"
+              : !unidades
+                ? "Selecciona productos"
+                : !preciosValidos
+                  ? "Revisa los precios"
+                  : enLinea
+                    ? "Registrar venta"
+                    : "Sin conexión"}
           </Boton>
         </div>
       </aside>

@@ -5,6 +5,8 @@ import { Navegacion, NavegacionInferior } from "@/components/navegacion";
 import { Campanita } from "@/components/campanita";
 import { Marca } from "@/components/marca";
 import { EnlacePerfil } from "@/components/enlace-perfil";
+import { BotonSalir } from "@/components/boton-salir";
+import { AvisoSinConexion } from "@/components/sin-conexion";
 import { Aviso, claseBoton } from "@/components/ui";
 import { faltanApellidos } from "@/lib/nombres";
 import { cerrarSesion } from "../(auth)/actions";
@@ -34,13 +36,15 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
             <EnlacePerfil nombre={empleado.nombre} />
             {/* En celular, Salir está en «Más», lejos de la campana y del perfil */}
             <form action={cerrarSesion} className="max-md:hidden">
-              <button className="h-9 cursor-pointer rounded-lg px-3 text-sm text-stone-600 transition-colors hover:bg-stone-100 hover:text-stone-900 focus-visible:outline-2 focus-visible:outline-emerald-700 pointer-coarse:h-11 dark:text-stone-400 dark:hover:bg-stone-800 dark:hover:text-stone-50 dark:focus-visible:outline-emerald-500">
+              <BotonSalir className="h-9 rounded-lg px-3 text-sm text-stone-600 transition-colors enabled:hover:bg-stone-100 enabled:hover:text-stone-900 focus-visible:outline-2 focus-visible:outline-emerald-700 pointer-coarse:h-11 dark:text-stone-400 dark:enabled:hover:bg-stone-800 dark:enabled:hover:text-stone-50 dark:focus-visible:outline-emerald-500">
                 Salir
-              </button>
+              </BotonSalir>
             </form>
           </div>
         </div>
         <Navegacion esAdmin={empleado.es_admin} />
+        {/* Sin conexión, una franja bajo las pestañas explica por qué no se puede enviar nada */}
+        <AvisoSinConexion />
       </header>
       {/* En celular, el relleno de abajo deja ver el final del contenido sobre la navegación fija */}
       <main

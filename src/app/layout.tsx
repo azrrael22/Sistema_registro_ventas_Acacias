@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { RegistrarServiceWorker } from "@/components/registrar-service-worker";
 import "./globals.css";
 
 const geist = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
@@ -19,7 +20,11 @@ export const viewport: Viewport = { themeColor: "#047857", colorScheme: "light d
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="es" className={`${geist.variable} ${geistMono.variable} h-full antialiased`}>
-      <body className="min-h-full bg-stone-50 text-stone-900 dark:bg-stone-900 dark:text-stone-50">{children}</body>
+      <body className="min-h-full bg-stone-50 text-stone-900 dark:bg-stone-900 dark:text-stone-50">
+        {children}
+        {/* Página propia cuando la app se abre sin conexión (public/sw.js) */}
+        <RegistrarServiceWorker />
+      </body>
     </html>
   );
 }

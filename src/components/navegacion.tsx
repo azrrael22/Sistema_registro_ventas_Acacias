@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState, type ComponentProps } from "react";
 import { cx } from "@/components/ui";
+import { BotonSalir } from "@/components/boton-salir";
 import {
   IconoBilletes,
   IconoCaja,
@@ -181,10 +182,10 @@ export function NavegacionInferior({ esAdmin }: { esAdmin: boolean }) {
           </ul>
           {/* Salir, aparte de las pantallas */}
           <form action={cerrarSesion} className="mt-2 border-t border-stone-200 pt-2 dark:border-stone-700">
-            <button className={cx(claseOpcion, anillo, "cursor-pointer text-stone-700 active:bg-stone-100 dark:text-stone-200 dark:active:bg-stone-700")}>
+            <BotonSalir className={cx(claseOpcion, anillo, "text-stone-700 enabled:active:bg-stone-100 dark:text-stone-200 dark:enabled:active:bg-stone-700")}>
               <IconoSalir />
               Salir
-            </button>
+            </BotonSalir>
           </form>
         </div>
       </dialog>

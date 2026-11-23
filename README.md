@@ -127,9 +127,10 @@ manuales, y los comandos de los pasos 1 y 3 sirven para desplegar a mano si hace
 src/app/(auth)/          login, registro, recuperar y restablecer la contraseña
 src/app/(app)/           pantallas internas (vender, ventas, productos, inventario, retiros, reportes, notificaciones, admin)
 src/app/manifest.ts      app instalable («Agregar a la pantalla de inicio»); íconos en public/iconos/
+public/sw.js             service worker: página «Sin conexión» si la app se abre sin internet (solo en producción)
 src/server/              código solo de servidor: cliente Supabase, sesión, consultas, reportes, proxy
 src/lib/                 código compartido: formato, tipos, cliente Supabase del navegador
-src/proxy.ts             redirige a /login si no hay sesión
+src/proxy.ts             redirige a /login si no hay sesión (y vuelve a la pantalla pedida al ingresar)
 supabase/migrations/     esquema, RLS, triggers, RPCs y catálogo inicial
 supabase/functions/      Edge Function de correos
 supabase/templates/      plantilla del correo de recuperación de contraseña

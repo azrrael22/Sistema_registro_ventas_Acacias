@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState } from "react";
+import { useActionState, useEffect } from "react";
 import { Aviso, Entrada, Etiqueta } from "@/components/ui";
 import { BotonEnvio } from "@/components/boton-envio";
 import { EntradaContrasena } from "@/components/entrada-contrasena";
@@ -9,10 +9,19 @@ import { CamposDocumento } from "@/components/campos-documento";
 import { CamposNombre } from "@/components/campos-nombre";
 import type { TipoDocumento } from "@/lib/documentos";
 import { atraparFallos } from "@/lib/acciones";
+import { rutaInterna } from "@/lib/rutas";
 import { iniciarSesion, registrarse } from "./actions";
 
-export function FormularioAuth({ modo }: { modo: "login" | "registro" }) {
+// `destino`: pantalla a la que se vuelve después de ingresar (?destino= del login, ya validado)
+export function FormularioAuth({ modo, destino }: { modo: "login" | "registro"; destino?: string }) {
   const [estado, accion] = useActionState(atraparFallos(modo === "login" ? iniciarSesion : registrarse), undefined);
+
+  // Ingresó y tenía destino: navegación completa, para que el navegador siga las redirecciones
+  // del destino con la URL correcta (ver iniciarSesion). replace: «atrás» no vuelve al login.
+  const ir = rutaInterna(estado?.ir);
+  useEffect(() => {
+    if (ir) window.location.replace(ir);
+  }, [ir]);
 
   if (estado?.ok) return <Aviso tipo="ok">{estado.ok}</Aviso>;
 
@@ -21,6 +30,7 @@ export function FormularioAuth({ modo }: { modo: "login" | "registro" }) {
 
   return (
     <form action={accion} className="flex flex-col gap-4">
+      {modo === "login" && destino && <input type="hidden" name="destino" value={destino} />}
       {modo === "registro" && (
         <>
           <CamposNombre valores={v} />
@@ -52,7 +62,10 @@ export function FormularioAuth({ modo }: { modo: "login" | "registro" }) {
         </Etiqueta>
       )}
       <Aviso>{estado?.error}</Aviso>
-      <BotonEnvio pendiente="Un momento…">{modo === "login" ? "Ingresar" : "Crear cuenta"}</BotonEnvio>
+      {/* Mientras el navegador va al destino, el botón no vuelve a quedar disponible */}
+      <BotonEnvio pendiente="Un momento…" disabled={Boolean(ir)}>
+        {ir ? "Entrando…" : modo === "login" ? "Ingresar" : "Crear cuenta"}
+      </BotonEnvio>
       <p className="text-center text-sm text-stone-600 dark:text-stone-400">
         {modo === "login" ? (
           <>¿No tienes cuenta? <Link className="font-medium text-emerald-700 hover:underline dark:text-emerald-400" href="/registro">Regístrate</Link></>

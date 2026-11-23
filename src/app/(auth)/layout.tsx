@@ -1,4 +1,5 @@
 import { Marca } from "@/components/marca";
+import { AvisoSinConexion } from "@/components/sin-conexion";
 import { TicketVenta } from "./ticket-venta";
 
 export default function AuthLayout({ children }: LayoutProps<"/">) {
@@ -11,6 +12,8 @@ export default function AuthLayout({ children }: LayoutProps<"/">) {
             <h1 className="mt-4 text-2xl font-medium text-stone-900 dark:text-stone-50">Ventas Las Acacias</h1>
             <p className="mt-1 text-sm text-stone-600 dark:text-stone-400">Registro de ventas de los empleados</p>
           </div>
+          {/* Sin conexión explica por qué «Ingresar» y los demás botones están deshabilitados */}
+          <AvisoSinConexion forma="caja" />
           <div className="rounded-xl border border-stone-200 bg-white p-6 shadow-sm dark:border-stone-700 dark:bg-stone-800 lg:border-0 lg:p-0 lg:shadow-none lg:dark:bg-transparent">{children}</div>
         </div>
       </div>

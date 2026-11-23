@@ -39,16 +39,25 @@ input[type="number"]::-webkit-outer-spin-button {
 }
 
 /* El foco y los saltos a un ancla no quedan debajo de las barras fijas (WCAG 2.4.11).
-   Arriba, el encabezado (con las pestañas desde md); abajo, en celular, la navegación
-   y, en Vender, la barra de la venta. */
+   Arriba, el encabezado (con las pestañas desde md, y la franja «Sin conexión» cuando
+   aparece); abajo, en celular, la navegación y, en Vender, la barra de la venta. */
 html {
   scroll-padding-top: 7rem;
+}
+
+html:has(#aviso-sin-conexion) {
+  scroll-padding-top: 9.5rem;
 }
 
 @media (width < 48rem) {
   html {
     scroll-padding-top: 4.5rem;
     scroll-padding-bottom: calc(5rem + env(safe-area-inset-bottom));
+  }
+
+  /* En celular la franja ocupa dos líneas */
+  html:has(#aviso-sin-conexion) {
+    scroll-padding-top: 8rem;
   }
 
   html:has(#venta-actual) {

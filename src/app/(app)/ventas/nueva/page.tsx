@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { createClient } from "@/server/supabase";
+import { requerirEmpleadoActivo } from "@/server/sesion";
 import { Titulo, Vacio } from "@/components/ui";
 import { urlFoto } from "@/lib/fotos";
 import { Carrito } from "./carrito";
@@ -7,6 +8,9 @@ import { Carrito } from "./carrito";
 export const metadata: Metadata = { title: "Vender" };
 
 export default async function NuevaVentaPage() {
+  // Ya lo consultó el layout (getEmpleado está cacheado por request): la venta guardada en el
+  // celular es de este empleado
+  const empleado = await requerirEmpleadoActivo();
   const supabase = await createClient();
   const [{ data: productos }, { data: stock }] = await Promise.all([
     supabase
@@ -33,7 +37,7 @@ export default async function NuevaVentaPage() {
     <>
       <Titulo>Registrar venta</Titulo>
       {lista.length ? (
-        <Carrito productos={lista} />
+        <Carrito productos={lista} empleadoId={empleado.id} />
       ) : (
         <Vacio>No hay productos activos. Un socio debe asignarles precio y activarlos en “Productos y socios”.</Vacio>
       )}

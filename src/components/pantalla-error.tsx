@@ -1,27 +1,18 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useSyncExternalStore } from "react";
+import { useEffect } from "react";
 import { Aviso, Boton, Titulo, claseBoton } from "@/components/ui";
 import { PantallaCentrada } from "@/components/pantalla-centrada";
+import { useEnLinea } from "@/components/sin-conexion";
 import { codigoError } from "@/lib/errores";
-
-// Conexión del dispositivo. En el servidor y al hidratar se supone que hay.
-function suscribir(avisar: () => void) {
-  window.addEventListener("online", avisar);
-  window.addEventListener("offline", avisar);
-  return () => {
-    window.removeEventListener("online", avisar);
-    window.removeEventListener("offline", avisar);
-  };
-}
 
 // Lo que muestran los error.tsx cuando una pantalla no carga. Dice qué pasó: sin internet (y
 // entonces se recarga sola cuando vuelve) o un fallo del sistema (Supabase caído, un error), con
 // el código para buscarlo en los logs.
 // `suelta`: fuera de la app, cuando falla el propio layout y no hay encabezado ni navegación.
 export function PantallaError({ error, retry, suelta = false }: { error: unknown; retry: () => void; suelta?: boolean }) {
-  const enLinea = useSyncExternalStore(suscribir, () => navigator.onLine, () => true);
+  const enLinea = useEnLinea();
   // En producción el mensaje real no llega al navegador; el código sirve para buscarlo en los logs
   const codigo = codigoError(error);
 
