@@ -17,7 +17,7 @@ function Seccion({ titulo, explicacion, children }: { titulo: string; explicacio
     <section className="grid gap-3 lg:grid-cols-[16rem_minmax(0,36rem)] lg:gap-8">
       <div>
         <h2 className="font-medium text-stone-900 dark:text-stone-50">{titulo}</h2>
-        <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">{explicacion}</p>
+        <p className="mt-1 text-sm text-stone-600 dark:text-stone-400">{explicacion}</p>
       </div>
       <Tarjeta>{children}</Tarjeta>
     </section>
@@ -52,7 +52,7 @@ export default async function PerfilPage({ searchParams }: PageProps<"/perfil">)
           <div className="flex flex-col gap-4">
             <Dato etiqueta="Documento" ayuda="Para corregirlo, pídeselo a un administrador">
               {yo.tipo_documento && yo.numero_documento ? (
-                <span className="tabular-nums">{documento(yo.tipo_documento, yo.numero_documento)}</span>
+                <span className="cifra">{documento(yo.tipo_documento, yo.numero_documento)}</span>
               ) : (
                 <span className="text-stone-500 dark:text-stone-400">Sin registrar</span>
               )}

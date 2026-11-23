@@ -160,7 +160,7 @@ export function Carrito({ productos, empleadoId }: { productos: Producto[]; empl
             {grupos.map(([cat, lista]) => (
               <div key={cat}>
                 {/* Con una categoría elegida en el filtro, el encabezado sobra */}
-                {cat && !categoria && <h2 className="mb-2 text-sm font-medium text-stone-500 dark:text-stone-400">{cat}</h2>}
+                {cat && !categoria && <h2 className="mb-2 text-sm font-medium text-stone-600 dark:text-stone-400">{cat}</h2>}
                 <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                   {lista.map((p) => {
                     const cant = cantidadDe(p);
@@ -197,7 +197,7 @@ export function Carrito({ productos, empleadoId }: { productos: Producto[]; empl
                               </>
                             )}
                             <Monto valor={precio ?? p.precio} className="text-stone-900 dark:text-stone-50" />
-                            <span className={cx("block text-xs", p.stock <= STOCK_BAJO ? "text-amber-700 dark:text-amber-400" : "text-stone-500 dark:text-stone-400")}>
+                            <span className={cx("cifra block text-xs", p.stock <= STOCK_BAJO ? "text-amber-700 dark:text-amber-400" : "text-stone-500 dark:text-stone-400")}>
                               {textoStock(p.stock)}
                             </span>
                           </span>
@@ -226,7 +226,7 @@ export function Carrito({ productos, empleadoId }: { productos: Producto[]; empl
                               onFocus={(e) => e.target.select()}
                               disabled={agotado}
                               aria-label={`Cantidad de ${p.nombre}`}
-                              className="h-full min-w-0 flex-1 bg-transparent text-center text-sm font-medium text-stone-900 tabular-nums focus:outline-none pointer-coarse:text-base dark:text-stone-50"
+                              className="h-full min-w-0 flex-1 bg-transparent text-center text-sm font-medium text-stone-900 cifra focus:outline-none pointer-coarse:text-base dark:text-stone-50"
                             />
                             <button
                               type="button"
@@ -267,14 +267,15 @@ export function Carrito({ productos, empleadoId }: { productos: Producto[]; empl
       </div>
 
       {/* En celular es una barra compacta sobre la navegación de abajo (en tablet, al fondo de la
-          pantalla); en escritorio, un panel al lado que queda bajo el encabezado fijo (~101px) y nunca
-          es más alto que la ventana */}
+          pantalla); en escritorio, un panel al lado con forma de tiquete (el contorno va en el aside y
+          el zigzag en el div de adentro) que queda bajo el encabezado fijo (~101px) y nunca es más alto
+          que la ventana */}
       <aside
         id="venta-actual"
         aria-label="Venta actual"
-        className="fixed inset-x-0 bottom-[calc(4rem+env(safe-area-inset-bottom))] z-10 border-t border-stone-200 bg-white px-4 py-3 shadow-[0_-4px_12px_rgba(0,0,0,0.05)] md:bottom-0 md:pb-[max(0.75rem,env(safe-area-inset-bottom))] dark:border-stone-700 dark:bg-stone-900 dark:shadow-[0_-4px_12px_rgba(0,0,0,0.3)] lg:sticky lg:inset-auto lg:top-32 lg:z-auto lg:rounded-xl lg:border lg:bg-white lg:p-4 lg:shadow-sm lg:dark:bg-stone-800 lg:dark:shadow-none"
+        className="fixed inset-x-0 bottom-[calc(4rem+env(safe-area-inset-bottom))] z-10 border-t border-stone-200 bg-white px-4 py-3 md:bottom-0 md:pb-[max(0.75rem,env(safe-area-inset-bottom))] dark:border-stone-700 dark:bg-stone-900 lg:contorno-tiquete lg:sticky lg:inset-auto lg:top-32 lg:z-auto lg:border-0 lg:bg-transparent lg:p-0 lg:dark:bg-transparent"
       >
-        <div className="mx-auto flex max-w-5xl flex-col gap-2 sm:px-6 lg:max-h-[calc(100dvh-12rem)] lg:px-0">
+        <div className="mx-auto flex max-w-5xl flex-col gap-2 sm:px-6 lg:corte-tiquete lg:max-h-[calc(100dvh-12rem)] lg:rounded-t-xl lg:bg-white lg:px-4 lg:pt-4 lg:pb-8 lg:dark:bg-stone-800">
           <h2 className="font-medium text-stone-900 max-lg:sr-only dark:text-stone-50">Venta actual</h2>
 
           {/* El detalle (líneas, precios y nota) se abre en celular con «Ver detalle»; en escritorio
@@ -291,7 +292,7 @@ export function Carrito({ productos, empleadoId }: { productos: Producto[]; empl
                     <li key={p.id}>
                       <div className="flex items-baseline justify-between gap-3 text-sm">
                         <p className="min-w-0 truncate text-stone-900 dark:text-stone-50">
-                          <span className="tabular-nums">{cant}</span> × {p.nombre}
+                          <span className="cifra">{cant}</span> × {p.nombre}
                         </p>
                         {precio === null ? (
                           <span className="shrink-0 text-stone-500 dark:text-stone-400" aria-hidden>—</span>
@@ -319,7 +320,7 @@ export function Carrito({ productos, empleadoId }: { productos: Producto[]; empl
                             aria-invalid={precio === null}
                             aria-describedby={precio === null ? `precio-${p.id}-error` : undefined}
                             className={cx(
-                              "h-8 min-h-8 w-24 px-2 text-right font-mono tabular-nums pointer-coarse:h-10 pointer-coarse:min-h-10",
+                              "h-8 min-h-8 w-24 px-2 text-right cifra pointer-coarse:h-10 pointer-coarse:min-h-10",
                               precio === null && "border-red-500 focus:border-red-500 focus:ring-red-500/20 dark:border-red-500 dark:focus:border-red-500",
                             )}
                           />

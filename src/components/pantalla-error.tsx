@@ -38,7 +38,7 @@ export function PantallaError({ error, retry, suelta = false }: { error: unknown
         </Link>
       </div>
       {codigo && enLinea && (
-        <p className="mt-6 text-xs text-stone-500 dark:text-stone-400">
+        <p className="mt-6 text-xs text-stone-600 dark:text-stone-400">
           Código del error: <span className="font-mono">{codigo}</span>
         </p>
       )}

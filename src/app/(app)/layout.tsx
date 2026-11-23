@@ -26,7 +26,7 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
       <a href="#contenido" className={claseBoton("secundario", "sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50")}>
         Saltar al contenido
       </a>
-      <header className="sticky top-0 z-10 border-b border-stone-200 bg-white/95 backdrop-blur-sm dark:border-stone-700 dark:bg-stone-900/95 print:hidden">
+      <header className="sticky top-0 z-10 border-b border-stone-200 bg-papel/95 backdrop-blur-sm dark:border-stone-700 dark:bg-stone-900/95 print:hidden">
         <div className="mx-auto flex h-14 max-w-5xl items-center justify-between gap-3 px-4 sm:px-6">
           <Link href="/" className="flex items-center gap-2 font-semibold text-stone-900 dark:text-stone-50">
             <Marca className="size-5" /> Las Acacias
@@ -36,7 +36,7 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
             <EnlacePerfil nombre={empleado.nombre} />
             {/* En celular, Salir está en «Más», lejos de la campana y del perfil */}
             <form action={cerrarSesion} className="max-md:hidden">
-              <BotonSalir className="h-9 rounded-lg px-3 text-sm text-stone-600 transition-colors enabled:hover:bg-stone-100 enabled:hover:text-stone-900 focus-visible:outline-2 focus-visible:outline-emerald-700 pointer-coarse:h-11 dark:text-stone-400 dark:enabled:hover:bg-stone-800 dark:enabled:hover:text-stone-50 dark:focus-visible:outline-emerald-500">
+              <BotonSalir className="h-9 rounded-lg px-3 text-sm text-stone-600 transition-colors enabled:hover:bg-stone-200 enabled:hover:text-stone-900 focus-visible:outline-2 focus-visible:outline-emerald-700 pointer-coarse:h-11 dark:text-stone-400 dark:enabled:hover:bg-stone-800 dark:enabled:hover:text-stone-50 dark:focus-visible:outline-emerald-500">
                 Salir
               </BotonSalir>
             </form>

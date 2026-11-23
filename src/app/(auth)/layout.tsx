@@ -14,7 +14,7 @@ export default function AuthLayout({ children }: LayoutProps<"/">) {
           </div>
           {/* Sin conexión explica por qué «Ingresar» y los demás botones están deshabilitados */}
           <AvisoSinConexion forma="caja" />
-          <div className="rounded-xl border border-stone-200 bg-white p-6 shadow-sm dark:border-stone-700 dark:bg-stone-800 lg:border-0 lg:p-0 lg:shadow-none lg:dark:bg-transparent">{children}</div>
+          <div className="rounded-xl border border-stone-200 bg-white p-6 dark:border-stone-700 dark:bg-stone-800 lg:border-0 lg:p-0 lg:dark:bg-transparent">{children}</div>
         </div>
       </div>
       <div className="hidden flex-col items-center justify-center gap-6 bg-emerald-800 lg:flex">

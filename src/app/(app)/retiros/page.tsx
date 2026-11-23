@@ -45,7 +45,7 @@ export default async function RetirosPage() {
           <Tarjeta>
             <h2 className="text-sm text-stone-500 dark:text-stone-400">Saldo disponible</h2>
             <Monto valor={total} className="mt-1 block text-3xl font-medium text-stone-900 dark:text-stone-50" />
-            <ul className="mt-4 divide-y divide-stone-100 border-t border-stone-100 text-sm dark:divide-stone-700 dark:border-stone-700">
+            <ul className="mt-4 divide-y divide-dashed divide-stone-300 border-t border-dashed border-stone-300 text-sm dark:divide-stone-600 dark:border-stone-600">
               {categorias.map((c) => (
                 <li key={c.id} className="flex justify-between gap-4 py-2.5">
                   <span className="text-stone-900 dark:text-stone-50">{c.nombre}</span>
@@ -65,7 +65,7 @@ export default async function RetirosPage() {
                 {porDia(retiros).map(([dia, delDia]) => (
                   <div key={dia}>
                     <h3 className="text-sm font-medium text-stone-500 dark:text-stone-400">{tituloDia(dia)}</h3>
-                    <ul className="divide-y divide-stone-100 text-sm dark:divide-stone-700">
+                    <ul className="divide-y divide-dashed divide-stone-300 text-sm dark:divide-stone-600">
                       {delDia.map((r) => (
                         <li key={r.id} className="flex items-baseline justify-between gap-4 py-2.5">
                           <span className="min-w-0">

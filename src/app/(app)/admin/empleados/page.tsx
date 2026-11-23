@@ -57,7 +57,7 @@ export default async function EmpleadosPage() {
                   {faltanApellidos(e) && <Insignia>Faltan apellidos</Insignia>}
                 </p>
                 <p className="text-sm text-stone-500 dark:text-stone-400">
-                  {e.tipo_documento && e.numero_documento && <span className="tabular-nums">{documento(e.tipo_documento, e.numero_documento)} · </span>}
+                  {e.tipo_documento && e.numero_documento && <span className="cifra">{documento(e.tipo_documento, e.numero_documento)} · </span>}
                   {e.email} · desde {fecha(e.creado_en)}
                 </p>
               </div>

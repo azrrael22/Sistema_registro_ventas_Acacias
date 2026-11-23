@@ -38,8 +38,8 @@ export function Campanita({ empleadoId, sinLeer }: { empleadoId: string; sinLeer
         "group relative flex size-9 items-center justify-center rounded-lg transition-colors focus-visible:outline-2 focus-visible:outline-emerald-700 pointer-coarse:size-11 dark:focus-visible:outline-emerald-500",
         // Activa: el mismo escalón de superficie que el hover, no el verde de las pestañas
         activa
-          ? "bg-stone-100 text-stone-900 dark:bg-stone-800 dark:text-stone-50"
-          : "text-stone-600 hover:bg-stone-100 hover:text-stone-900 dark:text-stone-400 dark:hover:bg-stone-800 dark:hover:text-stone-50",
+          ? "bg-stone-200 text-stone-900 dark:bg-stone-800 dark:text-stone-50"
+          : "text-stone-600 hover:bg-stone-200 hover:text-stone-900 dark:text-stone-400 dark:hover:bg-stone-800 dark:hover:text-stone-50",
       )}
       aria-label={sinLeer ? `Notificaciones (${sinLeer} sin leer)` : "Notificaciones"}
     >
@@ -49,8 +49,8 @@ export function Campanita({ empleadoId, sinLeer }: { empleadoId: string; sinLeer
         // En pantalla táctil el botón crece a 44 px: el contador se corre para quedar igual junto al ícono
         <span
           className={cx(
-            "absolute top-0.5 right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-emerald-700 px-1 text-[11px] leading-none font-medium text-white tabular-nums ring-2 transition-colors pointer-coarse:top-1.5 pointer-coarse:right-1.5 dark:bg-emerald-500",
-            activa ? "ring-stone-100 dark:ring-stone-800" : "ring-white group-hover:ring-stone-100 dark:ring-stone-900 dark:group-hover:ring-stone-800",
+            "absolute top-0.5 right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-emerald-700 px-1 text-[11px] leading-none font-medium text-white cifra ring-2 transition-colors pointer-coarse:top-1.5 pointer-coarse:right-1.5 dark:bg-emerald-500",
+            activa ? "ring-stone-200 dark:ring-stone-800" : "ring-papel group-hover:ring-stone-200 dark:ring-stone-900 dark:group-hover:ring-stone-800",
           )}
         >
           {sinLeer > 99 ? "99+" : sinLeer}

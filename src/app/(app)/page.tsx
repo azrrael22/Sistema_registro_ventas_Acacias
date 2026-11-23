@@ -49,7 +49,7 @@ export default async function InicioPage() {
         <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
           <h2 className="text-lg font-medium text-stone-900 dark:text-stone-50">Mis sociedades</h2>
           {sociedades.length > 1 && (
-            <p className="text-sm text-stone-500 dark:text-stone-400">
+            <p className="text-sm text-stone-600 dark:text-stone-400">
               Por retirar en total <Monto valor={sociedades.reduce((t, s) => t + s.saldo, 0)} className="text-stone-900 dark:text-stone-50" />
             </p>
           )}
@@ -65,13 +65,15 @@ export default async function InicioPage() {
                 <h3 className="font-medium text-stone-900 dark:text-stone-50">{cat}</h3>
                 <p className="mt-4 text-sm text-stone-500 dark:text-stone-400">Por retirar</p>
                 <Monto valor={saldo} className="mt-1 block text-3xl font-medium text-stone-900 dark:text-stone-50" />
-                <ul className="mt-5 divide-y divide-stone-100 border-t border-stone-100 text-sm dark:divide-stone-700 dark:border-stone-700">
+                {/* Como un renglón del libro de cuentas: producto, puntos y stock */}
+                <ul className="mt-5 flex flex-col border-t border-dashed border-stone-300 pt-2 text-sm dark:border-stone-600">
                   {prods.map((p) => {
                     const disponibles = stockPor.get(p.id) ?? 0;
                     return (
-                      <li key={p.id} className="flex justify-between gap-4 py-2">
-                        <span className="text-stone-700 dark:text-stone-200">{p.nombre}</span>
-                        <span className={cx("shrink-0 tabular-nums", disponibles <= STOCK_BAJO ? "text-amber-700 dark:text-amber-400" : "text-stone-500 dark:text-stone-400")}>
+                      <li key={p.id} className="flex items-baseline gap-2 py-1.5">
+                        <span className="min-w-0 text-stone-700 dark:text-stone-200">{p.nombre}</span>
+                        <span aria-hidden className="min-w-4 flex-1 border-b border-dotted border-stone-300 dark:border-stone-600" />
+                        <span className={cx("cifra shrink-0", disponibles <= STOCK_BAJO ? "text-amber-700 dark:text-amber-400" : "text-stone-500 dark:text-stone-400")}>
                           {textoStock(disponibles)}
                         </span>
                       </li>

@@ -54,7 +54,7 @@ export function CamposRetiro({ categorias }: { categorias: Categoria[] }) {
           onChange={(e) => setMonto(e.target.value)}
           aria-describedby="pista-monto"
           aria-invalid={excede || undefined}
-          className={cx("font-mono tabular-nums", excede && "border-amber-600 focus:border-amber-600 focus:ring-amber-600/20 dark:border-amber-500 dark:focus:border-amber-500")}
+          className={cx("cifra", excede && "border-amber-600 focus:border-amber-600 focus:ring-amber-600/20 dark:border-amber-500 dark:focus:border-amber-500")}
         />
       </Etiqueta>
       {/* Fuera de la etiqueta para no sumarse al nombre del campo; -mt-2 la deja a 4 px del campo */}

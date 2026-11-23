@@ -118,7 +118,7 @@ export default async function ProductosPage({ searchParams }: PageProps<"/produc
                           {!p.activo && <Insignia className="ml-2">Inactivo</Insignia>}
                         </span>
                         {/* Stock bajo en ámbar, como en Inicio, Inventario y Vender (no en los inactivos) */}
-                        <span className={cx("block text-xs tabular-nums", p.activo && disponibles <= STOCK_BAJO ? "text-amber-700 dark:text-amber-400" : "text-stone-500 dark:text-stone-400")}>
+                        <span className={cx("cifra block text-xs", p.activo && disponibles <= STOCK_BAJO ? "text-amber-700 dark:text-amber-400" : "text-stone-500 dark:text-stone-400")}>
                           {textoStock(disponibles)}
                         </span>
                       </span>

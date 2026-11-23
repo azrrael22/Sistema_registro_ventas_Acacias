@@ -8,7 +8,7 @@ import { PantallaError } from "@/components/pantalla-error";
 export default function ErrorGlobal({ error, retry }: { error: unknown; retry: () => void }) {
   return (
     <html lang="es" className="h-full antialiased">
-      <body className="min-h-full bg-stone-50 text-stone-900 dark:bg-stone-900 dark:text-stone-50">
+      <body className="min-h-full bg-papel text-stone-900 dark:bg-stone-900 dark:text-stone-50">
         <title>Algo salió mal · Ventas Las Acacias</title>
         <PantallaError error={error} retry={retry} suelta />
       </body>

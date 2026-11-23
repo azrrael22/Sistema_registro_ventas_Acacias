@@ -135,7 +135,7 @@ function Indicador({ titulo, valor, className, children }: { titulo: string; val
     <Tarjeta className={cx("flex flex-col gap-1", className)}>
       <p className="text-sm text-stone-500 dark:text-stone-400">{titulo}</p>
       {/* En lg son cinco columnas: el tamaño baja para que los montos quepan */}
-      <p className="text-xl font-medium text-stone-900 tabular-nums sm:text-2xl lg:text-xl dark:text-stone-50">{valor}</p>
+      <p className="cifra text-xl font-medium text-stone-900 sm:text-2xl lg:text-xl dark:text-stone-50">{valor}</p>
       {children}
     </Tarjeta>
   );
@@ -148,8 +148,8 @@ function Variacion({ actual, anterior, neutral }: { actual: number; anterior: nu
   const cambio = (actual - anterior) / Math.abs(anterior);
   const color = neutral || !cambio ? "text-stone-600 dark:text-stone-400" : cambio > 0 ? "text-emerald-700 dark:text-emerald-400" : "text-red-700 dark:text-red-400";
   return (
-    <p className={cx("text-xs font-medium tabular-nums", color)}>
-      <span aria-hidden>{cambio > 0 ? "▲" : cambio < 0 ? "▼" : "■"}</span> {porcentaje(cambio, true)}{" "}
+    <p className={cx("text-xs font-medium", color)}>
+      <span aria-hidden>{cambio > 0 ? "▲" : cambio < 0 ? "▼" : "■"}</span> <span className="cifra">{porcentaje(cambio, true)}</span>{" "}
       <span className="font-normal text-stone-500 dark:text-stone-400">vs periodo anterior</span>
     </p>
   );
@@ -220,13 +220,13 @@ function Tendencia({ tramos, paso }: { tramos: Reporte["tramos"]; paso: number }
                       <div
                         role="tooltip"
                         className={cx(
-                          "pointer-events-none absolute bottom-full z-10 mb-2 hidden rounded-lg bg-stone-900 px-3 py-2 text-xs whitespace-nowrap text-white shadow-lg group-hover:block group-focus-visible:block print:hidden",
+                          "pointer-events-none absolute bottom-full z-10 mb-2 hidden rounded-lg bg-stone-900 px-3 py-2 text-xs whitespace-nowrap text-white group-hover:block group-focus-visible:block print:hidden",
                           lado,
                         )}
                       >
                         <p className="font-medium">{rangoTramo(t)}</p>
                         <p>Ventas netas: <Monto valor={t.ventas} /></p>
-                        <p className="tabular-nums">Unidades: {t.unidades}</p>
+                        <p>Unidades: <span className="cifra">{t.unidades}</span></p>
                         {t.retiros > 0 && <p>Retiros: <Monto valor={t.retiros} /></p>}
                       </div>
                     </div>
@@ -252,7 +252,7 @@ function Tendencia({ tramos, paso }: { tramos: Reporte["tramos"]; paso: number }
 // La primera y la última columna se alinean con el relleno de la tarjeta
 const borde = "first:pl-4 last:pr-4 sm:first:pl-5 sm:last:pr-5";
 const th = cx("px-3 py-2 font-medium", borde);
-const td = cx("px-3 py-2.5 text-right tabular-nums", borde);
+const td = cx("cifra px-3 py-2.5 text-right", borde);
 
 // Los retiros son por categoría: aquí se ve cuánto queda de lo vendido en cada sociedad
 function TablaCategorias({ categorias, total }: { categorias: Reporte["categorias"]; total: Reporte["total"] }) {
@@ -356,7 +356,7 @@ function TablaProductos({ productos, total }: { productos: Reporte["productos"];
                         <div className="h-2 rounded-full bg-emerald-600" style={{ width: `${parte * 100}%` }} />
                       </div>
                       <Monto valor={p.ventas} />
-                      <span className="text-xs text-stone-500 tabular-nums dark:text-stone-400">{porcentaje(parte)}</span>
+                      <span className="cifra text-xs text-stone-500 dark:text-stone-400">{porcentaje(parte)}</span>
                     </div>
                   </td>
                 </tr>

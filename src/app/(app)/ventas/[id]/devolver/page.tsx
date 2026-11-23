@@ -54,7 +54,7 @@ export default async function DevolverPage({ params }: PageProps<"/ventas/[id]/d
                       max={max}
                       defaultValue={0}
                       disabled={max <= 0}
-                      className="w-20 text-right tabular-nums"
+                      className="cifra w-20 text-right"
                     />
                   </label>
                 </li>

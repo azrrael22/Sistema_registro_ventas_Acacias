@@ -77,7 +77,7 @@ export default async function InventarioPage() {
                 return (
                   <li key={p.id} className="flex justify-between gap-4 py-2.5">
                     <span className="text-stone-900 dark:text-stone-50">{p.nombre} <span className="text-stone-500 dark:text-stone-400">· {p.categorias?.nombre}</span></span>
-                    <span className={cx("font-medium tabular-nums", disponibles <= STOCK_BAJO ? "text-amber-700 dark:text-amber-400" : "text-stone-900 dark:text-stone-50")}>{disponibles}</span>
+                    <span className={cx("cifra font-medium", disponibles <= STOCK_BAJO ? "text-amber-700 dark:text-amber-400" : "text-stone-900 dark:text-stone-50")}>{disponibles}</span>
                   </li>
                 );
               })}
@@ -101,7 +101,7 @@ export default async function InventarioPage() {
                         return (
                           <li key={m.id} className="flex items-baseline gap-3 py-2.5">
                             {/* Las cantidades con signo en una columna alineada a la derecha */}
-                            <span className={cx("w-10 shrink-0 text-right font-medium tabular-nums", perdida ? "text-amber-700 dark:text-amber-400" : "text-stone-900 dark:text-stone-50")}>
+                            <span className={cx("cifra w-10 shrink-0 text-right font-medium", perdida ? "text-amber-700 dark:text-amber-400" : "text-stone-900 dark:text-stone-50")}>
                               {m.cantidad > 0 ? "+" : "−"}
                               {Math.abs(m.cantidad)}
                             </span>
@@ -112,7 +112,7 @@ export default async function InventarioPage() {
                                 {m.nota && <> · “{m.nota}”</>}
                               </span>
                             </span>
-                            <span className="shrink-0 text-xs text-stone-500 tabular-nums dark:text-stone-400">{horaDe(m.fecha)}</span>
+                            <span className="cifra shrink-0 text-xs text-stone-500 dark:text-stone-400">{horaDe(m.fecha)}</span>
                           </li>
                         );
                       })}

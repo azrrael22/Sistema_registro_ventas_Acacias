@@ -59,7 +59,7 @@ export function Navegacion({ esAdmin }: { esAdmin: boolean }) {
                 anillo,
                 activo === href
                   ? "text-emerald-700 after:absolute after:inset-x-3 after:bottom-0 after:h-0.5 after:rounded-full after:bg-emerald-700 dark:text-emerald-400 dark:after:bg-emerald-400"
-                  : "text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-stone-50",
+                  : "text-stone-600 hover:text-stone-900 dark:text-stone-400 dark:hover:text-stone-50",
               )}
             >
               <Icono className="size-4 shrink-0" />
@@ -113,7 +113,7 @@ export function NavegacionInferior({ esAdmin }: { esAdmin: boolean }) {
     <>
       <nav
         aria-label="Navegación principal"
-        className="fixed inset-x-0 bottom-0 z-20 border-t border-stone-200 bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-sm md:hidden print:hidden dark:border-stone-700 dark:bg-stone-900/95"
+        className="fixed inset-x-0 bottom-0 z-20 border-t border-stone-200 bg-papel/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-sm md:hidden print:hidden dark:border-stone-700 dark:bg-stone-900/95"
       >
         <ul className="mx-auto grid max-w-lg grid-cols-5">
           {fijos.map(({ href, texto, icono: Icono }) => (
@@ -152,7 +152,7 @@ export function NavegacionInferior({ esAdmin }: { esAdmin: boolean }) {
         aria-labelledby="titulo-mas"
         onClose={cerrar}
         onClick={(e) => e.target === e.currentTarget && cerrar()}
-        className="inset-x-0 top-auto bottom-0 m-0 max-h-[85dvh] w-full max-w-none overflow-y-auto overscroll-contain rounded-t-2xl bg-white p-0 text-stone-900 shadow-xl transition-[translate] duration-200 ease-out backdrop:bg-stone-950/40 starting:open:translate-y-full motion-reduce:transition-none print:hidden dark:bg-stone-800 dark:text-stone-50"
+        className="inset-x-0 top-auto bottom-0 m-0 max-h-[85dvh] w-full max-w-none overflow-y-auto overscroll-contain rounded-t-2xl border-t border-stone-200 bg-white p-0 text-stone-900 transition-[translate] duration-200 ease-out backdrop:bg-stone-950/40 starting:open:translate-y-full motion-reduce:transition-none print:hidden dark:border-stone-700 dark:bg-stone-800 dark:text-stone-50"
       >
         <div className="px-3 pt-2 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
           <div className="mx-auto mb-2 h-1 w-10 rounded-full bg-stone-300 dark:bg-stone-600" aria-hidden />
