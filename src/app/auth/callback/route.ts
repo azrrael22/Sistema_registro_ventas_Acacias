@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import type { EmailOtpType } from "@supabase/supabase-js";
 import { createClient } from "@/server/supabase";
 import { marcarRecuperacion } from "@/server/recuperacion";
+import { rutaInterna } from "@/lib/rutas";
 
 // Destino de los enlaces de los correos de Auth: confirmación de registro, cambio de correo y
 // recuperación de contraseña.
@@ -10,9 +11,8 @@ export async function GET(request: NextRequest) {
   const code = searchParams.get("code");
   const tokenHash = searchParams.get("token_hash");
   const type = searchParams.get("type") as EmailOtpType | null;
-  // Solo rutas internas: «//otro-sitio.com» sería una redirección abierta
-  const next = searchParams.get("next");
-  const destino = next?.startsWith("/") && !next.startsWith("//") ? next : "/";
+  // Solo rutas internas: «//otro-sitio.com» o «/\otro-sitio.com» serían una redirección abierta
+  const destino = rutaInterna(searchParams.get("next")) ?? "/";
   // Recuperación de contraseña: la plantilla propia (supabase/templates/recuperar.html) manda
   // token_hash y type=recovery; la de Supabase, un código PKCE y next=/restablecer
   const recuperacion = type === "recovery" || destino === "/restablecer";

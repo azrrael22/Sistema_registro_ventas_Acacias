@@ -1,8 +1,10 @@
 import type { NextRequest } from "next/server";
 import { PERIODOS, leerFiltros, obtenerReporte } from "@/server/reportes";
 
-// null (inventario de un producto que no lo lleva): celda vacía
-const celda = (v: string | number | null) => (v === null ? "" : typeof v === "number" ? String(v) : `"${v.replaceAll('"', '""')}"`);
+// null (inventario de un producto que no lo lleva): celda vacía. Un texto que empieza con = + - @
+// Excel lo toma como fórmula: el apóstrofo lo deja como texto
+const texto = (v: string) => (/^[=+\-@\t\r]/.test(v) ? `'${v}` : v);
+const celda = (v: string | number | null) => (v === null ? "" : typeof v === "number" ? String(v) : `"${texto(v).replaceAll('"', '""')}"`);
 
 export async function GET(request: NextRequest) {
   const filtros = leerFiltros(Object.fromEntries(request.nextUrl.searchParams));

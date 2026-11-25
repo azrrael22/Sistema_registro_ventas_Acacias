@@ -136,10 +136,11 @@ set local role authenticated;
 -- ===== Como A: crea categorías y productos, se hace socio de todo =====
 set local request.jwt.claims = '{"sub":"00000000-0000-0000-0000-000000000001"}';
 insert into categorias (nombre) values ('Pines'),('Repelentes'),('Camisetas'),('Alfajores');
+-- Primero socio: solo los socios de la categoría (o un admin) le agregan productos
+insert into socios (empleado_id, categoria_id) select auth.uid(), id from categorias;
 insert into productos (categoria_id, nombre, precio)
 select id, nombre || ' std', case nombre when 'Pines' then 5000 when 'Repelentes' then 12000
                                          when 'Camisetas' then 30000 else 3000 end from categorias;
-insert into socios (empleado_id, categoria_id) select auth.uid(), id from categorias;
 insert into inventario_movimientos (producto_id, tipo, cantidad)
 select id, 'entrada', 10 from productos;
 
@@ -156,6 +157,10 @@ do $$ begin
     insert into inventario_movimientos (producto_id, tipo, cantidad)
     select p.id, 'entrada', 5 from productos p join categorias c on c.id=p.categoria_id where c.nombre='Alfajores';
     assert false, 'no socio no mueve inventario';
+  exception when insufficient_privilege then null; end;
+  begin
+    insert into productos (categoria_id, nombre, precio) select id, 'Alfajor falso', 1000 from categorias where nombre='Alfajores';
+    assert false, 'no socio no agrega productos a la categoría';
   exception when insufficient_privilege then null; end;
 end $$;
 -- Fotos: B sube la de pines (es socio) pero no la de alfajores; la ruta siempre es '<id>/<n>.webp'
@@ -203,6 +208,12 @@ do $$ declare v_id bigint := (select v from r where k='venta_b'); begin
     perform registrar_venta(jsonb_build_array(jsonb_build_object('producto_id',
       (select id from productos where nombre='Pines std'), 'cantidad', 3)), 'devolucion', v_id);
     assert false, 'devolución excesiva';
+  exception when raise_exception then null; end;
+  -- Devolución suelta, sin la venta de la que sale
+  begin
+    perform registrar_venta(jsonb_build_array(jsonb_build_object('producto_id',
+      (select id from productos where nombre='Pines std'), 'cantidad', 1)), 'devolucion', null);
+    assert false, 'devolución sin venta de origen';
   exception when raise_exception then null; end;
   -- No puede insertar ventas directamente
   begin
@@ -259,7 +270,7 @@ do $$ begin
   assert (select count(*) from notificaciones) = 3, 'C: aprobada + retiro + nuevo socio';
   assert (select count(*) from reporte_socio('trimestre', '2020-01-01', '2100-01-01')) = 2, 'C ve 2 productos';
   assert (select sum(retiros) from retiros_socio('2020-01-01', '2100-01-01') where categoria='Repelentes') = 20000, 'retiros por categoría';
-  assert (select mensaje from notificaciones where tipo='retiro') = 'Ana Ruiz retiró $20000.00 de Repelentes', 'el aviso nombra la categoría';
+  assert (select mensaje from notificaciones where tipo='retiro') = 'Ana Ruiz retiró $20.000 de Repelentes', 'el aviso nombra la categoría';
   assert (select sum(ventas_netas) from reporte_socio('dia', '2020-01-01', '2100-01-01'))
        = (select sum(ventas_netas) from reporte_socio('anio', '2020-01-01', '2100-01-01')), 'por día suma igual que por año';
   assert (select unidades_base from inventario_socio('2020-01-01', '2100-01-01') where producto='Repelentes std') = 10, 'base repelentes';
