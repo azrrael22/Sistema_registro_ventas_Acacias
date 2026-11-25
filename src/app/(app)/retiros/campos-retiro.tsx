@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Entrada, Etiqueta, Selector, cx } from "@/components/ui";
 import { BotonEnvio } from "@/components/boton-envio";
 import { dinero } from "@/lib/formato";
+import { estadoMonto, saldoDe } from "@/lib/retiros";
 
 type Categoria = { id: number; nombre: string | null; saldo: number };
 
@@ -26,10 +27,7 @@ export function CamposRetiro({ categorias }: { categorias: Categoria[] }) {
     return () => form?.removeEventListener("reset", limpiar);
   }, [categorias]);
 
-  const saldo = categorias.find((c) => c.id === categoriaId)?.saldo ?? 0;
-  const valor = Number(monto);
-  const escrito = monto.trim() !== "" && Number.isInteger(valor) && valor > 0;
-  const excede = escrito && valor > saldo;
+  const { excede, pista, boton } = estadoMonto(monto, saldoDe(categorias, categoriaId));
 
   return (
     <div ref={campos} className="flex flex-col gap-3">
@@ -59,17 +57,13 @@ export function CamposRetiro({ categorias }: { categorias: Categoria[] }) {
       </Etiqueta>
       {/* Fuera de la etiqueta para no sumarse al nombre del campo; -mt-2 la deja a 4 px del campo */}
       <p id="pista-monto" className={cx("-mt-2 text-xs tabular-nums", excede ? "font-medium text-amber-700 dark:text-amber-400" : "text-stone-500 dark:text-stone-400")}>
-        {!escrito
-          ? `Disponible: ${dinero(saldo)}`
-          : excede
-            ? `Supera lo disponible en esta categoría (${dinero(saldo)})`
-            : `${dinero(valor)} de ${dinero(saldo)} disponibles`}
+        {pista}
       </p>
       <Etiqueta texto="Nota (opcional)">
         <Entrada name="nota" />
       </Etiqueta>
       <BotonEnvio disabled={excede} pendiente="Registrando…">
-        {escrito && !excede ? `Retirar ${dinero(valor)}` : "Registrar retiro"}
+        {boton}
       </BotonEnvio>
     </div>
   );

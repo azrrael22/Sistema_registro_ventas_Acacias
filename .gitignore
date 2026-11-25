@@ -43,3 +43,10 @@ next-env.d.ts
 !.env.example
 
 CLAUDE.md
+
+# graphify
+graphify-out/
+
+# métricas de crapper, dryer y mutator; target/: copias donde mutator corre los mutantes
+/.metrics
+/target

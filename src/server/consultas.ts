@@ -10,7 +10,7 @@ export async function misCategorias(empleadoId: string) {
     .eq("empleado_id", empleadoId)
     .eq("activo", true)
     .throwOnError();
-  return socios?.map((s) => s.categoria_id) ?? [];
+  return socios.map((s) => s.categoria_id);
 }
 
 // Productos de las categorías donde el empleado es socio activo.
@@ -24,5 +24,5 @@ export async function misProductos(empleadoId: string) {
     .in("categoria_id", categorias)
     .order("nombre")
     .throwOnError();
-  return data ?? [];
+  return data;
 }

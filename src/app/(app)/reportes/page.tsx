@@ -3,7 +3,8 @@ import Link from "next/link";
 import Form from "next/form";
 import { Suspense } from "react";
 import { stockBajo, dinero,dineroCorto, fecha, fechaCorta, hoy, porcentaje, rangoFechas } from "@/lib/formato";
-import { PERIODOS, leerFiltros, obtenerReporte, type Filtros, type Periodo } from "@/server/reportes";
+import { obtenerReporte } from "@/server/reportes";
+import { PERIODOS, leerFiltros, type Filtros, type Periodo } from "@/lib/reportes";
 import { Aviso, Boton, Entrada, Esqueleto, Etiqueta, Monto, Pestanas, Tarjeta, Titulo, Vacio, claseBoton, cx } from "@/components/ui";
 import { BotonImprimir } from "@/components/boton-imprimir";
 import { Marca } from "@/components/marca";
@@ -13,7 +14,7 @@ export const metadata: Metadata = { title: "Reportes" };
 type Reporte = Awaited<ReturnType<typeof obtenerReporte>>;
 
 export default async function ReportesPage({ searchParams }: PageProps<"/reportes">) {
-  const filtros = leerFiltros(await searchParams);
+  const filtros = leerFiltros(await searchParams, hoy());
 
   return (
     <>
