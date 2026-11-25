@@ -25,11 +25,12 @@ jobs:
       SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
       SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      # La misma versión del CLI que se usa en local (`supabase --version`). La v3 cambió el
+      # La misma versión del CLI que se usa en local (`supabase --version`). La v3 del CLI cambió el
       # formato de config.toml (p. ej. [inbucket] → [local_smtp]): subirla aquí y en local a la vez.
-      - uses: supabase/setup-cli@v1
+      # (La v3 de la acción, setup-cli@v3, es otra cosa: instala desde npm la versión que se le pida).
+      - uses: supabase/setup-cli@v3
         with:
           version: 2.84.2
 
