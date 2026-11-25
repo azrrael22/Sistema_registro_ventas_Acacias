@@ -23,6 +23,9 @@ export default defineConfig({
     // target/: las copias del proyecto donde mutator corre cada mutante
     exclude: [...configDefaults.exclude, "target/**"],
     setupFiles: ["./src/test/setup.ts"],
+    // Desde Node 25, Node trae su propio `localStorage` global, que es undefined sin
+    // --localstorage-file y tapa el de jsdom (lo usa la venta guardada de Vender).
+    execArgv: ["--no-experimental-webstorage"],
     coverage: {
       provider: "v8",
       reporter: ["text-summary", "lcov"],
