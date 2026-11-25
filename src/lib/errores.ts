@@ -34,12 +34,19 @@ export function mensajeError(error: ErrorBD | null) {
   const { code, message } = error;
   // raise exception de las migraciones: el texto ya es para el empleado
   if (code === "P0001") return message;
-  if (code === "42501") {
-    // Los raise con errcode insufficient_privilege traen su propio texto; los de Postgres
-    // (grants y RLS) vienen en inglés
-    return /^(permission denied|new row violates row-level security)/.test(message) ? "No tienes permiso para hacer esto" : message;
-  }
+  if (code === "42501") return mensajePermiso(message);
   if (code && code in DE_POSTGRES) return DE_POSTGRES[code];
+  return mensajeDelSistema(error);
+}
+
+// Los raise con errcode insufficient_privilege traen su propio texto; los de Postgres (grants y
+// RLS) vienen en inglés
+const mensajePermiso = (message: string) =>
+  /^(permission denied|new row violates row-level security)/.test(message) ? "No tienes permiso para hacer esto" : message;
+
+// Error sin texto para el empleado: la sesión venció, no hubo conexión o es inesperado
+function mensajeDelSistema(error: ErrorBD) {
+  const { code } = error;
   // JWT vencido o inválido
   if (code?.startsWith("PGRST3")) return SESION_VENCIDA;
   // Sin código: no hubo respuesta de Postgres (fetch failed, PostgREST caído, timeout).

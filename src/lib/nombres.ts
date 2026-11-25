@@ -1,3 +1,5 @@
+import { texto } from "@/lib/formulario";
+
 // Nombre de los empleados en partes: primer nombre y los dos apellidos son obligatorios.
 // En la tabla, `nombre` (primer nombre + primer apellido) y `nombre_completo` son generados.
 
@@ -11,7 +13,7 @@ export type Nombres = {
 // Lee las cuatro partes de un formulario. Las reglas son las mismas de los checks y el
 // trigger de la tabla empleados: sin espacios sobrantes y hasta 40 caracteres cada una.
 export function leerNombres(form: FormData): Nombres | { error: string } {
-  const leer = (campo: string) => String(form.get(campo) ?? "").trim().replace(/\s+/g, " ");
+  const leer = (campo: string) => texto(form, campo).trim().replace(/\s+/g, " ");
   const primer_nombre = leer("primer_nombre");
   const segundo_nombre = leer("segundo_nombre");
   const primer_apellido = leer("primer_apellido");

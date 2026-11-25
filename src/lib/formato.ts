@@ -53,17 +53,21 @@ export function ayer() {
 export const diaDe = (iso: string) => diaIso.format(new Date(iso));
 export const horaDe = (iso: string) => hora.format(new Date(iso));
 
-// Agrupa por día (hora de Colombia) una lista ya ordenada por fecha, sin cambiar el orden
-export function porDia<T extends { fecha: string }>(lista: T[]) {
-  const dias = new Map<string, T[]>();
+// Agrupa una lista por la clave de cada elemento, sin cambiar el orden: los grupos quedan en el
+// orden en que aparece su primer elemento
+export function agruparPor<T>(lista: T[], clave: (x: T) => string) {
+  const grupos = new Map<string, T[]>();
   for (const x of lista) {
-    const dia = diaDe(x.fecha);
-    const delDia = dias.get(dia);
-    if (delDia) delDia.push(x);
-    else dias.set(dia, [x]);
+    const k = clave(x);
+    const grupo = grupos.get(k);
+    if (grupo) grupo.push(x);
+    else grupos.set(k, [x]);
   }
-  return [...dias];
+  return [...grupos];
 }
+
+// Agrupa por día (hora de Colombia) una lista ya ordenada por fecha
+export const porDia = <T extends { fecha: string }>(lista: T[]) => agruparPor(lista, (x) => diaDe(x.fecha));
 
 // Encabezado de un día en las listas: «Hoy · 13 nov 2026», «Ayer · 12 nov 2026» o «11 nov 2026»
 export function tituloDia(dia: string) {
