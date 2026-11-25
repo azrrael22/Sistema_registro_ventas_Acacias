@@ -1,42 +1,29 @@
 import { NextResponse, type NextRequest } from "next/server";
-import type { EmailOtpType } from "@supabase/supabase-js";
 import { createClient } from "@/server/supabase";
 import { marcarRecuperacion } from "@/server/recuperacion";
-import { rutaInterna } from "@/lib/rutas";
+import { leerEnlace, rutaFalloEnlace, type Enlace } from "@/lib/enlaces";
 
 // Destino de los enlaces de los correos de Auth: confirmación de registro, cambio de correo y
 // recuperación de contraseña.
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = request.nextUrl;
-  const code = searchParams.get("code");
-  const tokenHash = searchParams.get("token_hash");
-  const type = searchParams.get("type") as EmailOtpType | null;
-  // Solo rutas internas: «//otro-sitio.com» o «/\otro-sitio.com» serían una redirección abierta
-  const destino = rutaInterna(searchParams.get("next")) ?? "/";
-  // Recuperación de contraseña: la plantilla propia (supabase/templates/recuperar.html) manda
-  // token_hash y type=recovery; la de Supabase, un código PKCE y next=/restablecer
-  const recuperacion = type === "recovery" || destino === "/restablecer";
+  const ir = (ruta: string) => NextResponse.redirect(new URL(ruta, origin));
+  const enlace = leerEnlace(searchParams);
+  if (enlace.soloMensaje) return ir(enlace.destino);
 
-  // Cambio de correo: el primero de los dos enlaces no trae código, solo un mensaje
-  if (!code && !tokenHash && searchParams.has("message")) return NextResponse.redirect(new URL(destino, origin));
-
-  const supabase = await createClient();
-
-  const { data, error } = code
-    ? await supabase.auth.exchangeCodeForSession(code)
-    : tokenHash && type
-      ? await supabase.auth.verifyOtp({ token_hash: tokenHash, type })
-      : { data: null, error: new Error("Enlace inválido") };
-
-  // Enlace vencido o ya usado: cada pantalla explica qué pasó (?error=enlace). El de cambio de
-  // correo vuelve a Mi perfil; el de confirmar la cuenta, al login.
-  if (error) {
-    const fallo = recuperacion ? "/recuperar" : destino === "/perfil" ? "/perfil" : "/login";
-    return NextResponse.redirect(new URL(`${fallo}?error=enlace`, origin));
-  }
-  if (recuperacion && data?.user) {
+  const { data, error } = await abrirSesion(enlace);
+  if (error) return ir(rutaFalloEnlace(enlace));
+  if (enlace.recuperacion && data.user) {
     await marcarRecuperacion(data.user.id);
-    return NextResponse.redirect(new URL("/restablecer", origin));
+    return ir("/restablecer");
   }
-  return NextResponse.redirect(new URL(destino, origin));
+  return ir(enlace.destino);
+}
+
+// Abre la sesión que trae el enlace: un código PKCE o un token_hash con su tipo
+async function abrirSesion({ code, tokenHash, type }: Enlace) {
+  const supabase = await createClient();
+  if (code) return supabase.auth.exchangeCodeForSession(code);
+  if (tokenHash && type) return supabase.auth.verifyOtp({ token_hash: tokenHash, type });
+  return { data: { user: null }, error: new Error("Enlace inválido") };
 }

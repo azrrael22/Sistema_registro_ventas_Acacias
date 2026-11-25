@@ -4,18 +4,15 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/server/supabase";
 import { requerirEmpleadoActivo } from "@/server/sesion";
 import { mensajeError } from "@/lib/errores";
+import { leerRetiro } from "@/lib/retiros";
 import type { Resultado } from "@/lib/acciones";
 
 export async function registrarRetiro(_: Resultado, form: FormData): Promise<Resultado> {
   await requerirEmpleadoActivo();
-  const monto = Number(form.get("monto"));
-  if (!Number.isFinite(monto) || monto <= 0) return { error: "El monto debe ser mayor que 0" };
+  const retiro = leerRetiro(form);
+  if ("error" in retiro) return retiro;
   const supabase = await createClient();
-  const { error } = await supabase.from("retiros").insert({
-    categoria_id: Number(form.get("categoria_id")),
-    monto,
-    nota: String(form.get("nota") ?? "").trim() || null,
-  });
+  const { error } = await supabase.from("retiros").insert(retiro);
   if (error) return { error: mensajeError(error) };
   revalidatePath("/", "layout");
   return { ok: "Retiro registrado. Se notificó a los demás socios." };

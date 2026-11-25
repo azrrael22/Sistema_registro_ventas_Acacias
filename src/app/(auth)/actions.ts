@@ -1,5 +1,6 @@
 "use server";
 
+import type { AuthError } from "@supabase/supabase-js";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "@/server/supabase";
@@ -7,6 +8,7 @@ import { enRecuperacion, terminarRecuperacion } from "@/server/recuperacion";
 import { leerContrasenaNueva } from "@/lib/contrasenas";
 import { mensajeErrorAuth } from "@/lib/errores";
 import { leerDocumento } from "@/lib/documentos";
+import { texto } from "@/lib/formulario";
 import { leerNombres } from "@/lib/nombres";
 import { rutaInterna } from "@/lib/rutas";
 import type { Resultado } from "@/lib/acciones";
@@ -22,9 +24,9 @@ const CAMPOS_REGISTRO = [
 ];
 
 export async function iniciarSesion(_: EstadoAuth, form: FormData): Promise<EstadoAuth> {
-  const email = String(form.get("email")).trim();
+  const email = texto(form, "email").trim();
   const supabase = await createClient();
-  const { error } = await supabase.auth.signInWithPassword({ email, password: String(form.get("password")) });
+  const { error } = await supabase.auth.signInWithPassword({ email, password: texto(form, "password") });
   // mensajeErrorAuth distingue la contraseña equivocada (invalid_credentials) de Auth caído o
   // de demasiados intentos, para no decir «incorrectos» cuando el problema es otro
   if (error) return { error: mensajeErrorAuth(error), valores: { email } };
@@ -38,7 +40,7 @@ export async function iniciarSesion(_: EstadoAuth, form: FormData): Promise<Esta
 }
 
 export async function registrarse(_: EstadoAuth, form: FormData): Promise<EstadoAuth> {
-  const valores = Object.fromEntries(CAMPOS_REGISTRO.map((c) => [c, String(form.get(c) ?? "")]));
+  const valores = Object.fromEntries(CAMPOS_REGISTRO.map((c) => [c, texto(form, c)]));
   const fallo = (error: string) => ({ error, valores });
 
   const nombres = leerNombres(form);
@@ -51,32 +53,32 @@ export async function registrarse(_: EstadoAuth, form: FormData): Promise<Estado
   const origen = (await headers()).get("origin");
   const supabase = await createClient();
   const { data, error } = await supabase.auth.signUp({
-    email: String(form.get("email")).trim(),
+    email: texto(form, "email").trim(),
     password: clave.password,
     options: {
       data: { ...nombres, tipo_documento: doc.tipo, numero_documento: doc.numero },
       emailRedirectTo: `${origen}/auth/callback`,
     },
   });
-  if (error) {
-    if (error.code === "user_already_exists") return fallo("Ese correo ya está registrado");
-    // Documento repetido: el índice único hace fallar el trigger que crea el perfil.
-    // Según la versión de Auth llega el código de Postgres o solo un mensaje genérico.
-    if (error.code === "23505" || error.message === "Database error saving new user") {
-      return fallo("Ese documento ya está registrado");
-    }
-    return fallo(mensajeErrorAuth(error));
-  }
+  if (error) return fallo(mensajeRegistro(error));
 
   // Si el proyecto no exige confirmar el correo, la sesión ya existe.
   if (data.session) redirect("/pendiente");
   return { ok: "Te enviamos un correo para confirmar tu cuenta. Después un administrador debe aprobarla." };
 }
 
+// Documento repetido: el índice único hace fallar el trigger que crea el perfil. Según la versión de
+// Auth llega el código de Postgres o solo un mensaje genérico. Lo demás (correo ya registrado,
+// correo inválido, Auth caído) lo explica mensajeErrorAuth.
+function mensajeRegistro(error: AuthError) {
+  const documentoRepetido = error.code === "23505" || error.message === "Database error saving new user";
+  return documentoRepetido ? "Ese documento ya está registrado" : mensajeErrorAuth(error);
+}
+
 // Envía el correo para crear una contraseña nueva. Su enlace pasa por auth/callback, que deja la
 // cookie de recuperación y lleva a /restablecer.
 export async function solicitarRecuperacion(_: Resultado, form: FormData): Promise<Resultado> {
-  const email = String(form.get("email") ?? "").trim();
+  const email = texto(form, "email").trim();
   if (!email) return { error: "Escribe tu correo" };
   const origen = (await headers()).get("origin");
   const supabase = await createClient();

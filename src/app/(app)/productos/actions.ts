@@ -6,6 +6,8 @@ import { requerirEmpleadoActivo } from "@/server/sesion";
 import { aWebp, guardarFoto } from "@/server/fotos";
 import { mensajeError } from "@/lib/errores";
 import { MAX_FOTO } from "@/lib/fotos";
+import { texto } from "@/lib/formulario";
+import { leerCambiosProducto, leerProductoNuevo } from "@/lib/productos";
 import type { Resultado } from "@/lib/acciones";
 
 // Foto del formulario convertida a WebP; sin webp ni error si no eligieron ninguna.
@@ -19,7 +21,7 @@ async function leerFoto(form: FormData): Promise<{ webp?: Buffer; error?: string
 
 export async function crearCategoria(_: Resultado, form: FormData): Promise<Resultado> {
   const empleado = await requerirEmpleadoActivo();
-  const nombre = String(form.get("nombre")).trim();
+  const nombre = texto(form, "nombre").trim();
   if (!nombre) return { error: "Escribe el nombre de la categoría" };
   const supabase = await createClient();
   const { data, error } = await supabase.from("categorias").insert({ nombre }).select("id").single();
@@ -38,44 +40,28 @@ export async function crearCategoria(_: Resultado, form: FormData): Promise<Resu
 
 export async function crearProducto(_: Resultado, form: FormData): Promise<Resultado> {
   await requerirEmpleadoActivo();
-  const nombre = String(form.get("nombre")).trim();
-  const precio = Number(form.get("precio"));
-  const maneja_inventario = form.get("maneja_inventario") === "on";
-  if (!nombre) return { error: "Escribe el nombre del producto" };
-  if (!Number.isFinite(precio) || precio <= 0) return { error: "El precio debe ser mayor que 0" };
+  const producto = leerProductoNuevo(form);
+  if ("error" in producto) return producto;
   const foto = await leerFoto(form);
   if (foto.error) return { error: foto.error };
   if (!foto.webp) return { error: "Agrega una foto del producto" };
   const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("productos")
-    .insert({ nombre, precio, maneja_inventario, categoria_id: Number(form.get("categoria_id")) })
-    .select("id")
-    .single();
+  const { data, error } = await supabase.from("productos").insert(producto).select("id").single();
   if (error) return { error: mensajeError(error) };
   const conFoto = await guardarFoto(supabase, data.id, foto.webp, null);
   revalidatePath("/productos");
-  if (!conFoto) return { error: `Producto "${nombre}" creado, pero la foto no se pudo subir. Agrégala desde Editar` };
-  return { ok: `Producto "${nombre}" creado` };
+  if (!conFoto) return { error: `Producto "${producto.nombre}" creado, pero la foto no se pudo subir. Agrégala desde Editar` };
+  return { ok: `Producto "${producto.nombre}" creado` };
 }
 
 export async function actualizarProducto(_: Resultado, form: FormData): Promise<Resultado> {
   await requerirEmpleadoActivo();
-  const nombre = String(form.get("nombre")).trim();
-  const precio = Number(form.get("precio"));
-  const activo = form.get("activo") === "on";
-  const maneja_inventario = form.get("maneja_inventario") === "on";
-  if (!nombre) return { error: "Escribe el nombre del producto" };
-  if (!Number.isFinite(precio) || precio < 0) return { error: "Precio inválido" };
-  if (activo && precio === 0) return { error: "Asigna un precio antes de activar el producto" };
+  const cambios = leerCambiosProducto(form);
+  if ("error" in cambios) return cambios;
   const foto = await leerFoto(form);
   if (foto.error) return { error: foto.error };
   const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("productos")
-    .update({ nombre, precio, activo, maneja_inventario })
-    .eq("id", Number(form.get("id")))
-    .select("id, foto");
+  const { data, error } = await supabase.from("productos").update(cambios.datos).eq("id", cambios.id).select("id, foto");
   if (error) return { error: mensajeError(error) };
   if (!data.length) return { error: "Solo los socios de la categoría, quien creó el producto o un admin pueden editarlo" };
   const conFoto = !foto.webp || (await guardarFoto(supabase, data[0].id, foto.webp, data[0].foto));

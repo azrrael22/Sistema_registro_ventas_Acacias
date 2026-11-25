@@ -1,5 +1,7 @@
 import type { NextRequest } from "next/server";
-import { PERIODOS, leerFiltros, obtenerReporte } from "@/server/reportes";
+import { obtenerReporte } from "@/server/reportes";
+import { hoy } from "@/lib/formato";
+import { PERIODOS, leerFiltros } from "@/lib/reportes";
 
 // null (inventario de un producto que no lo lleva): celda vacía. Un texto que empieza con = + - @
 // Excel lo toma como fórmula: el apóstrofo lo deja como texto
@@ -7,7 +9,7 @@ const texto = (v: string) => (/^[=+\-@\t\r]/.test(v) ? `'${v}` : v);
 const celda = (v: string | number | null) => (v === null ? "" : typeof v === "number" ? String(v) : `"${texto(v).replaceAll('"', '""')}"`);
 
 export async function GET(request: NextRequest) {
-  const filtros = leerFiltros(Object.fromEntries(request.nextUrl.searchParams));
+  const filtros = leerFiltros(Object.fromEntries(request.nextUrl.searchParams), hoy());
   const { categorias, productos, total, error } = await obtenerReporte(filtros);
   // Se abre como página: el mensaje queda a la vista en vez de descargarse un archivo roto
   if (error) {

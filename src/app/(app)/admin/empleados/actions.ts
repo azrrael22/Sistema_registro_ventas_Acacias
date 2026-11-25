@@ -5,13 +5,14 @@ import { createClient } from "@/server/supabase";
 import { requerirAdmin } from "@/server/sesion";
 import { mensajeError } from "@/lib/errores";
 import { leerDocumento } from "@/lib/documentos";
+import { texto } from "@/lib/formulario";
 import type { Resultado } from "@/lib/acciones";
 
 export async function actualizarEmpleado(_: Resultado, form: FormData): Promise<Resultado> {
   await requerirAdmin();
   const supabase = await createClient();
   const { error } = await supabase.rpc("actualizar_empleado", {
-    p_id: String(form.get("id")),
+    p_id: texto(form, "id"),
     p_activo: form.get("activo") === "true",
     p_es_admin: form.get("es_admin") === "true",
   });
@@ -26,7 +27,7 @@ export async function actualizarDocumento(_: Resultado, form: FormData): Promise
   if ("error" in doc) return doc;
   const supabase = await createClient();
   const { error } = await supabase.rpc("actualizar_documento_empleado", {
-    p_id: String(form.get("id")),
+    p_id: texto(form, "id"),
     p_tipo: doc.tipo,
     p_numero: doc.numero,
   });
