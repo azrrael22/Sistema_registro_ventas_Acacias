@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import { createClient } from "@/server/supabase";
 import { requerirEmpleadoActivo } from "@/server/sesion";
 import { Titulo, Vacio } from "@/components/ui";
-import { urlFoto } from "@/lib/fotos";
 import { Carrito } from "./carrito";
+import { productosEnVenta } from "./venta";
 
 export const metadata: Metadata = { title: "Vender" };
 
@@ -21,18 +21,7 @@ export default async function NuevaVentaPage() {
       .throwOnError(),
     supabase.from("stock_producto").select("producto_id, stock").throwOnError(),
   ]);
-  const stockPor = new Map(stock?.map((s) => [s.producto_id, Number(s.stock ?? 0)]));
-  const lista = (productos ?? [])
-    .map((p) => ({
-      id: p.id,
-      nombre: p.nombre,
-      precio: Number(p.precio),
-      foto: urlFoto(p.foto),
-      categoria: p.categorias?.nombre ?? "",
-      // null: no lleva inventario y se vende sin tope
-      stock: p.maneja_inventario ? (stockPor.get(p.id) ?? 0) : null,
-    }))
-    .sort((a, b) => a.categoria.localeCompare(b.categoria) || a.nombre.localeCompare(b.nombre));
+  const lista = productosEnVenta(productos, stock);
 
   return (
     <>
